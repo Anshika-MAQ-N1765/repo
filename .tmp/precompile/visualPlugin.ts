@@ -1,13 +1,13 @@
-import { Visual } from "../../src/visual";
+import { Visual } from "../../src/index";
 import powerbiVisualsApi from "powerbi-visuals-api";
 import IVisualPlugin = powerbiVisualsApi.visuals.plugins.IVisualPlugin;
 import VisualConstructorOptions = powerbiVisualsApi.extensibility.visual.VisualConstructorOptions;
 import DialogConstructorOptions = powerbiVisualsApi.extensibility.visual.DialogConstructorOptions;
 var powerbiKey: any = "powerbi";
 var powerbi: any = window[powerbiKey];
-var stackchart3ADDDC7DDF3E43E1858D2BA270B5D668: IVisualPlugin = {
-    name: 'stackchart3ADDDC7DDF3E43E1858D2BA270B5D668',
-    displayName: 'stackchart',
+var PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2: IVisualPlugin = {
+    name: 'PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2',
+    displayName: '100per-Stackchart',
     class: 'Visual',
     apiVersion: '5.3.0',
     create: (options?: VisualConstructorOptions) => {
@@ -27,6 +27,6 @@ var stackchart3ADDDC7DDF3E43E1858D2BA270B5D668: IVisualPlugin = {
 if (typeof powerbi !== "undefined") {
     powerbi.visuals = powerbi.visuals || {};
     powerbi.visuals.plugins = powerbi.visuals.plugins || {};
-    powerbi.visuals.plugins["stackchart3ADDDC7DDF3E43E1858D2BA270B5D668"] = stackchart3ADDDC7DDF3E43E1858D2BA270B5D668;
+    powerbi.visuals.plugins["PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2"] = PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2;
 }
-export default stackchart3ADDDC7DDF3E43E1858D2BA270B5D668;
+export default PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2;

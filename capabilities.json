@@ -1,79 +1,187 @@
 {
-    "dataRoles": [
-        {
-            "displayName": "Category Data",
-            "name": "category",
-            "kind": "Grouping"
-        },
-        {
-            "displayName": "Measure Data",
-            "name": "measure",
-            "kind": "Measure"
-        }
-    ],
-    "objects": {
-        "dataPoint": {
-            "properties": {
-                "defaultColor": {
-                    "type": {
-                        "fill": {
-                            "solid": {
-                                "color": true
-                            }
-                        }
-                    }
-                },
-                "showAllDataPoints": {
-                    "type": {
-                        "bool": true
-                    }
-                },
-                "fill": {
-                    "type": {
-                        "fill": {
-                            "solid": {
-                                "color": true
-                            }
-                        }
-                    }
-                },
-                "fillRule": {
-                    "type": {
-                        "fill": {}
-                    }
-                },
-                 "fontSize": {
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
-                }
-            }
-        }
+  "dataRoles": [
+    {
+      "displayName": "Category Data",
+      "name": "category",
+      "kind": "Grouping"
     },
-    "dataViewMappings": [
-        {
-            "categorical": {
-                "categories": {
-                    "for": {
-                        "in": "category"
-                    },
-                    "dataReductionAlgorithm": {
-                        "top": {}
-                    }
-                },
-                "values": {
-                    "select": [
-                        {
-                            "bind": {
-                                "to": "measure"
-                            }
-                        }
-                    ]
-                }
+    {
+      "displayName": "Series",
+      "name": "series",
+      "kind": "Grouping"
+    },
+    {
+      "displayName": "Primary Measure",
+      "name": "measure",
+      "kind": "Measure"
+    },
+    {
+      "displayName": "Secondary Measure",
+      "name": "secondaryMeasure",
+      "kind": "Measure"
+    },
+    {
+      "displayName": "Tertiary Measure",
+      "name": "tertiaryMeasure",
+      "kind": "Measure"
+    },
+    {
+      "displayName": "Quaternary Measure",
+      "name": "quaternaryMeasure",
+      "kind": "Measure"
+    },
+    {
+      "displayName": "Fifth Measure",
+      "name": "fifthMeasure",
+      "kind": "Measure"
+    },
+    {
+      "displayName": "Sixth Measure",
+      "name": "sixthMeasure",
+      "kind": "Measure"
+    },
+    {
+      "displayName": "Sample Size",
+      "name": "sampleSize",
+      "kind": "Measure"
+    }
+  ],
+
+  "objects": {
+    "dataPoint": {
+      "displayName": "Data colors",
+      "properties": {
+        "defaultColor": {
+          "type": {
+            "fill": {
+              "solid": { "color": true }
             }
+          }
+        },
+        "showAllDataPoints": {
+          "type": { "bool": true }
+        },
+        "fill": {
+          "type": {
+            "fill": {
+              "solid": { "color": true }
+            }
+          }
+        },
+        "fillRule": {
+          "type": { "fill": {} }
+        },
+        "fontSize": {
+          "type": {
+            "formatting": {
+              "fontSize": true
+            }
+          }
         }
-    ],
-    "privileges": []
+      }
+    },
+
+    "legend": {
+      "displayName": "Legend",
+      "properties": {
+        "show": { "type": { "bool": true } },
+        "position": {
+          "type": {
+            "enumeration": [
+              { "value": "Top", "displayName": "Top" },
+              { "value": "Bottom", "displayName": "Bottom" },
+              { "value": "TopCenter", "displayName": "Top Center" },
+              { "value": "BottomCenter", "displayName": "Bottom Center" }
+            ]
+          }
+        },
+        "showTitle": { "type": { "bool": true } },
+        "titleText": { "type": { "text": true } },
+        "labelColor": {
+          "type": {
+            "fill": {
+              "solid": { "color": true }
+            }
+          }
+        },
+        "fontSize": {
+          "type": {
+            "formatting": {
+              "fontSize": true
+            }
+          }
+        }
+      }
+    },
+
+    "labels": {
+      "displayName": "Data labels",
+      "properties": {
+        "show": { "type": { "bool": true } },
+        "color": {
+          "type": {
+            "fill": {
+              "solid": { "color": true }
+            }
+          }
+        },
+        "fontSize": {
+          "type": {
+            "formatting": {
+              "fontSize": true
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "category": { "max": 1 },
+          "series": { "max": 1 },
+          "measure": { "max": 1 },
+          "secondaryMeasure": { "max": 1 },
+          "tertiaryMeasure": { "max": 1 },
+          "quaternaryMeasure": { "max": 1 },
+          "fifthMeasure": { "max": 1 },
+          "sixthMeasure": { "max": 1 },
+          "sampleSize": { "max": 1 }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "for": { "in": "category" },
+          "dataReductionAlgorithm": {
+            "top": {}
+          }
+        },
+        "values": {
+          "group": {
+            "by": "series",
+            "select": [
+              { "bind": { "to": "measure" } },
+              { "bind": { "to": "secondaryMeasure" } },
+              { "bind": { "to": "tertiaryMeasure" } },
+              { "bind": { "to": "quaternaryMeasure" } },
+              { "bind": { "to": "fifthMeasure" } },
+              { "bind": { "to": "sixthMeasure" } },
+              { "bind": { "to": "sampleSize" } }
+            ]
+          }
+        }
+      }
+    }
+  ],
+
+  "supportsHighlight": true,
+  "sorting": {
+    "default": {}
+  },
+  "drilldown": {
+    "roles": ["category"]
+  },
+  "privileges": []
 }

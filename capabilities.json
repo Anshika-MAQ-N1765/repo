@@ -2,17 +2,17 @@
   "dataRoles": [
     {
       "displayName": "Category Data",
-      "name": "category",
+      "name": "Category",
       "kind": "Grouping"
     },
     {
       "displayName": "Series",
-      "name": "series",
+      "name": "Series",
       "kind": "Grouping"
     },
     {
       "displayName": "Primary Measure",
-      "name": "measure",
+      "name": "Y",
       "kind": "Measure"
     },
     {
@@ -46,7 +46,7 @@
       "kind": "Measure"
     }
   ],
-
+ 
   "objects": {
     "dataPoint": {
       "displayName": "Data colors",
@@ -80,7 +80,7 @@
         }
       }
     },
-
+ 
     "legend": {
       "displayName": "Legend",
       "properties": {
@@ -113,7 +113,7 @@
         }
       }
     },
-
+ 
     "labels": {
       "displayName": "Data labels",
       "properties": {
@@ -135,14 +135,14 @@
       }
     }
   },
-
+ 
   "dataViewMappings": [
     {
       "conditions": [
         {
-          "category": { "max": 1 },
-          "series": { "max": 1 },
-          "measure": { "max": 1 },
+          "Category": { "max": 1 },
+          "Series": { "max": 1 },
+          "Y": { "max": 1 },
           "secondaryMeasure": { "max": 1 },
           "tertiaryMeasure": { "max": 1 },
           "quaternaryMeasure": { "max": 1 },
@@ -153,16 +153,16 @@
       ],
       "categorical": {
         "categories": {
-          "for": { "in": "category" },
+          "for": { "in": "Category" },
           "dataReductionAlgorithm": {
             "top": {}
           }
         },
         "values": {
           "group": {
-            "by": "series",
+            "by": "Series",
             "select": [
-              { "bind": { "to": "measure" } },
+              { "bind": { "to": "Y" } },
               { "bind": { "to": "secondaryMeasure" } },
               { "bind": { "to": "tertiaryMeasure" } },
               { "bind": { "to": "quaternaryMeasure" } },
@@ -175,13 +175,13 @@
       }
     }
   ],
-
+ 
   "supportsHighlight": true,
   "sorting": {
     "default": {}
   },
   "drilldown": {
-    "roles": ["category"]
+    "roles": ["Category"]
   },
   "privileges": []
 }

@@ -1,8 +1,9 @@
+
 // @ts-nocheck
 import powerbi from "powerbi-visuals-api";
 import * as d3 from "d3";
 import { drag as d3Drag } from "d3-drag";
-import { pointer as d3Pointer, select as d3Select } from "d3-selection";
+import { pointer as d3Pointer, select as d3Select, selection as d3Selection } from "d3-selection";
 import { scaleLinear } from "d3-scale";
 import * as chartUtils from "powerbi-visuals-utils-chartutils";
 import * as colorUtils from "powerbi-visuals-utils-colorutils";
@@ -12,11 +13,11 @@ import * as interactivityLegacy from "powerbi-visuals-utils-interactivityutils/l
 import * as svgUtils from "powerbi-visuals-utils-svgutils";
 import * as typeUtils from "powerbi-visuals-utils-typeutils";
 import * as tooltipUtils from "powerbi-visuals-utils-tooltiputils";
-
+ 
 class LegendBehaviorImpl implements interactivityLegacy.IInteractiveBehavior {
     public static dimmedLegendColor = "#bfbfbf";
     private options: powerbi.extensibility.utils.chart.legend.LegendBehaviorOptions;
-
+ 
     public bindEvents(
         options: powerbi.extensibility.utils.chart.legend.LegendBehaviorOptions,
         selectionHandler: interactivityLegacy.ISelectionHandler
@@ -30,7 +31,7 @@ class LegendBehaviorImpl implements interactivityLegacy.IInteractiveBehavior {
             selectionHandler.handleClearSelection();
         });
     }
-
+ 
     public renderSelection(hasSelection: boolean): void {
         if (!this.options?.legendItems) {
             return;
@@ -39,13 +40,13 @@ class LegendBehaviorImpl implements interactivityLegacy.IInteractiveBehavior {
             (hasSelection && !d.selected) ? 0.2 : 0.8);
     }
 }
-
+ 
 const legacyD3 = d3 as typeof d3 & {
     mouse: (container: any) => [number, number];
     behavior: { drag: () => ReturnType<typeof d3Drag> };
     scale: { Linear: typeof scaleLinear };
 };
-
+ 
 let lastPointerEvent: MouseEvent | TouchEvent | PointerEvent | null = null;
 if (typeof document !== "undefined") {
     const trackPointer = (event: MouseEvent | TouchEvent | PointerEvent) => {
@@ -57,7 +58,7 @@ if (typeof document !== "undefined") {
     document.addEventListener("touchmove", trackPointer, true);
     document.addEventListener("pointermove", trackPointer, true);
 }
-
+ 
 (legacyD3 as any).select = d3Select;
 legacyD3.mouse = (container: any) => {
     if (lastPointerEvent) {
@@ -71,13 +72,54 @@ legacyD3.behavior = {
 legacyD3.scale = {
     Linear: scaleLinear,
 };
-
+ 
+// ---------------------------------------------------------------------------
+// d3 v3 -> v7 compatibility shim.
+// The legacy visual code was written for d3 v3.5 and calls selection.style({...})
+// and selection.attr({...}) with an object of name/value pairs. d3 v4+ removed
+// that object form: passing an object is treated as a *getter*, which returns a
+// string and breaks method chaining (e.g. `.style({...}).html(...)` throws).
+// We restore the object form here so the thousands of existing call sites work.
+// ---------------------------------------------------------------------------
+(function patchSelectionPrototype(): void {
+    const selectionProto: any = (d3Selection as any).prototype;
+    if (!selectionProto || selectionProto.__legacyObjectFormPatched) {
+        return;
+    }
+    selectionProto.__legacyObjectFormPatched = true;
+ 
+    const patchObjectForm = (methodName: "attr" | "style"): void => {
+        const original = selectionProto[methodName];
+        selectionProto[methodName] = function (name: any, value?: any, priority?: any) {
+            // Object form: { 'width': '100%', 'height': 10, ... } -> apply each pair.
+            if (name && typeof name === "object") {
+                for (const key of Object.keys(name)) {
+                    original.call(this, key, name[key]);
+                }
+                return this;
+            }
+            // String form (setter or getter) -> delegate to native d3 behaviour.
+            return original.apply(this, arguments as any);
+        };
+    };
+ 
+    patchObjectForm("attr");
+    patchObjectForm("style");
+})();
+ 
+// Expose the patched d3 as a global. The legacy visual code references a bare
+// global `d3` (e.g. `d3.select`, `d3.scale.Linear`, `d3.min`, `d3.format`) that
+// used to be provided by an external script include. With the module-based
+// build there is no global, so we publish the patched module copy here. This
+// file is imported before any visual code runs, so `d3` is ready in time.
+(globalThis as typeof globalThis & { d3?: typeof legacyD3 }).d3 = legacyD3;
+ 
 const legacyPowerbi = (globalThis as typeof globalThis & { powerbi?: typeof powerbi }).powerbi ??= powerbi;
 legacyPowerbi.extensibility ??= {} as any;
 legacyPowerbi.extensibility.utils ??= {} as any;
-
+ 
 const legacyUtilsRoot = legacyPowerbi.extensibility.utils as Record<string, any>;
-
+ 
 legacyUtilsRoot.dataview = {
     converterHelper: dataviewUtils.converterHelper,
     DataViewObjects: dataviewUtils.dataViewObjects,
@@ -103,8 +145,8 @@ legacyUtilsRoot.svg = {
         Rect: svgUtils.Rect,
     },
 };
-
-
+ 
+ 
 legacyUtilsRoot.CartesianHelper = {
     getCategoryAxisProperties(metadata: any) {
         return metadata?.objects?.categoryAxis ?? metadata?.objects?.xAxis ?? {};
@@ -116,7 +158,7 @@ legacyUtilsRoot.CartesianHelper = {
         if (typeof isScalar === "boolean") {
             return isScalar;
         }
-
+ 
         return !!xAxisCardProperties?.axisType || !!xAxisCardProperties?.isScalar;
     },
     getPrecision(precision: any) {
@@ -126,11 +168,11 @@ legacyUtilsRoot.CartesianHelper = {
         if (!data) {
             return undefined;
         }
-
+ 
         if (isScalar) {
             return data.categories?.[index]?.value ?? data.categories?.[index];
         }
-
+ 
         return index;
     },
 };
@@ -156,8 +198,10 @@ legacyUtilsRoot.chart = {
         LegendBehavior: LegendBehaviorImpl,
     }),
 };
-
+ 
 (powerbi.extensibility.utils.chart.legend as any).LegendBehavior = LegendBehaviorImpl;
 (powerbi.extensibility.utils.chart.legend as any).LegendBehavior.dimmedLegendColor = "#bfbfbf";
-
+ 
 export { Visual } from "./visual";
+ 
+ 

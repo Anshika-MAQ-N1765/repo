@@ -1968,36 +1968,27 @@ let dp,textProperties: any,primaryWidth=0,labelwidth:any;;
         }
 
         public ColumnUtilDrawSeries(data, graphicsContext) {
-            let colGroupSelection = graphicsContext.selectAll(ColumnChartGMO.SeriesClasses.selector);
-            let seriesVal: UpdateSelection<ColumnChartSeries> = graphicsContext.selectAll(ColumnChartGMO.SeriesClasses.selector).data([], (d: ColumnChartSeries) => d.key);
-            //console.log(data.series);
-            for (let count = 0; count < data.series.length; count++) {
-
-
-                let seriesArr = [];
-                seriesArr.push(data.series[count]);
-                let series: UpdateSelection<ColumnChartSeries> = colGroupSelection.data(seriesArr, (d: ColumnChartSeries) => d.key);
-
-                series
-                    .enter()
-                    .append('g')
-                    .classed(ColumnChartGMO.SeriesClasses.class, true);
-
-                series
-                    .style({
-                        fill: (d: ColumnChartSeries) => d.color,
-                    });
-
-                series
-                    .exit()
-                    .remove();
-
-                seriesVal[0].push(series[0][0]);
-                //console.log(data.series[count].tooltip);
-                this.TooltipServiceWrapper.addTooltip(series,
-                    ((tooltipEvent: TooltipEventArgs<any>) => (data.series[count].tooltip)));
-            }
-            return seriesVal;
+            // d3 v7: bind one <g class="series"> per data series, then merge the
+            // entering and updating selections so styling/tooltips apply to all.
+            let seriesSelection: UpdateSelection<ColumnChartSeries> = graphicsContext
+                .selectAll(ColumnChartGMO.SeriesClasses.selector)
+                .data(data.series, (d: ColumnChartSeries) => d.key);
+ 
+            let seriesEnter = seriesSelection
+                .enter()
+                .append('g')
+                .classed(ColumnChartGMO.SeriesClasses.class, true);
+ 
+            let seriesMerged = seriesEnter.merge(seriesSelection);
+ 
+            seriesMerged.style('fill', (d: ColumnChartSeries) => d.color);
+ 
+            seriesSelection.exit().remove();
+ 
+            this.TooltipServiceWrapper.addTooltip(seriesMerged,
+                ((tooltipEvent: TooltipEventArgs<any>) => (tooltipEvent && tooltipEvent.data ? tooltipEvent.data.tooltip : undefined)));
+ 
+            return seriesMerged;
         }
 
         public ColumnUtilDrawDefaultShapes(data, series, layout, itemCS, filterZeros, hasSelection) {
@@ -2013,22 +2004,26 @@ let dp,textProperties: any,primaryWidth=0,labelwidth:any;;
             }
             let shapeSelection = series.selectAll(itemCS.selector);
             let shapes = shapeSelection.data(dataSelector, (d: ColumnChartDataPoint) => d.key);
-            let rect = shapes.enter()
+ 
+            // d3 v7: append entering rects, then merge with the update selection so
+            // the layout (x/y/width/height) and fill styles are applied to BOTH the
+            // newly created and the existing rectangles. Without merge, brand new
+            // rects on first render get no geometry and stay invisible.
+            let shapesEnter = shapes.enter()
                 .append("rect")
-                .attr("class", "");
-
-
-
-
-            shapes
+                .classed(itemCS.class, true);
+ 
+            let shapesMerged = shapesEnter.merge(shapes);
+ 
+            shapesMerged
                 .style("fill-opacity", (d: ColumnChartDataPoint) => ColumnUtil.getFillOpacity(d.selected, d.highlight, hasSelection, data.hasHighlights))
                 .style("fill", (d: ColumnChartDataPoint) => d.color !== data.series[d.seriesIndex].color ? d.color : null)  // PERF: Only set the fill color if it is different than series.
                 .attr(layout.shapeLayout);
-
+ 
             shapes
                 .exit()
                 .remove();
-            return shapes;
+            return shapesMerged;
         }
 
         public drawColumns(useAnimation: boolean): ColumnChartDrawInfoGMO {
@@ -2799,25 +2794,34 @@ let dp,textProperties: any,primaryWidth=0,labelwidth:any;;
             this.root = d3.select(options.element);
             this.viewport;
             this.hostService = options.host;
-
+ 
             this.interactivityService = createInteractivityService(this.hostService);
-
+ 
             this.options = options;
             this.TooltipServiceWrapper = createTooltipServiceWrapper(
                 options.host.tooltipService,
                 options.element);
-
-            d3.select(options.element)
+ 
+            const titleDiv = d3.select(options.element)
                 .append('div')
                 .classed('Title_Div_Text', true)
-                .style({ 'width': '100%', 'display': 'inline-block', 'position': 'static' })
-                .html('<div class = "GMOColumnChartTitleDiv" style = "max-width: 80%; overflow: hidden; -ms-text-overflow: ellipsis;-o-text-overflow: ellipsis; text-overflow: ellipsis; white-space: nowrap; display: inline-block">' + '</div>'
-                    + '<span class = "GMOColumnChartTitleIcon" style = "width: 2%; cursor: pointer; position: absolute">&nbsp(&#063;)</span>');
+                .style({ 'width': '100%', 'display': 'inline-block', 'position': 'static' });
+            titleDiv.append('div')
+                .classed('GMOColumnChartTitleDiv', true)
+                .style({
+                    'max-width': '80%', 'overflow': 'hidden',
+                    'text-overflow': 'ellipsis', 'white-space': 'nowrap',
+                    'display': 'inline-block'
+                });
+            titleDiv.append('span')
+                .classed('GMOColumnChartTitleIcon', true)
+                .style({ 'width': '2%', 'cursor': 'pointer', 'position': 'absolute' })
+                .text('\u00A0(?)');
             d3.select(options.element)
                 .append('div')
                 .classed('EmptyDiv', true)
                 .style({ 'width': '100%', 'position': 'relative', 'visibility': 'hidden', 'height': '8px' })
-                .html('.');
+                .text('.');
 
             d3.select(options.element)
                 .append('div')
@@ -2921,7 +2925,7 @@ this.root.selectAll('.legendItem').remove();
             }
             else if (dataViews.length !== 0 && dataViews[0].metadata.columns.length === 0) {
                 this.updateCount = 0;
-                (<HTMLElement>this.root.select('.errorMessage')[0][0]).innerHTML = 'No data available';
+                this.root.select('.errorMessage').text('No data available');
                 this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
                 this.root.select('.legend').style({ 'display': 'none' });
                 this.svg.style({ 'display': 'none' });
@@ -2930,7 +2934,7 @@ this.root.selectAll('.legendItem').remove();
             }
             else if (dataViews[0].categorical.categories && dataViews[0].categorical.categories[0].values.length == 0 && dataViews[0].categorical.values && dataViews[0].categorical.values[0].values.length == 0) {
                 this.updateCount = 0;
-                (<HTMLElement>this.root.select('.errorMessage')[0][0]).innerHTML = 'No data available';
+                this.root.select('.errorMessage').text('No data available');
                 this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
                 this.root.select('.legend').style({ 'display': 'none' });
                 this.svg.style({ 'display': 'none' });

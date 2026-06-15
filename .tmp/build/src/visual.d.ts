@@ -1,14 +1,3 @@
-import powerbiApi from "powerbi-visuals-api";
-import "./layout";
-import "./selectionId";
-import "./Columnutil";
-import { legendInterfaces } from "powerbi-visuals-utils-chartutils";
-import type { LabelEnabledDataPoint, VisualDataLabelsSettings } from "powerbi-visuals-utils-chartutils/lib/dataLabel/dataLabelInterfaces";
-import type { IMargin, IAxisProperties } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
-import * as formattingUtils from "powerbi-visuals-utils-formattingutils";
-import { IInteractiveBehavior, IInteractivityService, ISelectionHandler, SelectableDataPoint } from "powerbi-visuals-utils-interactivityutils/lib/interactivityService";
-import { ITooltipServiceWrapper, TooltipEnabledDataPoint } from "powerbi-visuals-utils-tooltiputils";
-import { CssConstants, IRect } from "powerbi-visuals-utils-svgutils";
 type DataViewObjects = powerbiApi.DataViewObjects;
 type DataViewObject = powerbiApi.DataViewObject;
 type DataViewObjectPropertyIdentifier = powerbiApi.DataViewObjectPropertyIdentifier;
@@ -20,15 +9,13 @@ type VisualTooltipDataItem = powerbiApi.extensibility.VisualTooltipDataItem;
 type IColorPalette = powerbiApi.extensibility.IColorPalette;
 type Selector = powerbiApi.data.Selector;
 type ImageValue = powerbiApi.ImageValue;
-type Selection<G = any> = d3.Selection<G>;
+type Selection<G = any> = d3.Selection;
 interface ClassAndSelector extends CssConstants.ClassAndSelector {
     selector: string;
     class: string;
 }
 type LegendPositionType = legendInterfaces.LegendPosition;
 type LegendData = legendInterfaces.LegendData;
-type TextProperties = formattingUtils.interfaces.TextProperties;
-type IValueFormatter = formattingUtils.valueFormatter.IValueFormatter;
 declare namespace powerbi.extensibility.visual {
     export interface ChartAxesLabels {
         x: string;
@@ -354,7 +341,7 @@ declare namespace powerbi.extensibility.visual {
         private static LegendMaxWidthFactor;
         private static TopLegendHeight;
         private static DefaultTextMargin;
-        DefaultTextMargin: number;
+        DefaultTextMargin: any;
         private static DefaultMaxLegendFactor;
         private secondaryExists;
         private static LegendArrowOffset;
@@ -527,7 +514,7 @@ declare namespace powerbi.extensibility.visual {
         static OuterPaddingRatio: number;
         static InnerPaddingRatio: number;
         private static FontSize;
-        FontSizeString: string;
+        FontSizeString: any;
         static AxisTextProperties: TextProperties;
         static getPreferredCategorySpan(categoryCount: number, categoryThickness: number, noOuterPadding?: boolean): number;
         static getIsScalar(objects: DataViewObjects, propertyId: DataViewObjectPropertyIdentifier, type: ValueTypeDescriptor, scalarKeys?: any): boolean;
@@ -569,8 +556,8 @@ declare namespace powerbi.extensibility.visual {
         getCategoryAxis(data: StackedChartGMOData, size: number, layout: CategoryLayout, isVertical: boolean, forcedXMin?: DataViewPropertyValue, forcedXMax?: DataViewPropertyValue, axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureXDomain?: NumberRange): IAxisProperties;
         lookupXValue(data: StackedChartGMOData, index: number, type: any, isScalar: boolean): any;
         calcValueDomain(data: any, is100pct: any): {
-            min: any;
-            max: any;
+            min: number;
+            max: number;
         };
         setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: number): IAxisProperties;
         StackedChartGMOStrategyGetLayout(data: any, axisOptions: any): {
@@ -988,8 +975,8 @@ declare namespace powerbi.extensibility.visual {
         maxMarginFactor?: number;
     }
     /**
-     * Renders a stacked and clustered column chart.
-     */
+    * Renders a stacked and clustered column chart.
+    */
     export class Visual implements IVisual {
         private root;
         private updateCount;
@@ -1079,6 +1066,12 @@ declare namespace powerbi.extensibility.visual {
         updateVisualMetadata(x: IAxisProperties, y: IAxisProperties, margin: any): void;
         checkDatapointAgainstSelectedIds: (datapoint: any, selectedIds: any) => any;
         applyViewportSettings(): void;
+        /**
+         * Renders a runtime error directly onto the visual surface so that failures
+         * are visible (with the failing call stack) instead of showing a blank visual.
+         * This method must never throw itself.
+         */
+        private renderFatalError;
         constructor(options: VisualConstructorOptions);
         update(options: VisualUpdateOptions): void;
         private shouldRenderAxis;

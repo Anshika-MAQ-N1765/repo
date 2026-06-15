@@ -6529,6 +6529,20 @@ let dvcCategories= dataViewCat.categories
             axisLabels: ChartAxesLabels,
             suppressAnimations: boolean)
            {
+
+            // d3 v3 -> v7: axes returned by AxisHelper.createAxis are d3 v7 axis
+            // generators (axisBottom / axisLeft). The legacy render code calls
+            // `axis.orient(...)`, which existed in d3 v3 but was removed in v4+.
+            // Without this, `axis.orient is not a function` throws here and aborts
+            // the whole render -> the chart shows no bars/axes (blank visual).
+            // In d3 v7 the orientation is fixed when the axis is created, so we add
+            // a no-op `orient` that returns the axis to preserve method chaining.
+            [xAxis, yAxis].forEach((axisProps: any) => {
+                if (axisProps && axisProps.axis && typeof axisProps.axis.orient !== "function") {
+                    axisProps.axis.orient = () => axisProps.axis;
+                }
+            });
+ 
            
             let bottomMarginLimit = this.bottomMarginLimit;
             let xFontSize: any;

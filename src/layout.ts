@@ -177,3 +177,25 @@ namespace powerbi.extensibility.visual.roleUtils {
         return getMeasureIndexByRole(dataViewCategorical, roleName) >= 0;
     }
 }
+ 
+/* ===== Publish legacy namespaces onto the shared global `powerbi` =====
+* In the ES-module build, every file's `namespace powerbi {}` compiles to a
+* file-LOCAL `powerbi` object. visual.ts has its own local `powerbi`, so it
+* cannot see the members defined here. We copy them onto the single shared
+* `globalThis.powerbi` object that visual.ts reads from at runtime. */
+{
+    const g: any = globalThis as any;
+    g.powerbi = g.powerbi || {};
+    g.powerbi.extensibility = g.powerbi.extensibility || {};
+    g.powerbi.extensibility.visual = g.powerbi.extensibility.visual || {};
+    g.powerbi.extensibility.utils = g.powerbi.extensibility.utils || {};
+    if (typeof powerbi !== "undefined" && powerbi.extensibility) {
+        if (powerbi.extensibility.visual) {
+            Object.assign(g.powerbi.extensibility.visual, powerbi.extensibility.visual);
+        }
+        if (powerbi.extensibility.utils) {
+            Object.assign(g.powerbi.extensibility.utils, powerbi.extensibility.utils);
+        }
+    }
+}
+ 

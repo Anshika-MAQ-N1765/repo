@@ -1,3 +1,14 @@
+import powerbiApi from "powerbi-visuals-api";
+import "./layout";
+import "./selectionId";
+import "./Columnutil";
+import { legendInterfaces } from "powerbi-visuals-utils-chartutils";
+import type { LabelEnabledDataPoint, VisualDataLabelsSettings } from "powerbi-visuals-utils-chartutils/lib/dataLabel/dataLabelInterfaces";
+import type { IMargin, IAxisProperties } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
+import * as formattingUtils from "powerbi-visuals-utils-formattingutils";
+import { IInteractiveBehavior, IInteractivityService, ISelectionHandler, SelectableDataPoint } from "powerbi-visuals-utils-interactivityutils/lib/interactivityService";
+import { ITooltipServiceWrapper, TooltipEnabledDataPoint } from "powerbi-visuals-utils-tooltiputils";
+import { CssConstants, IRect } from "powerbi-visuals-utils-svgutils";
 type DataViewObjects = powerbiApi.DataViewObjects;
 type DataViewObject = powerbiApi.DataViewObject;
 type DataViewObjectPropertyIdentifier = powerbiApi.DataViewObjectPropertyIdentifier;
@@ -16,6 +27,8 @@ interface ClassAndSelector extends CssConstants.ClassAndSelector {
 }
 type LegendPositionType = legendInterfaces.LegendPosition;
 type LegendData = legendInterfaces.LegendData;
+type TextProperties = formattingUtils.interfaces.TextProperties;
+type IValueFormatter = formattingUtils.valueFormatter.IValueFormatter;
 declare namespace powerbi.extensibility.visual {
     export interface ChartAxesLabels {
         x: string;
@@ -341,7 +354,7 @@ declare namespace powerbi.extensibility.visual {
         private static LegendMaxWidthFactor;
         private static TopLegendHeight;
         private static DefaultTextMargin;
-        DefaultTextMargin: any;
+        DefaultTextMargin: number;
         private static DefaultMaxLegendFactor;
         private secondaryExists;
         private static LegendArrowOffset;
@@ -514,7 +527,7 @@ declare namespace powerbi.extensibility.visual {
         static OuterPaddingRatio: number;
         static InnerPaddingRatio: number;
         private static FontSize;
-        FontSizeString: any;
+        FontSizeString: string;
         static AxisTextProperties: TextProperties;
         static getPreferredCategorySpan(categoryCount: number, categoryThickness: number, noOuterPadding?: boolean): number;
         static getIsScalar(objects: DataViewObjects, propertyId: DataViewObjectPropertyIdentifier, type: ValueTypeDescriptor, scalarKeys?: any): boolean;
@@ -556,8 +569,8 @@ declare namespace powerbi.extensibility.visual {
         getCategoryAxis(data: StackedChartGMOData, size: number, layout: CategoryLayout, isVertical: boolean, forcedXMin?: DataViewPropertyValue, forcedXMax?: DataViewPropertyValue, axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureXDomain?: NumberRange): IAxisProperties;
         lookupXValue(data: StackedChartGMOData, index: number, type: any, isScalar: boolean): any;
         calcValueDomain(data: any, is100pct: any): {
-            min: number;
-            max: number;
+            min: any;
+            max: any;
         };
         setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: number): IAxisProperties;
         StackedChartGMOStrategyGetLayout(data: any, axisOptions: any): {

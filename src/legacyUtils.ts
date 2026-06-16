@@ -202,6 +202,9 @@ legacyUtilsRoot.chart = {
 (powerbi.extensibility.utils.chart.legend as any).LegendBehavior = LegendBehaviorImpl;
 (powerbi.extensibility.utils.chart.legend as any).LegendBehavior.dimmedLegendColor = "#bfbfbf";
  
-export { Visual } from "./visual";
- 
+// NOTE: do NOT re-export Visual from here. A `export { Visual } from "./visual"`
+// would pull visual.ts into this module's dependency graph and force it (and the
+// layout/Columnutil/selectionId publish footers) to evaluate BEFORE this file's
+// body runs — so visual.ts would read globalThis.powerbi before it is populated.
+// index.ts is the single place that exports Visual, AFTER importing this module.
  

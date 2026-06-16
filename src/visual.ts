@@ -1,91 +1,105 @@
-// @ts-nocheck /// /// import powerbiApi from "powerbi-visuals-api"; import { drag as d3Drag, pointer as d3Pointer } from "d3"; import "./layout"; import "./selectionId"; import "./Columnutil"; import { converterHelper } from "powerbi-visuals-utils-dataviewutils"; import * as dataViewObjects from "powerbi-visuals-utils-dataviewutils/lib/dataViewObjects"; import * as dataViewObject from "powerbi-visuals-utils-dataviewutils/lib/dataViewObject"; import { axis as AxisHelper, axisScale, axisStyle, dataLabelUtils, legend, legendInterfaces, legendPosition, svgLegend, } from "powerbi-visuals-utils-chartutils"; import type { IDataLabelSettings, DataLabelObject, LabelEnabledDataPoint, VisualDataLabelsSettings, } from "powerbi-visuals-utils-chartutils/lib/dataLabel/dataLabelInterfaces"; import type { IMargin, IAxisProperties } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces"; import { ColorHelper } from "powerbi-visuals-utils-colorutils"; import * as formattingUtils from "powerbi-visuals-utils-formattingutils"; import { appendClearCatcher, createInteractivityService, dataHasSelection, IInteractiveBehavior, IInteractivityService, ISelectionHandler, SelectableDataPoint, } from "powerbi-visuals-utils-interactivityutils/lib/interactivityService"; import { createTooltipServiceWrapper, ITooltipServiceWrapper, TooltipEnabledDataPoint, TooltipEventArgs, } from "powerbi-visuals-utils-tooltiputils"; import { CssConstants, IRect, manipulation, Rect } from "powerbi-visuals-utils-svgutils"; import { valueType, double as Double, prototype as Prototype, enumExtensions as EnumExtensions, pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils"; 
-
-type DataViewObjects = powerbiApi.DataViewObjects; type DataViewObject = powerbiApi.DataViewObject; type DataViewObjectPropertyIdentifier = powerbiApi.DataViewObjectPropertyIdentifier; type DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn; type DataView = powerbiApi.DataView; type IViewport = powerbiApi.IViewport; type NumberRange = powerbiApi.NumberRange; type VisualObjectInstance = powerbiApi.VisualObjectInstance; type VisualTooltipDataItem = powerbiApi.extensibility.VisualTooltipDataItem; type IColorPalette = powerbiApi.extensibility.IColorPalette; type Selector = powerbiApi.data.Selector; type ImageValue = powerbiApi.ImageValue; type UpdateSelection<G = any> = d3.selection.Update; type Selection<G = any> = d3.Selection; interface ClassAndSelector extends CssConstants.ClassAndSelector { selector: string; class: string; } 
-
-function createClassAndSelector(className: string): ClassAndSelector { const cs = CssConstants.createClassAndSelector(className); return { ...cs, selector: cs.selectorName, class: cs.className, }; } 
-
-const NewDataLabelUtils = dataLabelUtils; const Legend = legend; const LegendPosition = legendInterfaces.LegendPosition; type LegendPositionType = legendInterfaces.LegendPosition; type LegendData = legendInterfaces.LegendData; type LegendDataPoint = legendInterfaces.LegendDataPoint; const legendProps = legendInterfaces.legendProps; const SVGLegend = svgLegend.SVGLegend; // Guarded read: this runs at module-evaluation time. If the legacy global // namespace isn't present yet, optional chaining yields undefined instead of // throwing, so the module still loads and the Visual can register (any real // failure then surfaces via the try/catch in the constructor/update). const LegendBehavior = (powerbi as any)?.extensibility?.utils?.chart?.legend?.LegendBehavior; type LegendBehaviorOptions = any; const valueFormatter = formattingUtils.valueFormatter; const TextMeasurementService = formattingUtils.textMeasurementService; type TextProperties = formattingUtils.interfaces.TextProperties; const font = formattingUtils.font; const wordBreaker = formattingUtils.wordBreaker; type IValueFormatter = formattingUtils.valueFormatter.IValueFormatter; 
-
-/* 
-
-Power BI Visual CLI 
-
+// @ts-nocheck
+/// <reference types="powerbi-visuals-api" />
+/// <reference path="./legacyShim.d.ts" />
+import powerbiApi from "powerbi-visuals-api";
+import { drag as d3Drag, pointer as d3Pointer } from "d3"; import "./layout"; import "./selectionId"; import "./Columnutil"; import { converterHelper } from "powerbi-visuals-utils-dataviewutils"; import * as dataViewObjects from "powerbi-visuals-utils-dataviewutils/lib/dataViewObjects"; import * as dataViewObject from "powerbi-visuals-utils-dataviewutils/lib/dataViewObject"; import { axis as AxisHelper, axisScale, axisStyle, dataLabelUtils, legend, legendInterfaces, legendPosition, svgLegend, } from "powerbi-visuals-utils-chartutils"; import type { IDataLabelSettings, DataLabelObject, LabelEnabledDataPoint, VisualDataLabelsSettings, } from "powerbi-visuals-utils-chartutils/lib/dataLabel/dataLabelInterfaces"; import type { IMargin, IAxisProperties } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces"; import { ColorHelper } from "powerbi-visuals-utils-colorutils"; import * as formattingUtils from "powerbi-visuals-utils-formattingutils"; import { appendClearCatcher, createInteractivityService, dataHasSelection, IInteractiveBehavior, IInteractivityService, ISelectionHandler, SelectableDataPoint, } from "powerbi-visuals-utils-interactivityutils/lib/interactivityService"; import { createTooltipServiceWrapper, ITooltipServiceWrapper, TooltipEnabledDataPoint, TooltipEventArgs, } from "powerbi-visuals-utils-tooltiputils"; import { CssConstants, IRect, manipulation, Rect } from "powerbi-visuals-utils-svgutils"; import { valueType, double as Double, prototype as Prototype, enumExtensions as EnumExtensions, pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils";
  
-
-Copyright (c) Microsoft Corporation 
-
-All rights reserved. 
-
-MIT License 
-
+type DataViewObjects = powerbiApi.DataViewObjects; type DataViewObject = powerbiApi.DataViewObject; type DataViewObjectPropertyIdentifier = powerbiApi.DataViewObjectPropertyIdentifier; type DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn; type DataView = powerbiApi.DataView; type IViewport = powerbiApi.IViewport; type NumberRange = powerbiApi.NumberRange; type VisualObjectInstance = powerbiApi.VisualObjectInstance; type VisualTooltipDataItem = powerbiApi.extensibility.VisualTooltipDataItem; type IColorPalette = powerbiApi.extensibility.IColorPalette; type Selector = powerbiApi.data.Selector; type ImageValue = powerbiApi.ImageValue; type UpdateSelection<G = any> = d3.selection.Update; type Selection<G = any> = d3.Selection; interface ClassAndSelector extends CssConstants.ClassAndSelector { selector: string; class: string; }
  
-
-Permission is hereby granted, free of charge, to any person obtaining a copy 
-
-of this software and associated documentation files (the ""Software""), to deal 
-
-in the Software without restriction, including without limitation the rights 
-
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-
-copies of the Software, and to permit persons to whom the Software is 
-
-furnished to do so, subject to the following conditions: 
-
+function createClassAndSelector(className: string): ClassAndSelector { const cs = CssConstants.createClassAndSelector(className); return { ...cs, selector: cs.selectorName, class: cs.className, }; }
  
-
-The above copyright notice and this permission notice shall be included in 
-
-all copies or substantial portions of the Software. 
-
+const NewDataLabelUtils = dataLabelUtils; const Legend = legend; const LegendPosition = legendInterfaces.LegendPosition; type LegendPositionType = legendInterfaces.LegendPosition; type LegendData = legendInterfaces.LegendData; type LegendDataPoint = legendInterfaces.LegendDataPoint; const legendProps = legendInterfaces.legendProps; const SVGLegend = svgLegend.SVGLegend;
+// Read the legend behavior from the SHARED global `powerbi` (populated by
+// legacyUtils). visual.ts has its own file-local `powerbi` namespace, so we must
+// go through globalThis to see members published by the other modules.
+const LegendBehavior = (globalThis as any).powerbi?.extensibility?.utils?.chart?.legend?.LegendBehavior;
+type LegendBehaviorOptions = any;
+const valueFormatter = formattingUtils.valueFormatter;
+const TextMeasurementService = formattingUtils.textMeasurementService;
+type TextProperties = formattingUtils.interfaces.TextProperties;
+const font = formattingUtils.font;
+const wordBreaker = formattingUtils.wordBreaker;
+type IValueFormatter = formattingUtils.valueFormatter.IValueFormatter;
  
-
-THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
-
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
-
-THE SOFTWARE. 
-
-*/ 
-
-namespace powerbi.extensibility.visual { export interface ChartAxesLabels { x: string; y: string; y2?: string; } 
-
-export interface VisualBackground { 
-   image?: ImageValue; 
-   transparency?: number; 
-} 
+/*
  
-const ValueType = valueType.ValueType; 
-// Guarded reads: these run at module-evaluation time and reach into the 
-// legacy `powerbi.extensibility.utils/visual` namespaces. Optional chaining 
-// prevents a load-time crash if those aren't populated yet, so the Visual 
-// still registers and any real failure surfaces on-screen via try/catch. 
-const ColumnUtil = (powerbi as any)?.extensibility?.utils?.ColumnUtil; 
-const CartesianHelper = (powerbi as any)?.extensibility?.utils?.CartesianHelper; 
-const axisType = (powerbi as any)?.extensibility?.visual?.axisType; 
-const yAxisPosition = (powerbi as any)?.extensibility?.visual?.yAxisPosition; 
-const SelectionId = (powerbi as any)?.extensibility?.visual?.SelectionId; 
+Power BI Visual CLI
  
-let globalallDataPoints : StackedChartGMODataPoint[] = []; 
  
-export type IGenericAnimator = IAnimator<IAnimatorOptions, IAnimationOptions, IAnimationResult>; 
-export interface IGMOLegend { 
-   getMargins(): IViewport; 
-   isVisible(): boolean; 
-   changeOrientation(orientation: LegendPositionType): void; 
-   getOrientation(): LegendPositionType; 
-   drawLegend(data: LegendData, viewport: IViewport); 
-   drawLegendInternal(data: LegendData, viewport: IViewport, width: boolean, detailedLegend: any); 
-   reset(): void; 
-} 
+ 
+Copyright (c) Microsoft Corporation
+ 
+All rights reserved.
+ 
+MIT License
+ 
+ 
+ 
+Permission is hereby granted, free of charge, to any person obtaining a copy
+ 
+of this software and associated documentation files (the ""Software""), to deal
+ 
+in the Software without restriction, including without limitation the rights
+ 
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ 
+copies of the Software, and to permit persons to whom the Software is
+ 
+furnished to do so, subject to the following conditions:
+ 
+ 
+ 
+The above copyright notice and this permission notice shall be included in
+ 
+all copies or substantial portions of the Software.
+ 
+ 
+ 
+THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ 
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ 
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ 
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ 
+THE SOFTWARE.
+ 
+*/
+ 
+namespace powerbi.extensibility.visual { export interface ChartAxesLabels { x: string; y: string; y2?: string; }
+ 
+export interface VisualBackground {
+   image?: ImageValue;
+   transparency?: number;
+}
+ 
+    const ValueType = valueType.ValueType;
+    // These members live in OTHER modules' `namespace powerbi {}` blocks, which in
+    // the ES-module build are file-local. The publish footers in layout.ts,
+    // Columnutil.ts and selectionId.ts copy them onto the SHARED globalThis.powerbi,
+    // and the side-effect imports above guarantee those run before this point.
+    const ColumnUtil = (globalThis as any).powerbi?.extensibility?.utils?.ColumnUtil;
+    const CartesianHelper = (globalThis as any).powerbi?.extensibility?.utils?.CartesianHelper;
+    const axisType = (globalThis as any).powerbi?.extensibility?.visual?.axisType;
+    const yAxisPosition = (globalThis as any).powerbi?.extensibility?.visual?.yAxisPosition;
+    const SelectionId = (globalThis as any).powerbi?.extensibility?.visual?.SelectionId;let globalallDataPoints : StackedChartGMODataPoint[] = [];
+ 
+export type IGenericAnimator = IAnimator<IAnimatorOptions, IAnimationOptions, IAnimationResult>;
+export interface IGMOLegend {
+   getMargins(): IViewport;
+   isVisible(): boolean;
+   changeOrientation(orientation: LegendPositionType): void;
+   getOrientation(): LegendPositionType;
+   drawLegend(data: LegendData, viewport: IViewport);
+   drawLegendInternal(data: LegendData, viewport: IViewport, width: boolean, detailedLegend: any);
+   reset(): void;
+}
+ 
 export interface BehaviorOptions { 
    clearCatcher: Selection<any>; 
    taskSelection: Selection<any>; 

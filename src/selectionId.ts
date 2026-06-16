@@ -532,3 +532,18 @@ namespace powerbi.extensibility.visual {
         }
     }
 }
+ 
+/* ===== Publish legacy namespaces onto the shared global `powerbi` =====
+* Copies this module's local `powerbi.extensibility.visual` members (SelectionId,
+* SelectionIdBuilder) onto the single shared `globalThis.powerbi` object that
+* visual.ts reads from at runtime. */
+{
+    const g: any = globalThis as any;
+    g.powerbi = g.powerbi || {};
+    g.powerbi.extensibility = g.powerbi.extensibility || {};
+    g.powerbi.extensibility.visual = g.powerbi.extensibility.visual || {};
+    if (typeof powerbi !== "undefined" && powerbi.extensibility && powerbi.extensibility.visual) {
+        Object.assign(g.powerbi.extensibility.visual, powerbi.extensibility.visual);
+    }
+}
+ 

@@ -871,3 +871,18 @@ export interface ColumnChartDataPoint extends CartesianDataPoint, SelectableData
     }
 }
 }
+ 
+/* ===== Publish legacy namespaces onto the shared global `powerbi` =====
+* Copies this module's local `powerbi.extensibility.utils` members (ColumnUtil,
+* columnChartProps, ClusteredUtil, StackedUtil, ...) onto the single shared
+* `globalThis.powerbi` object that visual.ts reads from at runtime. */
+{
+    const g: any = globalThis as any;
+    g.powerbi = g.powerbi || {};
+    g.powerbi.extensibility = g.powerbi.extensibility || {};
+    g.powerbi.extensibility.utils = g.powerbi.extensibility.utils || {};
+    if (typeof powerbi !== "undefined" && powerbi.extensibility && powerbi.extensibility.utils) {
+        Object.assign(g.powerbi.extensibility.utils, powerbi.extensibility.utils);
+    }
+}
+ 

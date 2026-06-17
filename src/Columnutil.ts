@@ -861,8 +861,6 @@ export interface ColumnChartDataPoint extends CartesianDataPoint, SelectableData
             mainGraphicsContext: d3.Selection<any>,
             itemCS: ClassAndSelector): void {
 
-
-
             let bars = mainGraphicsContext.selectAll(itemCS.selector)
                 .data([]);
 

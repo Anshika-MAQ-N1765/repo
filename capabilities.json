@@ -110,28 +110,259 @@
               "fontSize": true
             }
           }
+        },
+        "labelDisplayUnits": {
+          "type": { "formatting": { "labelDisplayUnits": true } }
+        },
+        "labelPrecision": {
+          "type": { "numeric": true }
+        },
+        "primaryMeasureOnoff": {
+          "type": { "bool": true }
         }
       }
     },
  
     "labels": {
       "displayName": "Data labels",
+      "description": "Display data label options",
       "properties": {
         "show": { "type": { "bool": true } },
+        "showSeries": { "type": { "bool": true } },
         "color": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "labelDisplayUnits": {
+          "type": { "formatting": { "labelDisplayUnits": true } }
+        },
+        "labelPrecision": { "type": { "numeric": true } },
+        "showAll": { "type": { "bool": true } },
+        "fontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        }
+      }
+    },
+ 
+    "general": {
+      "displayName": "General",
+      "properties": {}
+    },
+ 
+    "categoryAxis": {
+      "displayName": "X Axis",
+      "properties": {
+        "show": { "type": { "bool": true } },
+        "axisScale": {
           "type": {
-            "fill": {
-              "solid": { "color": true }
-            }
+            "enumeration": [
+              { "value": "Scalar", "displayName": "Scalar" },
+              { "value": "Categorical", "displayName": "Categorical" }
+            ]
           }
         },
+        "start": { "type": { "numeric": true } },
+        "end": { "type": { "numeric": true } },
+        "showAxisTitle": { "type": { "bool": true } },
+        "labelColor": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "labelDisplayUnits": {
+          "type": { "formatting": { "labelDisplayUnits": true } }
+        },
         "fontSize": {
-          "type": {
-            "formatting": {
-              "fontSize": true
-            }
-          }
+          "type": { "formatting": { "fontSize": true } }
+        },
+        "labelPrecision": { "type": { "numeric": true } }
+      }
+    },
+ 
+    "sampleFilter": {
+      "displayName": "Sample Filter",
+      "properties": {
+        "show": { "type": { "bool": true } }
+      }
+    },
+ 
+    "textWrap": {
+      "displayName": "X-Axis Text Wrap",
+      "properties": {
+        "show": { "type": { "bool": true } }
+      }
+    },
+ 
+    "measureTitles": {
+      "displayName": "Measure Titles",
+      "properties": {
+        "ellipses": { "type": { "numeric": true } }
+      }
+    },
+ 
+    "valueAxis": {
+      "displayName": "Y Axis",
+      "properties": {
+        "show": { "type": { "bool": true } },
+        "start": { "type": { "numeric": true } },
+        "end": { "type": { "numeric": true } },
+        "showAxisTitle": { "type": { "bool": true } },
+        "intersection": { "type": { "numeric": true } },
+        "labelColor": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "labelDisplayUnits": {
+          "type": { "formatting": { "labelDisplayUnits": true } }
+        },
+        "labelPrecision": { "type": { "numeric": true } }
+      }
+    },
+ 
+    "totalLabels": {
+      "displayName": "Total Labels",
+      "description": "Display total label options",
+      "properties": {
+        "show": { "type": { "bool": true } },
+        "titleText": { "type": { "text": true } },
+        "color": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "labelDisplayUnits": {
+          "type": { "formatting": { "labelDisplayUnits": true } }
+        },
+        "labelPrecision": { "type": { "numeric": true } },
+        "fontSize": {
+          "type": { "formatting": { "fontSize": true } }
         }
+      }
+    },
+ 
+    "secondaryLabels": {
+      "displayName": "Secondary Labels",
+      "description": "Display secondary label options",
+      "properties": {
+        "titleText": { "type": { "text": true } },
+        "color": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "labelDisplayUnits": {
+          "type": { "formatting": { "labelDisplayUnits": true } }
+        },
+        "labelPrecision": { "type": { "numeric": true } },
+        "fontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        }
+      }
+    },
+ 
+    "tertiaryLabels": {
+      "displayName": "Tertiary Labels",
+      "description": "Display tertiary label options",
+      "properties": {
+        "titleText": { "type": { "text": true } },
+        "color": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "labelDisplayUnits": {
+          "type": { "formatting": { "labelDisplayUnits": true } }
+        },
+        "labelPrecision": { "type": { "numeric": true } },
+        "fontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        }
+      }
+    },
+ 
+    "quaternaryLabels": {
+      "displayName": "Quaternary Labels",
+      "description": "Display quaternary label options",
+      "properties": {
+        "titleText": { "type": { "text": true } },
+        "color": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "labelDisplayUnits": {
+          "type": { "formatting": { "labelDisplayUnits": true } }
+        },
+        "labelPrecision": { "type": { "numeric": true } },
+        "fontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        }
+      }
+    },
+ 
+    "FifthLabels": {
+      "displayName": "Fifth Labels",
+      "description": "Display fifth label options",
+      "properties": {
+        "titleText": { "type": { "text": true } },
+        "color": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "labelDisplayUnits": {
+          "type": { "formatting": { "labelDisplayUnits": true } }
+        },
+        "labelPrecision": { "type": { "numeric": true } },
+        "fontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        }
+      }
+    },
+ 
+    "SixthLabels": {
+      "displayName": "Sixth Labels",
+      "description": "Display sixth label options",
+      "properties": {
+        "titleText": { "type": { "text": true } },
+        "color": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "labelDisplayUnits": {
+          "type": { "formatting": { "labelDisplayUnits": true } }
+        },
+        "labelPrecision": { "type": { "numeric": true } },
+        "fontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        }
+      }
+    },
+ 
+    "PMIndicator": {
+      "displayName": "Primary Measure Indicator",
+      "description": "Display indicators options",
+      "properties": {
+        "show": { "type": { "bool": true } },
+        "PMThreshold": { "type": { "numeric": true } }
+      }
+    },
+ 
+    "GMOColumnChartTitle": {
+      "displayName": "Stacked Chart Title",
+      "properties": {
+        "show": { "type": { "bool": true } },
+        "titleText": { "type": { "text": true } },
+        "fill1": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "fontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        },
+        "backgroundColor": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "tooltipText": { "type": { "text": true } }
+      }
+    },
+ 
+    "plotArea": {
+      "displayName": "Plot Area",
+      "properties": {
+        "transparency": { "type": { "numeric": true } }
+      }
+    },
+ 
+    "title": {
+      "displayName": "Visual Title",
+      "properties": {
+        "showTooltip": { "type": { "bool": true } },
+        "tooltiptext": { "type": { "text": true } }
       }
     }
   },
@@ -176,6 +407,7 @@
     }
   ],
  
+  "suppressDefaultTitle": true,
   "supportsHighlight": true,
   "sorting": {
     "default": {}

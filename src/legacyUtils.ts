@@ -1,5 +1,3 @@
-
-// @ts-nocheck
 import powerbi from "powerbi-visuals-api";
 import * as d3 from "d3";
 import { drag as d3Drag } from "d3-drag";
@@ -41,12 +39,14 @@ class LegendBehaviorImpl implements interactivityLegacy.IInteractiveBehavior {
     }
 }
  
-const legacyD3 = d3 as typeof d3 & {
-    mouse: (container: any) => [number, number];
-    behavior: { drag: () => ReturnType<typeof d3Drag> };
-    scale: { Linear: typeof scaleLinear };
-};
- 
+// IMPORTANT: copy d3's exports into a FRESH, writable plain object.
+// `import * as d3` yields an ES-module namespace whose exports are read-only
+// getters. Mutating it directly (e.g. `d3.mouse = ...`) throws in the real
+// webpack/Power BI bundle: "Cannot set property select of #<Object> which has
+// only a getter". Spreading into a new object gives us a mutable copy we can
+// safely extend with the legacy d3 v3 surface (mouse/behavior/scale).
+const legacyD3: any = { ...(d3 as any) };
+
 let lastPointerEvent: MouseEvent | TouchEvent | PointerEvent | null = null;
 if (typeof document !== "undefined") {
     const trackPointer = (event: MouseEvent | TouchEvent | PointerEvent) => {
@@ -58,8 +58,8 @@ if (typeof document !== "undefined") {
     document.addEventListener("touchmove", trackPointer, true);
     document.addEventListener("pointermove", trackPointer, true);
 }
- 
-(legacyD3 as any).select = d3Select;
+
+legacyD3.select = d3Select;
 legacyD3.mouse = (container: any) => {
     if (lastPointerEvent) {
         return d3Pointer(lastPointerEvent, container) as [number, number];
@@ -71,6 +71,30 @@ legacyD3.behavior = {
 };
 legacyD3.scale = {
     Linear: scaleLinear,
+};
+// d3 v3 `d3.transform(str)` parsed an SVG transform string into
+// { translate:[x,y], rotate, scale:[sx,sy], skew }. Removed in d3 v4+. The
+// legacy code reads `.translate[1]`, so provide a compatible parser.
+legacyD3.transform = (transformStr: string) => {
+    const result = { translate: [0, 0] as [number, number], rotate: 0, scale: [1, 1] as [number, number], skew: 0 };
+    if (!transformStr) {
+        return result;
+    }
+    const translateMatch = /translate\(\s*([-\d.eE]+)[ ,]*([-\d.eE]+)?\s*\)/.exec(transformStr);
+    if (translateMatch) {
+        result.translate = [parseFloat(translateMatch[1]) || 0, parseFloat(translateMatch[2]) || 0];
+    }
+    const rotateMatch = /rotate\(\s*([-\d.eE]+)/.exec(transformStr);
+    if (rotateMatch) {
+        result.rotate = parseFloat(rotateMatch[1]) || 0;
+    }
+    const scaleMatch = /scale\(\s*([-\d.eE]+)[ ,]*([-\d.eE]+)?\s*\)/.exec(transformStr);
+    if (scaleMatch) {
+        const sx = parseFloat(scaleMatch[1]) || 1;
+        const sy = scaleMatch[2] != null ? (parseFloat(scaleMatch[2]) || sx) : sx;
+        result.scale = [sx, sy];
+    }
+    return result;
 };
  
 // ---------------------------------------------------------------------------
@@ -105,6 +129,19 @@ legacyD3.scale = {
  
     patchObjectForm("attr");
     patchObjectForm("style");
+
+    // d3 v3 exposed the first group's node array as `selection[0]`, so legacy code
+    // does `selection[0][0]` (first node) and `selection[0].length` (node count).
+    // d3 v4+ moved nodes into `selection._groups`. Restore index-0 access so the
+    // many `boxes[0][0]` / `xTicks[0].length` / `allBoxes[0].length` sites work.
+    if (!Object.prototype.hasOwnProperty.call(selectionProto, "0")) {
+        Object.defineProperty(selectionProto, "0", {
+            configurable: true,
+            get(this: any) {
+                return this._groups ? this._groups[0] : undefined;
+            },
+        });
+    }
 })();
  
 // Expose the patched d3 as a global. The legacy visual code references a bare
@@ -145,7 +182,6 @@ legacyUtilsRoot.svg = {
         Rect: svgUtils.Rect,
     },
 };
- 
  
 legacyUtilsRoot.CartesianHelper = {
     getCategoryAxisProperties(metadata: any) {
@@ -198,10 +234,279 @@ legacyUtilsRoot.chart = {
         LegendBehavior: LegendBehaviorImpl,
     }),
 };
- 
-(powerbi.extensibility.utils.chart.legend as any).LegendBehavior = LegendBehaviorImpl;
-(powerbi.extensibility.utils.chart.legend as any).LegendBehavior.dimmedLegendColor = "#bfbfbf";
- 
+
+// LegendBehavior (and its dimmedLegendColor static) are already wired into
+// `legacyUtilsRoot.chart.legend` above. Reference THAT object — never the
+// imported `powerbi` namespace: in the real Power BI/webpack bundle the imported
+// `powerbi` is a different (read-only) object than the host global we populate,
+// so `powerbi.extensibility.utils.chart...` would throw at load.
+LegendBehaviorImpl.dimmedLegendColor = "#bfbfbf";
+if (legacyUtilsRoot.chart && legacyUtilsRoot.chart.legend) {
+    legacyUtilsRoot.chart.legend.LegendBehavior = LegendBehaviorImpl;
+}
+
+// ---------------------------------------------------------------------------
+// jQuery (`$`) and lodash (`_`) global shims.
+// The legacy visual was written for an API-1.13 environment where jQuery and
+// lodash were provided as global script includes (via pbiviz `externalJS`).
+// The modern module build no longer bundles them, yet the source still calls
+// `$.extend(...)`, `$(el).find(...)`, `_.isEmpty(...)`, `_.filter(...)`, etc.
+// These run on EVERY constructor/update (the margin & viewport setters use
+// `$.extend`), so without a shim the visual throws `$ is not defined` before it
+// can render. We provide tiny, dependency-free replacements and publish them as
+// globals so the existing bare `$` / `_` references resolve at runtime.
+// ---------------------------------------------------------------------------
+type JQLike = {
+    length: number;
+    [index: number]: any;
+    children(selector?: string): JQLike;
+    find(selector: string): JQLike;
+    filter(fn: (index: number, el: any) => boolean): JQLike;
+    each(fn: (index: number, el: any) => void): JQLike;
+    attr(name: string, value?: any): any;
+    css(name: string, value?: any): any;
+    hide(): JQLike;
+    show(): JQLike;
+    remove(): JQLike;
+    empty(): JQLike;
+    addClass(name: string): JQLike;
+    removeClass(name: string): JQLike;
+    on(type: string, handler: any): JQLike;
+    parent(): JQLike;
+    first(): JQLike;
+    width(): number;
+    height(): number;
+    get(index?: number): any;
+};
+
+function makeJQ(nodes: any[]): JQLike {
+    const wrapper: any = Object.create(jqProto);
+    wrapper.length = nodes.length;
+    for (let i = 0; i < nodes.length; i++) {
+        wrapper[i] = nodes[i];
+    }
+    wrapper._nodes = nodes;
+    return wrapper as JQLike;
+}
+
+const jqProto: any = {
+    children(selector?: string): JQLike {
+        const out: any[] = [];
+        for (const node of this._nodes) {
+            if (!node || !node.children) continue;
+            for (const child of Array.from(node.children) as any[]) {
+                if (!selector || (child.matches && child.matches(selector))) {
+                    out.push(child);
+                }
+            }
+        }
+        return makeJQ(out);
+    },
+    find(selector: string): JQLike {
+        const out: any[] = [];
+        for (const node of this._nodes) {
+            if (!node || !node.querySelectorAll) continue;
+            try {
+                out.push(...(Array.from(node.querySelectorAll(selector)) as any[]));
+            } catch (ignored) { /* invalid selector -> no matches */ }
+        }
+        return makeJQ(out);
+    },
+    filter(fn: (index: number, el: any) => boolean): JQLike {
+        const out: any[] = [];
+        this._nodes.forEach((node: any, i: number) => {
+            try {
+                if (fn.call(node, i, node)) {
+                    out.push(node);
+                }
+            } catch (ignored) { /* ignore predicate errors */ }
+        });
+        return makeJQ(out);
+    },
+    each(fn: (index: number, el: any) => void): JQLike {
+        this._nodes.forEach((node: any, i: number) => fn.call(node, i, node));
+        return this;
+    },
+    attr(name: string, value?: any): any {
+        if (value === undefined) {
+            const first = this._nodes[0];
+            return first && first.getAttribute ? first.getAttribute(name) : undefined;
+        }
+        for (const node of this._nodes) {
+            if (node && node.setAttribute) node.setAttribute(name, value);
+        }
+        return this;
+    },
+    css(name: string, value?: any): any {
+        if (value === undefined) {
+            const first = this._nodes[0];
+            return first && first.style ? first.style[name] : undefined;
+        }
+        for (const node of this._nodes) {
+            if (node && node.style) node.style[name] = value;
+        }
+        return this;
+    },
+    hide(): JQLike {
+        for (const node of this._nodes) {
+            if (node && node.style) node.style.display = "none";
+        }
+        return this;
+    },
+    show(): JQLike {
+        for (const node of this._nodes) {
+            if (node && node.style) node.style.display = "";
+        }
+        return this;
+    },
+    remove(): JQLike {
+        for (const node of this._nodes) {
+            if (node && node.parentNode) node.parentNode.removeChild(node);
+        }
+        return this;
+    },
+    empty(): JQLike {
+        for (const node of this._nodes) {
+            while (node && node.firstChild) node.removeChild(node.firstChild);
+        }
+        return this;
+    },
+    addClass(name: string): JQLike {
+        for (const node of this._nodes) {
+            if (node && node.classList) node.classList.add(name);
+        }
+        return this;
+    },
+    removeClass(name: string): JQLike {
+        for (const node of this._nodes) {
+            if (node && node.classList) node.classList.remove(name);
+        }
+        return this;
+    },
+    on(type: string, handler: any): JQLike {
+        for (const node of this._nodes) {
+            if (node && node.addEventListener) node.addEventListener(type, handler);
+        }
+        return this;
+    },
+    parent(): JQLike {
+        const out: any[] = [];
+        for (const node of this._nodes) {
+            if (node && node.parentNode) out.push(node.parentNode);
+        }
+        return makeJQ(out);
+    },
+    first(): JQLike {
+        return makeJQ(this._nodes.slice(0, 1));
+    },
+    width(): number {
+        const first = this._nodes[0];
+        return first && first.getBoundingClientRect ? first.getBoundingClientRect().width : 0;
+    },
+    height(): number {
+        const first = this._nodes[0];
+        return first && first.getBoundingClientRect ? first.getBoundingClientRect().height : 0;
+    },
+    get(index?: number): any {
+        if (index === undefined) return this._nodes.slice();
+        return this._nodes[index < 0 ? this._nodes.length + index : index];
+    },
+};
+
+function legacyJQuery(arg: any): JQLike {
+    let nodes: any[] = [];
+    if (arg == null) {
+        nodes = [];
+    } else if (typeof arg === "string") {
+        const str = arg.trim();
+        if (str.charAt(0) === "<") {
+            nodes = []; // HTML-string creation is not used in render paths
+        } else if (typeof document !== "undefined") {
+            try {
+                nodes = Array.from(document.querySelectorAll(str)) as any[];
+            } catch (ignored) {
+                nodes = [];
+            }
+        }
+    } else if (arg.nodeType || arg === (globalThis as any).window || arg === (globalThis as any).document) {
+        nodes = [arg];
+    } else if (arg && (arg as any)._nodes) {
+        nodes = (arg as any)._nodes.slice();
+    } else if (typeof arg === "object" && typeof arg.length === "number") {
+        nodes = Array.prototype.slice.call(arg);
+    } else {
+        nodes = [arg];
+    }
+    return makeJQ(nodes);
+}
+
+(legacyJQuery as any).extend = function extend(...args: any[]): any {
+    let deep = false;
+    if (typeof args[0] === "boolean") {
+        deep = args.shift();
+    }
+    const target = args[0] || {};
+    for (let i = 1; i < args.length; i++) {
+        const src = args[i];
+        if (!src) continue;
+        for (const key of Object.keys(src)) {
+            const val = src[key];
+            if (deep && val && typeof val === "object" && !Array.isArray(val)) {
+                target[key] = extend(true, target[key] && typeof target[key] === "object" ? target[key] : {}, val);
+            } else {
+                target[key] = val;
+            }
+        }
+    }
+    return target;
+};
+(legacyJQuery as any).isEmptyObject = (obj: any) => !obj || Object.keys(obj).length === 0;
+
+const legacyLodash = {
+    isEmpty(value: any): boolean {
+        if (value == null) return true;
+        if (Array.isArray(value) || typeof value === "string") return value.length === 0;
+        if (value instanceof Map || value instanceof Set) return value.size === 0;
+        if (typeof value === "object") return Object.keys(value).length === 0;
+        return true;
+    },
+    filter(collection: any, predicate: any): any[] {
+        if (!collection) return [];
+        const arr: any[] = Array.isArray(collection) ? collection : Object.values(collection);
+        const fn = typeof predicate === "function" ? predicate : (x: any) => x && x[predicate];
+        return arr.filter(fn);
+    },
+    map(collection: any, iteratee: any): any[] {
+        if (!collection) return [];
+        const arr: any[] = Array.isArray(collection) ? collection : Object.values(collection);
+        const fn = typeof iteratee === "function" ? iteratee : (x: any) => x && x[iteratee];
+        return arr.map(fn);
+    },
+    forEach(collection: any, iteratee: (value: any, key: any) => void): any {
+        if (!collection) return collection;
+        if (Array.isArray(collection)) {
+            collection.forEach(iteratee);
+        } else {
+            for (const key of Object.keys(collection)) iteratee(collection[key], key);
+        }
+        return collection;
+    },
+    find(collection: any, predicate: any): any {
+        if (!collection) return undefined;
+        const arr: any[] = Array.isArray(collection) ? collection : Object.values(collection);
+        const fn = typeof predicate === "function" ? predicate : (x: any) => x && x[predicate];
+        return arr.find(fn);
+    },
+    isArray: Array.isArray,
+    keys: (obj: any) => (obj ? Object.keys(obj) : []),
+    values: (obj: any) => (obj ? Object.values(obj) : []),
+};
+(legacyLodash as any).each = legacyLodash.forEach;
+
+(globalThis as any).$ = (globalThis as any).$ || legacyJQuery;
+(globalThis as any).jQuery = (globalThis as any).jQuery || legacyJQuery;
+(globalThis as any)._ = (globalThis as any)._ || legacyLodash;
+
 // NOTE: do NOT re-export Visual from here. A `export { Visual } from "./visual"`
 // would pull visual.ts into this module's dependency graph and force it (and the
 // layout/Columnutil/selectionId publish footers) to evaluate BEFORE this file's

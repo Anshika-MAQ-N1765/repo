@@ -31,6 +31,7 @@ declare namespace d3 {
     function pointer(event: any, container: any): [number, number];
     function drag<Datum = any>(): any;
     function format(specifier: string): (n: number) => string;
+    function transform(transformString?: string): any;
 }
 
 declare module "d3-axis" {
@@ -45,6 +46,26 @@ declare module "d3-axis" {
 declare const _: any;
 declare const $: any;
 declare interface JQuery {}
+
+// ---- Ambient aliases for legacy Power BI API type names referenced unqualified ----
+// The 2023-era code uses many short, unqualified type names that were globals in the
+// old namespace model. Declaring them here keeps the legacy source compiling without
+// rewriting thousands of references. Structural data-view types are mapped to `any`
+// (legacy port); visual-lifecycle types are mapped to their real API equivalents.
+declare type DataViewCategorical = any;
+declare type DataViewValueColumn = any;
+declare type DataViewMetadata = any;
+declare type DataViewScopeIdentity = any;
+declare type DataViewPropertyValue = any;
+declare type PrimitiveValue = any;
+declare type ValueTypeDescriptor = any;
+declare type IStyleInfo = any;
+declare type IColorInfo = any;
+declare type IVisual = powerbi.extensibility.visual.IVisual;
+declare type VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
+declare type VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
+declare type EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
+declare type VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 
 declare namespace powerbi.extensibility.visual {
     interface ChartAxesLabels {

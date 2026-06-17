@@ -39,6 +39,8 @@ declare namespace powerbi.extensibility.visual {
         image?: ImageValue;
         transparency?: number;
     }
+    const SelectionId: any;
+    type SelectionId = any;
     export type IGenericAnimator = IAnimator<IAnimatorOptions, IAnimationOptions, IAnimationResult>;
     export interface IGMOLegend {
         getMargins(): IViewport;
@@ -572,7 +574,7 @@ declare namespace powerbi.extensibility.visual {
             min: any;
             max: any;
         };
-        setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: number): IAxisProperties;
+        setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: NumberRange): IAxisProperties;
         StackedChartGMOStrategyGetLayout(data: any, axisOptions: any): {
             shapeLayout: {
                 width: (d: ColumnChartDataPoint) => any;
@@ -1059,6 +1061,8 @@ declare namespace powerbi.extensibility.visual {
         private element;
         private seriesLabelFormattingEnabled;
         private isComboChart;
+        private formattingSettingsService;
+        private formattingSettingsModel;
         private categoryAxisProperties;
         private valueAxisProperties;
         visualOptions: CalculateScaleAndDomainOptions;
@@ -1077,7 +1081,6 @@ declare namespace powerbi.extensibility.visual {
         private get viewportIn();
         private static substractMargin;
         updateVisualMetadata(x: IAxisProperties, y: IAxisProperties, margin: any): void;
-        checkDatapointAgainstSelectedIds: (datapoint: any, selectedIds: any) => any;
         applyViewportSettings(): void;
         /**
          * Renders a runtime error directly onto the visual surface so that failures
@@ -1119,11 +1122,14 @@ declare namespace powerbi.extensibility.visual {
         calculateLegend(): LegendData;
         hasLegend(): boolean;
         enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, series?: StackedChartGMOSeries): VisualObjectInstanceEnumeration;
+        getFormattingModel(): powerbiApi.visuals.FormattingModel;
+        private applyDynamicFormatting;
         private getLegendValue;
         private getSampleFilterSettings;
         private getTextWrapSettings;
         private getMeasureTitlesSettings;
         private getTotalLabelSettings;
+        private getMeasureLabelSettings;
         private getSecondaryLabelSettings;
         private getTertiaryLabelSettings;
         private getQuaternaryLabelSettings;
@@ -1133,6 +1139,7 @@ declare namespace powerbi.extensibility.visual {
         getDefaultTextWrapSettings(): textWrapSettings;
         getDefaultMeasureTitlesSettings(): measureTitlesSettings;
         getDefaultTotalLabelSettings(): totalLabelSettings;
+        getDefaultMeasureLabelSettings(): secondaryLabelSettings;
         getDefaultSecondaryLabelSettings(): secondaryLabelSettings;
         getDefaultTertiaryLabelSettings(): tertiaryLabelSettings;
         getDefaultQuaternaryLabelSettings(): quaternaryLabelSettings;
@@ -1159,7 +1166,6 @@ declare namespace powerbi.extensibility.visual {
         private ApplyInteractivity;
         private selectColumn;
         private createInteractiveLegendDataPoints;
-        overrideXScale(xProperties: IAxisProperties): void;
         calculateAxes(categoryAxisProperties: DataViewObject, valueAxisProperties: DataViewObject, textProperties: TextProperties, scrollbarVisible: boolean): IAxisProperties[];
         render(suppressAnimations: boolean, resize: boolean): CartesianVisualRenderResultGMO;
         spliceMeasures(measure: any[]): void;
@@ -1176,9 +1182,6 @@ declare namespace powerbi.extensibility.visual {
         private getUnitType;
         private addUnitTypeToAxisLabel;
         onClearSelection(): void;
-        getVisualCategoryAxisIsScalar(): boolean;
-        getSupportedCategoryAxisType(): string;
-        setFilteredData(startIndex: number, endIndex: number): CartesianData;
         static getLabelFill(labelColor: string, isInside: boolean, isCombo: boolean): string;
         getLegendDispalyUnits(dataView: DataView, propertyName: string): any;
     }

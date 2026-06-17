@@ -1,8 +1,9 @@
-// @ts-nocheck
 /// <reference types="powerbi-visuals-api" />
 /// <reference path="./legacyShim.d.ts" />
 import powerbiApi from "powerbi-visuals-api";
 import { drag as d3Drag, pointer as d3Pointer } from "d3"; import "./layout"; import "./selectionId"; import "./Columnutil"; import { converterHelper } from "powerbi-visuals-utils-dataviewutils"; import * as dataViewObjects from "powerbi-visuals-utils-dataviewutils/lib/dataViewObjects"; import * as dataViewObject from "powerbi-visuals-utils-dataviewutils/lib/dataViewObject"; import { axis as AxisHelper, axisScale, axisStyle, dataLabelUtils, legend, legendInterfaces, legendPosition, svgLegend, } from "powerbi-visuals-utils-chartutils"; import type { IDataLabelSettings, DataLabelObject, LabelEnabledDataPoint, VisualDataLabelsSettings, } from "powerbi-visuals-utils-chartutils/lib/dataLabel/dataLabelInterfaces"; import type { IMargin, IAxisProperties } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces"; import { ColorHelper } from "powerbi-visuals-utils-colorutils"; import * as formattingUtils from "powerbi-visuals-utils-formattingutils"; import { appendClearCatcher, createInteractivityService, dataHasSelection, IInteractiveBehavior, IInteractivityService, ISelectionHandler, SelectableDataPoint, } from "powerbi-visuals-utils-interactivityutils/lib/interactivityService"; import { createTooltipServiceWrapper, ITooltipServiceWrapper, TooltipEnabledDataPoint, TooltipEventArgs, } from "powerbi-visuals-utils-tooltiputils"; import { CssConstants, IRect, manipulation, Rect } from "powerbi-visuals-utils-svgutils"; import { valueType, double as Double, prototype as Prototype, enumExtensions as EnumExtensions, pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils";
+import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
+import { VisualFormattingSettingsModel } from "./formattingSettings";
  
 type DataViewObjects = powerbiApi.DataViewObjects; type DataViewObject = powerbiApi.DataViewObject; type DataViewObjectPropertyIdentifier = powerbiApi.DataViewObjectPropertyIdentifier; type DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn; type DataView = powerbiApi.DataView; type IViewport = powerbiApi.IViewport; type NumberRange = powerbiApi.NumberRange; type VisualObjectInstance = powerbiApi.VisualObjectInstance; type VisualTooltipDataItem = powerbiApi.extensibility.VisualTooltipDataItem; type IColorPalette = powerbiApi.extensibility.IColorPalette; type Selector = powerbiApi.data.Selector; type ImageValue = powerbiApi.ImageValue; type UpdateSelection<G = any> = d3.selection.Update; type Selection<G = any> = d3.Selection; interface ClassAndSelector extends CssConstants.ClassAndSelector { selector: string; class: string; }
  
@@ -22,54 +23,29 @@ const wordBreaker = formattingUtils.wordBreaker;
 type IValueFormatter = formattingUtils.valueFormatter.IValueFormatter;
  
 /*
- 
-Power BI Visual CLI
- 
- 
- 
-Copyright (c) Microsoft Corporation
- 
-All rights reserved.
- 
-MIT License
- 
- 
- 
-Permission is hereby granted, free of charge, to any person obtaining a copy
- 
-of this software and associated documentation files (the ""Software""), to deal
- 
-in the Software without restriction, including without limitation the rights
- 
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- 
-copies of the Software, and to permit persons to whom the Software is
- 
-furnished to do so, subject to the following conditions:
- 
- 
- 
-The above copyright notice and this permission notice shall be included in
- 
-all copies or substantial portions of the Software.
- 
- 
- 
-THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- 
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- 
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- 
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- 
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- 
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- 
-THE SOFTWARE.
- 
-*/
+ *  Power BI Visual CLI
+ *
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  MIT License
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in
+ *  all copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
  
 namespace powerbi.extensibility.visual { export interface ChartAxesLabels { x: string; y: string; y2?: string; }
  
@@ -87,7 +63,9 @@ export interface VisualBackground {
     const CartesianHelper = (globalThis as any).powerbi?.extensibility?.utils?.CartesianHelper;
     const axisType = (globalThis as any).powerbi?.extensibility?.visual?.axisType;
     const yAxisPosition = (globalThis as any).powerbi?.extensibility?.visual?.yAxisPosition;
-    const SelectionId = (globalThis as any).powerbi?.extensibility?.visual?.SelectionId;let globalallDataPoints : StackedChartGMODataPoint[] = [];
+    const SelectionId = (globalThis as any).powerbi?.extensibility?.visual?.SelectionId;
+    type SelectionId = any;
+    const SelectionIdBuilder = (globalThis as any).powerbi?.extensibility?.visual?.SelectionIdBuilder;let globalallDataPoints : StackedChartGMODataPoint[] = [];
  
 export type IGenericAnimator = IAnimator<IAnimatorOptions, IAnimationOptions, IAnimationResult>;
 export interface IGMOLegend {
@@ -214,9 +192,6 @@ export const columnChartProps = {
        image: <DataViewObjectPropertyIdentifier>{}, 
        transparency: <DataViewObjectPropertyIdentifier>{}, 
    }, 
-  /* valueAxis:{ 
-       axisType:<DataViewObjectPropertyIdentifier>{}, 
-   },*/ 
 }; 
 export interface InteractivityOptions { 
    /** Indicates that dragging of data points should be permitted. */ 
@@ -231,7 +206,6 @@ export interface InteractivityOptions {
    /** Indicates overflow behavior. Values are CSS oveflow strings */ 
    overflow?: string; 
 } 
- 
  
 export interface CalculateScaleAndDomainOptions { 
    viewport: IViewport; 
@@ -529,7 +503,6 @@ export class GMOSVGLegend implements IGMOLegend {
  
    constructor( 
        
- 
        element: any, 
        legendPosition: LegendPositionType, 
        interactivityService: IInteractivityService, 
@@ -556,7 +529,6 @@ export class GMOSVGLegend implements IGMOLegend {
        let orientation = this.orientation; 
        if (this.data) { 
  
-
 let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) { if ( check && this.secondaryExists) { legendViewport.height = legendViewport.height + 3 * (this.legendFontSizeMarginDifference) + 20; } else if (check|| this.secondaryExists) { legendViewport.height = legendViewport.height + 2 * (this.legendFontSizeMarginDifference) + 20; } 
 
           } 
@@ -683,9 +655,6 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
        else { 
            group.attr('transform', null); 
        } 
-    /*  let legendTitle = group 
-           .selectAll(GMOSVGLegend.LegendTitle.selector) 
-           .data(titleData);*/ 
        if (titleLayout) { 
            let legendTitle = group 
                .selectAll(GMOSVGLegend.LegendTitle.selector) 
@@ -705,7 +674,6 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
  
            legendTitle.exit().remove(); 
        } 
- 
  
        if (data.dataPoints.length) { 
            let virtualizedDataPoints = data.dataPoints.slice(this.legendDataStartIndex, this.legendDataStartIndex + layout.numberOfItems); 
@@ -794,7 +762,6 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
            this.legendDataStartIndex = 0; 
        } 
    } 
- 
  
    private calculateTitleLayout(title: string): TitleLayout { 
        let width = 0; 
@@ -993,10 +960,6 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
        let totalSpaceOccupiedThusFar = 0; 
        let iconTotalItemPadding = GMOSVGLegend.LegendIconRadius * 2 + fontSizeMargin * 3; 
        let numberOfItems: number = dataPoints.length; 
-      /* let primaryMeasureLength: number = 0; 
-       if (detailedLegend === "Value") { 
-           primaryMeasureLength = dataPoints[0]['measure'].length; 
-       }*/ 
        if (title) { 
            totalSpaceOccupiedThusFar = title.width; 
            title.y = fixedTextShift; 
@@ -1012,7 +975,6 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
        maxTextLength = maxTextLength > GMOSVGLegend.MaxTextLength ? maxTextLength : GMOSVGLegend.MaxTextLength; 
        this.maxLegendTextLength = maxTextLength; 
  
-
 let dp,textProperties: any,primaryWidth=0,labelwidth:any;; for (let i = 0; i < dataPointsLength; i++) { dp = dataPoints[i]; 
 
           dp.glyphPosition = { 
@@ -1024,12 +986,9 @@ let dp,textProperties: any,primaryWidth=0,labelwidth:any;; for (let i = 0; i < d
                y: fixedTextShift 
            }; 
  
-            
            textProperties = GMOSVGLegend.getTextProperties(false, dp.label, this.data.fontSize); 
             labelwidth = TextMeasurementService.measureSvgTextWidth(textProperties); 
             
-         /*  if (detailedLegend === "Value" || detailedLegend === "Percentage" || detailedLegend === "Both") {*/ 
- 
                if (detailedLegend === "Value") { 
                    primaryWidth = TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(false, dp.measure, this.data.fontSize)); 
                } 
@@ -1828,8 +1787,8 @@ export class StackedChartGMOStrategy implements IColumnChartStrategyGMO {
            return defaultNumberRange; 
  
        // Can't use AxisHelper because Stacked layout has a slightly different calc, (position - valueAbs) 
-       let min = d3.min<ColumnChartSeries, number>(data, d => d3.min<ColumnChartDataPoint, number>(d.data, e => e.position - e.valueAbsolute)); 
-       let max = d3.max<ColumnChartSeries, number>(data, d => d3.max<ColumnChartDataPoint, number>(d.data, e => e.position)); 
+       let min = d3.min(data, d => d3.min(d.data, e => e.position - e.valueAbsolute)); 
+       let max = d3.max(data, d => d3.max(d.data, e => e.position)); 
  
        if (is100pct) { 
            min = Double.roundToPrecision(min, 0.0001); 
@@ -1842,7 +1801,7 @@ export class StackedChartGMOStrategy implements IColumnChartStrategyGMO {
        }; 
    } 
  
-   public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: number): IAxisProperties { 
+   public setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, y1ReferenceLineValue?: NumberRange): IAxisProperties { 
        let height = this.height; 
        let valueDomain = this.calcValueDomain(this.data.series, is100Pct); 
        let valueDomainArr = [valueDomain.min, valueDomain.max]; 
@@ -2328,8 +2287,6 @@ let flagClustered: number = 1 << 3;
 let flagStacked: number = 1 << 4; 
 let flagStacked100: number = flagStacked | (1 << 5); 
  
- 
- 
 export enum StackedChartGMOType { 
    clusteredBar = flagBar | flagClustered, 
    clusteredColumn = flagColumn | flagClustered, 
@@ -2440,9 +2397,6 @@ export let StackedChartGMOProps = {
    categoryAxis: { 
        axisType: <DataViewObjectPropertyIdentifier>{ objectName: 'categoryAxis', propertyName: 'axisType' }, 
    }, 
-/*   valueAxis:{ 
-       axisType:<DataViewObjectPropertyIdentifier>{objectName: 'valueAxis',propertyName: 'axisType'} 
-   },*/ 
    textWrap: { 
        show: { objectName: 'textWrap', propertyName: 'show' } 
    }, 
@@ -2662,7 +2616,9 @@ export class Visual implements IVisual {
    private element: any; 
    private seriesLabelFormattingEnabled: boolean; 
    private isComboChart: boolean; 
-   private categoryAxisProperties: DataViewObject; 
+    private formattingSettingsService = new FormattingSettingsService();
+    private formattingSettingsModel = new VisualFormattingSettingsModel();
+   private categoryAxisProperties: DataViewObject & { [key: string]: any }; 
    private valueAxisProperties: DataViewObject; 
    public visualOptions: CalculateScaleAndDomainOptions; 
    private categoryAxisHasUnitType: boolean; 
@@ -2695,10 +2651,6 @@ export class Visual implements IVisual {
        return this._viewportIn || this.viewport; 
    } 
  
- /*  private get legendViewport(): IViewport { 
-       return this.legend.getMargins(); 
-   }*/ 
- 
    private static substractMargin(viewport: IViewport, margin: IMargin): IViewport { 
        return { 
            width: Math.max(viewport.width - (margin.left + margin.right), 0), 
@@ -2711,10 +2663,6 @@ export class Visual implements IVisual {
        this.yAxisProperties = y; 
        this.margin = margin; 
    } 
-   public checkDatapointAgainstSelectedIds = function (datapoint, selectedIds) { 
-       selectedIds = []; 
-       return selectedIds.some(function (value) { return value.includes(datapoint.identity); }); 
-   }; 
    public applyViewportSettings(): void { 
        if ( this.viewport.height < 370 || this.viewport.width < 390 ) { 
            this.categoryAxisProperties['fontSize'] = this.categoryAxisProperties['fontSize'] > 16 ? 16 : this.categoryAxisProperties['fontSize']; 
@@ -2778,9 +2726,7 @@ export class Visual implements IVisual {
    } 
  
    constructor(options: VisualConstructorOptions) { 
-      // debugger 
      try { 
-      var t0=performance.now(); 
        this.categoryAxisType = null; 
        this.tooltipsEnabled = true; 
        this.root = d3.select(options.element); 
@@ -2874,17 +2820,16 @@ export class Visual implements IVisual {
        this.mainGraphicsContext = this.mainGraphicsG.append('svg'); 
        this.ColorPalette = options.host.colorPalette; 
        this.legend = new GMOSVGLegend(element, LegendPosition.Top, this.interactivityService, true); 
-   
-       var t1=performance.now(); 
-   //console.log("constructor"+(t1-t0)) 
      } catch (e) { 
          this.renderFatalError('constructor', e, options && options.element); 
      } 
 } 
    public update(options: VisualUpdateOptions) { 
      try { 
-       var t0=performance.now(); 
        Visual.totalHeight = options.viewport.height; 
+             if (options.dataViews && options.dataViews.length > 0) {
+                     this.formattingSettingsModel = this.formattingSettingsService.populateFormattingSettingsModel(VisualFormattingSettingsModel, options.dataViews[0]);
+             }
         
        this.root.selectAll('.svgScrollable > .axisGraphicsContext > .mainGraphicsContext > .dataLabels > .dataLabel').remove(); 
        //total, secondary, tertiary and quarternay fifth sixth 
@@ -2896,7 +2841,6 @@ export class Visual implements IVisual {
        this.root.selectAll('.svgScrollable > .axisGraphicsContext > .fiveLabels').remove(); 
        this.root.selectAll('.svgScrollable > .axisGraphicsContext > .sixLabels').remove(); 
  
-
 this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon').remove(); this.root.selectAll('.legendText').remove(); this.root.selectAll('.legendItem').remove(); this.updateCount++; 
 
       this.isPrimaryMeasure = false; 
@@ -2959,7 +2903,97 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
            resize = true; 
        } 
        this.dataView = options.dataViews[0]; 
-       this.dataViews = options.dataViews; 
+       // ---- Multi-measure delivery (modern Power BI emits ONE dataView) ----
+       // This visual was originally written for API 1.x, where each of its 7
+       // dataViewMappings produced its own dataView (so dataViews[1]=secondary,
+       // [3]=tertiary, etc.). Modern Power BI (API 5.x) emits a SINGLE dataView
+       // and DROPS value-only categorical mappings entirely (confirmed at runtime:
+       // dataViews.length===1 with only the Y role present). So every measure must
+       // be delivered together inside dataViews[0].categorical.values (grouped by
+       // Series), and we reconstruct here exactly what the renderer expects:
+       //   (a) a Y-ONLY categorical clone for the stacking chart, so the existing
+       //       converter (which indexes the flat values array) is unaffected; and
+       //   (b) one synthesized, aggregated-per-category dataView for each extra
+       //       measure, placed at its fixed index: [1]=secondary [2]=sampleSize
+       //       [3]=tertiary [4]=quaternary [5]=fifth [6]=sixth.
+       {
+           const host0: any = options.dataViews[0];
+           const cat: any = host0 && host0.categorical;
+           const allValues: any = cat && cat.values ? cat.values : null;
+           // A SINGLE column can carry MULTIPLE roles at once. When the same field
+           // is dropped into several measure wells (e.g. "Sum of Sales" assigned to
+           // Primary + Secondary + Quaternary), modern Power BI returns ONE column
+           // with roles {Y:true, secondaryMeasure:true, quaternaryMeasure:true} -
+           // it does NOT duplicate the column. So we must test each role
+           // INDEPENDENTLY (hasRole) rather than pick a single "first" role; the old
+           // roleOf approach silently dropped every role after the first, which is
+           // why secondary/quaternary rows went missing while a single-role column
+           // (tertiary = "Count of Month") still worked.
+           const hasRole = (col: any, role: string): boolean => {
+               const r = col && col.source && col.source.roles;
+               return !!(r && r[role]);
+           };
+           const normalized: DataView[] = [];
+           if (allValues && typeof allValues.grouped === 'function') {
+               const origGroups: any[] = allValues.grouped() || [];
+               const categories: any = cat.categories;
+               const catLen: number = categories && categories[0] && categories[0].values
+                   ? categories[0].values.length : 0;
+
+               // (a) Y-only categorical clone -> stacking chart sees exactly what it
+               //     sees today when only the Primary measure is bound.
+               const yOnlyValues: any = allValues.filter((c: any) => hasRole(c, 'Y'));
+               yOnlyValues.source = allValues.source;
+               yOnlyValues.grouped = () => origGroups.map((g: any) => {
+                   const ng: any = Object.assign({}, g);
+                   ng.values = (g.values || []).filter((c: any) => hasRole(c, 'Y'));
+                   return ng;
+               });
+               const chartDataView: any = Object.assign({}, host0);
+               chartDataView.categorical = Object.assign({}, cat, { values: yOnlyValues });
+               normalized[0] = chartDataView;
+               this.dataView = chartDataView;
+
+               // (b) synthesize an aggregated-per-category dataView per extra measure.
+               const ROLE_TO_INDEX: { [role: string]: number } = {
+                   secondaryMeasure: 1,
+                   sampleSize: 2,
+                   tertiaryMeasure: 3,
+                   quaternaryMeasure: 4,
+                   fifthMeasure: 5,
+                   sixthMeasure: 6,
+               };
+               for (const role in ROLE_TO_INDEX) {
+                   let srcCol: any = null;
+                   for (const g of origGroups) {
+                       const found = (g.values || []).find((c: any) => hasRole(c, role));
+                       if (found) { srcCol = found; break; }
+                   }
+                   if (!srcCol) { continue; }
+                   const sums: any[] = new Array(catLen).fill(null);
+                   for (const g of origGroups) {
+                       const col = (g.values || []).find((c: any) => hasRole(c, role));
+                       if (!col || !col.values) { continue; }
+                       for (let c = 0; c < catLen; c++) {
+                           const v = col.values[c];
+                           if (v != null) {
+                               const n = typeof v === 'number' ? v : (parseFloat(v) || 0);
+                               sums[c] = (sums[c] == null ? 0 : sums[c]) + n;
+                           }
+                       }
+                   }
+                   const synthValues: any = [{ source: srcCol.source, values: sums }];
+                   synthValues.source = undefined;
+                   normalized[ROLE_TO_INDEX[role]] = <any>{
+                       metadata: { columns: [srcCol.source], objects: host0.metadata ? host0.metadata.objects : null },
+                       categorical: { categories: categories, values: synthValues },
+                   };
+               }
+           } else {
+               normalized[0] = host0;
+           }
+           this.dataViews = normalized; 
+       }
        this.svg.selectAll('.columnChartMainGraphicsContext').remove(); 
        this.mainGraphicsContext = this.svg.append('g').classed('columnChartMainGraphicsContext', true); 
        this.axisGraphicsContextScrollable.selectAll('.' + Visual.MainGraphicsContextClassName).remove(); 
@@ -2970,7 +3004,6 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        if (axisName === legendName) 
            this.isSameAxis = true; 
        
- 
        if (!this.isPrimaryMeasure) { 
            this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' }); 
            this.root.select('.legend').style({ 'display': 'none' }); 
@@ -2994,7 +3027,7 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
            this.populateObjectProperties(dataViews); 
        } 
        // MAQ Code 
-       let GMOColumnChartTitleOnOffStatus: IDataLabelSettings = false 
+       let GMOColumnChartTitleOnOffStatus: boolean = false 
            , titleText: string = "" 
            , tooltiptext: string = "" 
            , titlefontsize 
@@ -3019,7 +3052,6 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        titlefontsize = this.getTitleSize(this.dataView); 
        if (!titlefontsize) titlefontsize = 12; 
  
-
 let Tcolor=this.getTitleFill(this.dataView) 
 if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcolor(this.dataView) 
     if (TBgcolor) { titlebgcolor = TBgcolor.solid.color; if ("none" === titlebgcolor) { titlebgcolor = "#ffffff"; } } this.root.select('.GMOColumnChartTitleDiv') .text(titleText); 
@@ -3033,9 +3065,10 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
        } 
  
        // MAQ Code Ends 
-      debugger 
-       this.setData(dataViews); 
-       debugger 
+       // Feed the reconstructed dataViews (Y-only chart view at [0] + synthesized
+       // per-measure views at [1..6]) to setData so the stacking converter sees a
+       // single Y measure per series group, exactly as in the working chart.
+       this.setData(this.dataViews); 
        if (this.data.categories.length == 0) { 
            this.updateCount = 0; 
            (<HTMLElement>this.root.select('.errorMessage')[0][0]).innerHTML = 'Statistically Insignificant Data'; 
@@ -3058,10 +3091,6 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
        } 
        let xAxisCardProperties = CartesianHelper.getCategoryAxisProperties(options.dataViews[0].metadata); 
        let valueAxisProperties = CartesianHelper.getValueAxisProperties(options.dataViews[0].metadata); 
-      /* if (options && options.dataViews[0] && options.dataViews[0].metadata) { 
-           let xAxisCardProperties = CartesianHelper.getCategoryAxisProperties(options.dataViews[0].metadata); 
-           let valueAxisProperties = CartesianHelper.getValueAxisProperties(options.dataViews[0].metadata); 
-       }*/ 
        this.visualOptions = { 
            viewport: this.viewport, 
            margin: this.margin, 
@@ -3130,9 +3159,9 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
        this.margin = this.visualOptions.margin; 
        this.calculateAxesProperties(this.visualOptions); 
        this.render(true, resize); 
- 
-
-var t1=performance.now(); console.log("update"+(t1-t0)); } catch (e) { this.renderFatalError('update', e); } } private shouldRenderAxis(axisProperties: IAxisProperties, propertyName: string = "show"): boolean { 
+     } catch (e) { this.renderFatalError('update', e); } 
+   } 
+   private shouldRenderAxis(axisProperties: IAxisProperties, propertyName: string = "show"): boolean { 
 
       if (!axisProperties) { 
            return false; 
@@ -3224,7 +3253,6 @@ var t1=performance.now(); console.log("update"+(t1-t0)); } catch (e) { this.rend
  
    private renderLegend(): void { 
        let legendProperties = this.legendObjectProperties; 
-       debugger; 
        let legendData = this.data.legendData; 
        legendData.fontSize = this.legendLabelFontSize = dataViewObject.getValue<number>(this.legendObjectProperties, legendProps.fontSize, Visual.LegendLabelFontSizeDefault); 
        let legend: IGMOLegend = this.legend; 
@@ -3244,9 +3272,6 @@ var t1=performance.now(); console.log("update"+(t1-t0)); } catch (e) { this.rend
                legendData.labelColor = solid['color']; 
            } 
  
-
-debugger; 
-
           legendData.fontSize = this.legendLabelFontSize; 
            if (this.layerLegendData.grouped) { 
                legendData.grouped = true; 
@@ -3271,12 +3296,10 @@ debugger;
                legend.changeOrientation(LegendPosition[position]); 
            } 
  
- 
        } 
        else { 
            legend.changeOrientation(LegendPosition.Top); 
        } 
-       debugger; 
         
        legend.drawLegendInternal( 
             
@@ -3293,17 +3316,15 @@ debugger;
                // If category exists, we render title using category source. If not, we render title 
                // using measure. 
  
-
-let categories=this.dataView.categorical.categories 
-let values=this.dataView.categorical.values 
+var categories=this.dataView.categorical.categories 
+var values=this.dataView.categorical.values 
 let dvCategorySourceName = categories && categories.length > 0 && categories[0].source ? categories[0].source.displayName : ""; if (categories[0].values) { return dvCategorySourceName; } break; case 'primaryTitle': let source = values && (values[0].source || values[1].source); let dvValuesSourceName: string = ''; if (source && showPrimaryMeasure && showPrimaryMeasure !== 'None') { let index: number = values[0].source.roles.hasOwnProperty('Y') ? 0 : 1; dvValuesSourceName = values[index].source.displayName; } 
 
               return dvValuesSourceName; 
        } 
    } 
  
-
-/* private hideLegends(): boolean { if (!this.cartesianSmallViewPortProperties) return false; if (this.cartesianSmallViewPortProperties) { if (this.cartesianSmallViewPortProperties.hideLegendOnSmallViewPort && (this.viewport.height < this.cartesianSmallViewPortProperties.MinHeightLegendVisible)) { return true; } } }*/ private getCategoryLayout(numCategoryValues: number, options: CalculateScaleAndDomainOptions): CategoryLayout { let availableWidth: number; let legendPosition = parseFloat(this.root.select('.legend').attr('orientation')); 
+   private getCategoryLayout(numCategoryValues: number, options: CalculateScaleAndDomainOptions): CategoryLayout { let availableWidth: number; let legendPosition = parseFloat(this.root.select('.legend').attr('orientation')); 
 
       let customTitleHeight = parseFloat(this.root.select('.Title_Div_Text').style('height')); 
        if (isNaN(customTitleHeight)) { 
@@ -3340,7 +3361,7 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
        } 
  
        let metaDataColumn = this.data ? this.data.categoryMetadata : undefined; 
-       let categoryDataType: InstanceType<typeof ValueType> = AxisHelper.getCategoryValueType(metaDataColumn); 
+       let categoryDataType: any = AxisHelper.getCategoryValueType(metaDataColumn); 
        let isScalar = this.data ? this.data.scalarCategoryAxis : false; 
        let domain = AxisHelper.createDomain(this.data.series, categoryDataType, isScalar, options.forcedXDomain); 
        return CartesianChartGMO.getLayout( 
@@ -3375,8 +3396,8 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
        else if (xAxisProperties.xLabelMaxWidth !== undefined) { 
            xLabelOuterPadding = Math.max(0, (viewport.width - xAxisProperties.xLabelMaxWidth * xLabels.length) / 2); 
        } 
-       if (AxisHelper.getRecommendedNumberOfTicksForXAxis(viewport.width) !== 0 
-           || AxisHelper.getRecommendedNumberOfTicksForYAxis(viewport.height) !== 0) { 
+       if ((AxisHelper.getRecommendedNumberOfTicksForXAxis(viewport.width) as number) !== 0 
+           || (AxisHelper.getRecommendedNumberOfTicksForYAxis(viewport.height) as number) !== 0) { 
            let rotation; 
            if (scrollbarVisible) 
                rotation = AxisHelper.LabelLayoutStrategy.DefaultRotationWithScrollbar; 
@@ -3544,10 +3565,9 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
                        color = colors.getColor(source.groupName).value; 
                    } 
  
- 
                    let label; 
                    label = valueFormatter.format(source.groupName, formatStringProp); 
-                   legend.push({ 
+                   legend.push(<any>{ 
                        icon: LegendIcon.Box, 
                        color: color, 
                        label: label, 
@@ -3689,7 +3709,6 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
            labelSettings.precision = 4; 
        } 
  
-        
        let legendAndSeriesInfo = this.getLegend(colors, defaultLegendLabelColor, defaultDataPointColor); 
        let legend: LegendDataPoint[] = legendAndSeriesInfo.legend.dataPoints; 
        let seriesSources: DataViewMetadataColumn[] = legendAndSeriesInfo.seriesSources; 
@@ -3718,7 +3737,7 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
            let aggregatedValues = []; 
            let sampleSize; 
            sampleSize = -9999; 
-           let dvaCategorical=dataViewAll[2].categorical 
+           let dvaCategorical=dataViewAll[2] && dataViewAll[2].categorical 
            if (dataViewAll[2] && dvaCategorical && dvaCategorical.values) { 
                let values= dvaCategorical.values[0].values; 
                let length=values.length 
@@ -3729,7 +3748,6 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
                    } 
                } 
                let dclength=dataCategories.length,dslength=dataSeries.length 
-               var t0=performance.now(); 
                for (let k = 0; k < dclength; k++) { 
                    let sum = 0; 
                    for (let i = 0; i < dslength; i++) { 
@@ -3747,8 +3765,6 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
                    } 
                    aggregatedValues.push(sum); 
                } 
-               //var t1=performance.now(); 
-               //console.log("in function " + (t1-t0)) 
                let newCategoryIndex = -1,avlength=aggregatedValues.length; 
                for (let k = avlength - 1; k >= 0; k--) { 
                    if (aggregatedValues[k] < sampleSize) { 
@@ -3874,29 +3890,41 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
    public createTooltipInfo(seriesIndex: number, categoryIndex: number): VisualTooltipDataItem[] { 
        
        const tooltipDataItems: VisualTooltipDataItem[] = []; 
-       let dvCategories=this.dataView.categorical; 
-       if (dvCategories.values) { 
-           let categories = dvCategories.categories[0]; 
+       let dvCategories = this.dataView && this.dataView.categorical; 
+       if (dvCategories && dvCategories.values) { 
+           let categories = dvCategories.categories && dvCategories.categories.length > 0 ? dvCategories.categories[0] : null; 
            let values = dvCategories.values; 
+           let valueColumn = values[seriesIndex]; 
            //let index = this.getIndexOfValue(values[categoryIndex]); 
-           let iValueFormatter = valueFormatter.create({ format: values[seriesIndex].source.format }); 
-           let value1 = <string>categories.values[categoryIndex] 
-           tooltipDataItems.push({ 
-                
-               value: value1, 
-               displayName: <string>categories.source.displayName, 
-           }) 
-           tooltipDataItems.push({ 
-               value: <string>values[seriesIndex].source.groupName,//values[index].values[categoryIndex], 
-               displayName: <string>values.source.displayName, 
-           }) 
-           tooltipDataItems.push({ 
-               value: iValueFormatter.format(values[seriesIndex].values[categoryIndex]), 
-               displayName: <string>values[seriesIndex].source.displayName, 
-           }) 
- 
+           let iValueFormatter = valueFormatter.create({ format: valueColumn && valueColumn.source ? valueColumn.source.format : undefined }); 
+
+           // Category tooltip item 
+           if (categories && categories.source) { 
+               let value1 = <string>categories.values[categoryIndex] 
+               tooltipDataItems.push({ 
+                   value: value1, 
+                   displayName: <string>categories.source.displayName, 
+               }) 
+           } 
+
+           // Series (dynamic series) tooltip item - only present when a Series/Legend field is assigned 
+           if (values.source && valueColumn && valueColumn.source) { 
+               tooltipDataItems.push({ 
+                   value: <string>valueColumn.source.groupName,//values[index].values[categoryIndex], 
+                   displayName: <string>values.source.displayName, 
+               }) 
+           } 
+
+           // Measure value tooltip item 
+           if (valueColumn && valueColumn.source) { 
+               tooltipDataItems.push({ 
+                   value: iValueFormatter.format(valueColumn.values[categoryIndex]), 
+                   displayName: <string>valueColumn.source.displayName, 
+               }) 
+           } 
+
        } 
- 
+
        return tooltipDataItems; 
    } 
    public getIndexOfValue(values: DataViewValueColumn): number { 
@@ -3977,18 +4005,15 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
        } 
        let dataPointObjects: DataViewObjects[] = categoryObjectsList, 
            formatStringProp = columnChartProps.general.formatString; 
-       debugger 
-       //var t0=performance.now(); 
- 
+
        for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) { 
            let seriesDataPoints: StackedChartGMODataPoint[] = [], 
                legendItem = legend[seriesIndex], 
                seriesLabelSettings: VisualDataLabelsSettings; 
  
- 
            if (!hasDynamicSeries) { 
                let labelsSeriesGroup = grouped && grouped.length > 0 && grouped[0].values ? grouped[0].values[seriesIndex] : null; 
-               let lsgsoruce=labelsSeriesGroup.source 
+               let lsgsoruce = labelsSeriesGroup ? labelsSeriesGroup.source : null; 
                let labelObjects = (labelsSeriesGroup && lsgsoruce && lsgsoruce.objects) ? <DataLabelObject>lsgsoruce.objects['labels'] : null; 
                if (labelObjects) { 
                    seriesLabelSettings = Prototype.inherit(defaultLabelSettings); 
@@ -3998,7 +4023,6 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
            let tooltipInfo: VisualTooltipDataItem[] = this.createTooltipInfo(seriesIndex, seriesIndex); 
            let color; 
  
-
 let dvcvalues=this.dataView.categorical.values 
 if (dvcvalues && dvcvalues[seriesIndex]) { let valueObj = dvcvalues[seriesIndex]; let vosObjects=valueObj.source.objects 
     if (vosObjects&& vosObjects["dataPoint"]) { let dataPointObj = vosObjects["dataPoint"]; color = dataPointObj["fill"]; legendItem.color = color.solid.color; } } columnSeries.push({ displayName: legendItem.label, key: 'series' + seriesIndex, index: seriesIndex, data: seriesDataPoints, identity: legendItem.identity['selector'], color: legendItem.color, labelSettings: seriesLabelSettings }); 
@@ -4065,9 +4089,7 @@ if (dvcvalues && dvcvalues[seriesIndex]) { let valueObj = dvcvalues[seriesIndex]
                    position = baseValuesPos[categoryIndex]; 
                } 
  
-
 let dvcCategories= dataViewCat.categories 
-
 
 let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex].values ? grouped[seriesIndex].values[0] : null; let category = dvcCategories&& dvcCategories.length > 0 ? dvcCategories[0] : null; let identity = SelectionIdBuilder.builder() .withCategory(category, categoryIndex) .withSeries(dataViewCat.values, seriesGroup) .withMeasure(converterStrategy.getMeasureNameByIndex(seriesIndex)) .createSelectionId(); 
 
@@ -4106,7 +4128,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
                    chartType: chartType 
                }; 
                 
-               // console.log(tooltipInfo); 
                seriesDataPoints.push(dataPoint); 
                 
                if (hasHighlights) { 
@@ -4169,10 +4190,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            globalallDataPoints = globalallDataPoints.concat(seriesDataPoints); 
             
        } 
-       //var t1=performance.now(); 
-       //console.log('in data point function' + (t1-t0)) 
-       debugger 
-        
        return { 
            series: columnSeries, 
            hasHighlights: hasHighlights, 
@@ -4290,7 +4307,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        let FifthLabelSettings: FifthLabelSettings = this.getFifthLabelSettings(this.dataViews[5]); 
        let SixthLabelSettings: SixthLabelSettings = this.getSixthLabelSettings(this.dataViews[6]); 
  
- 
        switch (options.objectName) { 
            case 'dataPoint': 
               // let categoricalDataView: DataViewCategorical = this.data && this.dataViewCat ? this.dataViewCat : null; 
@@ -4299,16 +4315,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            case 'categoryAxis': 
                this.getCategoryAxisValues(objectEnumeration); 
                break; 
-           // case 'sampleFilter': 
-           //     objectEnumeration.push({ 
-           //         objectName: 'sampleFilter', 
-           //         displayName: 'Sample filter', 
-           //         selector: series && series.identity ? series.identity.getSelector() : null, 
-           //         properties: { 
-           //             show: sampleFilterSettings.show, 
-           //         } 
-           //     }); 
-           //     break; 
            case 'textWrap': 
                objectEnumeration.push({ 
                    objectName: 'textWrap', 
@@ -4451,6 +4457,46 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        } 
        return objectEnumeration; 
    } 
+
+   public getFormattingModel(): powerbiApi.visuals.FormattingModel {
+       try {
+           this.applyDynamicFormatting();
+       } catch (e) {
+           // The format pane must never break the visual surface.
+           // eslint-disable-next-line no-console
+           console.error('[100per-Stackchart] getFormattingModel() dynamic step failed:', e);
+       }
+       return this.formattingSettingsService.buildFormattingModel(this.formattingSettingsModel);
+   }
+ 
+   // Injects data-driven values into the formatting model right before it is
+   // built: one "Data colors" swatch per value shown in the legend, plus the
+   // measure-label titles taken from each bound column when the user hasn't
+   // typed an override.
+   private applyDynamicFormatting(): void {
+       const model = this.formattingSettingsModel;
+ 
+       // Per-series data colors (one color picker per legend value).
+       const points = (this.data && this.data.legendData && this.data.legendData.dataPoints) || [];
+       model.setDataColors(points.map((dp: any) => ({
+           displayName: dp.label,
+           color: dp.color,
+           selector: dp.identity
+               ? (typeof dp.identity.getSelector === 'function' ? dp.identity.getSelector() : dp.identity.selector)
+               : null
+       })));
+ 
+       // Measure-label titles default to the bound column's display name.
+       const dvs = this.dataViews;
+       if (dvs && dvs.length) {
+           if (dvs[0]) { model.totalLabelsCard.titleText.value = this.getTotalLabelSettings(dvs[0]).titleText; }
+           if (dvs[1]) { model.secondaryLabelsCard.titleText.value = this.getSecondaryLabelSettings(dvs[1]).titleText; }
+           if (dvs[3]) { model.tertiaryLabelsCard.titleText.value = this.getTertiaryLabelSettings(dvs[3]).titleText; }
+           if (dvs[4]) { model.quaternaryLabelsCard.titleText.value = this.getQuaternaryLabelSettings(dvs[4]).titleText; }
+           if (dvs[5]) { model.fifthLabelsCard.titleText.value = this.getFifthLabelSettings(dvs[5]).titleText; }
+           if (dvs[6]) { model.sixthLabelsCard.titleText.value = this.getSixthLabelSettings(dvs[6]).titleText; }
+       }
+   }
  
    private getLegendValue(enumeration: VisualObjectInstance[], series?: StackedChartGMOSeries): void { 
  
@@ -4461,7 +4507,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        //let primaryMeasureOnOff = this.getShowPrimaryMeasure(this.dataView); 
        let titleText = dataViewObject.getValue<string>(this.legendObjectProperties, legendProps.titleText, this.layerLegendData ? this.layerLegendData.title : ''); 
        let legendLabelColor = dataViewObject.getValue<string>(this.legendObjectProperties, legendProps.labelColor, this.layerLegendData.labelColor);  //changed last argument from red to this 
-      debugger; 
        this.legendLabelFontSize = dataViewObject.getValue<number>(this.legendObjectProperties, legendProps.fontSize, Visual.LegendLabelFontSizeDefault); 
        //let labelDisplayUnits = this.getLegendDispalyUnits(this.dataViews[0], 'labelDisplayUnits'); 
        let labelPrecision = this.getLegendDispalyUnits(this.dataViews[0], 'labelPrecision'); 
@@ -4474,7 +4519,7 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            selector: series && series.identity ? series.identity.getSelector() : null, 
            properties: { 
                show: show, 
-               position: LegendPositionType[this.legend.getOrientation()], 
+               position: LegendPosition[this.legend.getOrientation()], 
                showTitle: showTitle, 
                titleText: titleText, 
                labelColor: legendLabelColor, 
@@ -4546,113 +4591,42 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        return labelSettings; 
    } 
  
-   private getSecondaryLabelSettings(dataView: DataView): secondaryLabelSettings { 
-       let objects: DataViewObjects = null; 
-       let labelSettings: secondaryLabelSettings = this.getDefaultSecondaryLabelSettings(); 
+   // Shared body for the secondary..sixth measure label settings. These five
+   // settings are identical except for the property-bag they read from
+   // (StackedChartGMOProps.<name>Labels), so the common logic lives here.
+   private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: any): any {
+       if (!dataView || !dataView.categorical) { return labelSettings; }
+       if (dataView.categorical.values) {
+           labelSettings.titleText = dataView.categorical.values[0].source.displayName;
+       }
+       if (!dataView.metadata || !dataView.metadata.objects) { return labelSettings; }
+       let objects = dataView.metadata.objects;
+       labelSettings.titleText = dataViewObjects.getValue(objects, props.titleText, labelSettings.titleText);
+       labelSettings.textPrecision = dataViewObjects.getValue(objects, props.textPrecision, labelSettings.textPrecision);
+       labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision);
+       labelSettings.fontSize = dataViewObjects.getValue(objects, props.fontSize, labelSettings.fontSize);
+       labelSettings.displayUnits = dataViewObjects.getValue(objects, props.displayUnits, labelSettings.displayUnits);
+       labelSettings.color = dataViewObjects.getFillColor(objects, props.color, labelSettings.color);
+       return labelSettings;
+   }
+
+   private getSecondaryLabelSettings(dataView: DataView): secondaryLabelSettings {
+       return this.getMeasureLabelSettings(dataView, StackedChartGMOProps.secondaryLabels, this.getDefaultSecondaryLabelSettings());
+   }
  
-       if (dataView.categorical.values) { 
-           labelSettings.titleText = dataView.categorical.values[0].source.displayName; 
-       } 
-       if (!dataView.metadata || !dataView.metadata.objects) 
-           return labelSettings; 
+   private getTertiaryLabelSettings(dataView: DataView): tertiaryLabelSettings {
+       return this.getMeasureLabelSettings(dataView, StackedChartGMOProps.tertiaryLabels, this.getDefaultTertiaryLabelSettings());
+   }
  
-       objects = dataView.metadata.objects; 
-       let secondaryLabelsProperties = StackedChartGMOProps; 
-       labelSettings.titleText = dataViewObjects.getValue(objects, secondaryLabelsProperties.secondaryLabels.titleText, labelSettings.titleText); 
-       labelSettings.textPrecision = dataViewObjects.getValue(objects, secondaryLabelsProperties.secondaryLabels.textPrecision, labelSettings.textPrecision); 
-       labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision); 
-       labelSettings.fontSize = dataViewObjects.getValue(objects, secondaryLabelsProperties.secondaryLabels.fontSize, labelSettings.fontSize); 
-       labelSettings.displayUnits = dataViewObjects.getValue(objects, secondaryLabelsProperties.secondaryLabels.displayUnits, labelSettings.displayUnits); 
-       labelSettings.color = dataViewObjects.getFillColor(objects, secondaryLabelsProperties.secondaryLabels.color, labelSettings.color); 
- 
-       return labelSettings; 
-   } 
- 
-   private getTertiaryLabelSettings(dataView: DataView): tertiaryLabelSettings { 
-       let objects: DataViewObjects = null; 
-       let labelSettings: tertiaryLabelSettings = this.getDefaultTertiaryLabelSettings(); 
- 
-       if (dataView.categorical.values) { 
-           labelSettings.titleText = dataView.categorical.values[0].source.displayName; 
-       } 
-       if (!dataView.metadata || !dataView.metadata.objects) 
-           return labelSettings; 
- 
-       objects = dataView.metadata.objects; 
-       let tertiaryLabelsProperties = StackedChartGMOProps; 
-       labelSettings.titleText = dataViewObjects.getValue(objects, tertiaryLabelsProperties.tertiaryLabels.titleText, labelSettings.titleText); 
-       labelSettings.textPrecision = dataViewObjects.getValue(objects, tertiaryLabelsProperties.tertiaryLabels.textPrecision, labelSettings.textPrecision); 
-       labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision); 
-       labelSettings.fontSize = dataViewObjects.getValue(objects, tertiaryLabelsProperties.tertiaryLabels.fontSize, labelSettings.fontSize); 
-       labelSettings.displayUnits = dataViewObjects.getValue(objects, tertiaryLabelsProperties.tertiaryLabels.displayUnits, labelSettings.displayUnits); 
-       labelSettings.color = dataViewObjects.getFillColor(objects, tertiaryLabelsProperties.tertiaryLabels.color, labelSettings.color); 
- 
-       return labelSettings; 
-   } 
- 
-   private getQuaternaryLabelSettings(dataView: DataView): quaternaryLabelSettings { 
-       let objects: DataViewObjects = null; 
-       let labelSettings: quaternaryLabelSettings = this.getDefaultQuaternaryLabelSettings(); 
-       let dvCategories=dataView.categorical.values 
-       if (dvCategories) { 
-           labelSettings.titleText = dvCategories[0].source.displayName; 
-       } 
-       if (!dataView.metadata || !dataView.metadata.objects) 
-           return labelSettings; 
- 
-       objects = dataView.metadata.objects; 
-       let quaternaryLabelsProperties = StackedChartGMOProps; 
-       labelSettings.titleText = dataViewObjects.getValue(objects, quaternaryLabelsProperties.quaternaryLabels.titleText, labelSettings.titleText); 
-       labelSettings.textPrecision = dataViewObjects.getValue(objects, quaternaryLabelsProperties.quaternaryLabels.textPrecision, labelSettings.textPrecision); 
-       labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision); 
-       labelSettings.fontSize = dataViewObjects.getValue(objects, quaternaryLabelsProperties.quaternaryLabels.fontSize, labelSettings.fontSize); 
-       labelSettings.displayUnits = dataViewObjects.getValue(objects, quaternaryLabelsProperties.quaternaryLabels.displayUnits, labelSettings.displayUnits); 
-       labelSettings.color = dataViewObjects.getFillColor(objects, quaternaryLabelsProperties.quaternaryLabels.color, labelSettings.color); 
- 
-       return labelSettings; 
-   } 
-   private getFifthLabelSettings(dataView: DataView): FifthLabelSettings { 
-       let objects: DataViewObjects = null; 
-       let labelSettings: FifthLabelSettings = this.getDefaultFifthLabelSettings(); 
- 
-       if (dataView.categorical.values) { 
-           labelSettings.titleText = dataView.categorical.values[0].source.displayName; 
-       } 
-       if (!dataView.metadata || !dataView.metadata.objects) 
-           return labelSettings; 
- 
-       objects = dataView.metadata.objects; 
-       let FifthLabelsProperties = StackedChartGMOProps; 
-       labelSettings.titleText = dataViewObjects.getValue(objects, FifthLabelsProperties.FifthLabels.titleText, labelSettings.titleText); 
-       labelSettings.textPrecision = dataViewObjects.getValue(objects, FifthLabelsProperties.FifthLabels.textPrecision, labelSettings.textPrecision); 
-       labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision); 
-       labelSettings.fontSize = dataViewObjects.getValue(objects, FifthLabelsProperties.FifthLabels.fontSize, labelSettings.fontSize); 
-       labelSettings.displayUnits = dataViewObjects.getValue(objects, FifthLabelsProperties.FifthLabels.displayUnits, labelSettings.displayUnits); 
-       labelSettings.color = dataViewObjects.getFillColor(objects, FifthLabelsProperties.FifthLabels.color, labelSettings.color); 
- 
-       return labelSettings; 
-   } 
-   private getSixthLabelSettings(dataView: DataView): SixthLabelSettings { 
-       let objects: DataViewObjects = null; 
-       let labelSettings: SixthLabelSettings = this.getDefaultSixthLabelSettings(); 
- 
-       if (dataView.categorical.values) { 
-           labelSettings.titleText = dataView.categorical.values[0].source.displayName; 
-       } 
-       if (!dataView.metadata || !dataView.metadata.objects) 
-           return labelSettings; 
- 
-       objects = dataView.metadata.objects; 
-       let SixthLabelsProperties = StackedChartGMOProps; 
-       labelSettings.titleText = dataViewObjects.getValue(objects, SixthLabelsProperties.SixthLabels.titleText, labelSettings.titleText); 
-       labelSettings.textPrecision = dataViewObjects.getValue(objects, SixthLabelsProperties.SixthLabels.textPrecision, labelSettings.textPrecision); 
-       labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision); 
-       labelSettings.fontSize = dataViewObjects.getValue(objects, SixthLabelsProperties.SixthLabels.fontSize, labelSettings.fontSize); 
-       labelSettings.displayUnits = dataViewObjects.getValue(objects, SixthLabelsProperties.SixthLabels.displayUnits, labelSettings.displayUnits); 
-       labelSettings.color = dataViewObjects.getFillColor(objects, SixthLabelsProperties.SixthLabels.color, labelSettings.color); 
- 
-       return labelSettings; 
-   } 
+   private getQuaternaryLabelSettings(dataView: DataView): quaternaryLabelSettings {
+       return this.getMeasureLabelSettings(dataView, StackedChartGMOProps.quaternaryLabels, this.getDefaultQuaternaryLabelSettings());
+   }
+   private getFifthLabelSettings(dataView: DataView): FifthLabelSettings {
+       return this.getMeasureLabelSettings(dataView, StackedChartGMOProps.FifthLabels, this.getDefaultFifthLabelSettings());
+   }
+   private getSixthLabelSettings(dataView: DataView): SixthLabelSettings {
+       return this.getMeasureLabelSettings(dataView, StackedChartGMOProps.SixthLabels, this.getDefaultSixthLabelSettings());
+   }
  
    public getDefaultSampleFilterSettings(): sampleFilterSettings { 
        return { 
@@ -4683,7 +4657,8 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        } 
    } 
  
-   public getDefaultSecondaryLabelSettings(): secondaryLabelSettings { 
+   // Shared defaults for the secondary..sixth measure labels (all identical).
+   public getDefaultMeasureLabelSettings(): secondaryLabelSettings { 
        return { 
            titleText: '', 
            color: '#777', 
@@ -4692,44 +4667,13 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            fontSize: 9, 
        } 
    } 
+   public getDefaultSecondaryLabelSettings(): secondaryLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
  
-   public getDefaultTertiaryLabelSettings(): tertiaryLabelSettings { 
-       return { 
-           titleText: '', 
-           color: '#777', 
-           displayUnits: 0, 
-           textPrecision: 0, 
-           fontSize: 9, 
-       } 
-   } 
+   public getDefaultTertiaryLabelSettings(): tertiaryLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
  
-   public getDefaultQuaternaryLabelSettings(): quaternaryLabelSettings { 
-       return { 
-           titleText: '', 
-           color: '#777', 
-           displayUnits: 0, 
-           textPrecision: 0, 
-           fontSize: 9, 
-       } 
-   } 
-   public getDefaultFifthLabelSettings(): FifthLabelSettings { 
-       return { 
-           titleText: '', 
-           color: '#777', 
-           displayUnits: 0, 
-           textPrecision: 0, 
-           fontSize: 9, 
-       } 
-   } 
-   public getDefaultSixthLabelSettings(): SixthLabelSettings { 
-       return { 
-           titleText: '', 
-           color: '#777', 
-           displayUnits: 0, 
-           textPrecision: 0, 
-           fontSize: 9, 
-       } 
-   } 
+   public getDefaultQuaternaryLabelSettings(): quaternaryLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
+   public getDefaultFifthLabelSettings(): FifthLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
+   public getDefaultSixthLabelSettings(): SixthLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
  
    //Get Measure value 
    public measureValue(measure, measureFormat, legendObjectProperties, modelingPrecision) { 
@@ -4782,8 +4726,22 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        switch (displayunitValue) { 
            case 0: 
                { 
-                   let prefix = d3.formatPrefix(d); 
-                   result = d3.round(prefix.scale(d), precisionValue).toFixed(precisionValue) + prefix.symbol.toUpperCase(); 
+                   // Auto display units. d3 v3's formatPrefix().scale()/.symbol and
+                   // d3.round were all removed in d3 v4+, so compute the K/M/bn/T
+                   // suffix directly. Mirrors the explicit cases below to keep the
+                   // same output (and uses numberWithCommas for grouping). 
+                   let abs = Math.abs(d); 
+                   if (abs >= 1000000000000) { 
+                       result = this.numberWithCommas((d / 1000000000000).toFixed(precisionValue)) + 'T'; 
+                   } else if (abs >= 1000000000) { 
+                       result = this.numberWithCommas((d / 1000000000).toFixed(precisionValue)) + 'bn'; 
+                   } else if (abs >= 1000000) { 
+                       result = this.numberWithCommas((d / 1000000).toFixed(precisionValue)) + 'M'; 
+                   } else if (abs >= 1000) { 
+                       result = this.numberWithCommas((d / 1000).toFixed(precisionValue)) + 'K'; 
+                   } else { 
+                       result = this.numberWithCommas(d.toFixed(precisionValue)); 
+                   } 
                    break; 
                } 
            case 1: 
@@ -4918,7 +4876,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            }, 
        }); 
  
- 
    } 
  
    private enumerateDataLabels(enumeration: VisualObjectInstance[]): void { 
@@ -4961,18 +4918,18 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
    } 
    // MAQ Code 
    // This function returns on/off status of the funnel title properties 
-   private getShowTitle(dataView: DataView): IDataLabelSettings { 
+   private getShowTitle(dataView: DataView): boolean { 
        if (dataView && dataView.metadata && dataView.metadata.objects) { 
            if (dataView.metadata.objects && dataView.metadata.objects.hasOwnProperty('GMOColumnChartTitle')) { 
                let showTitle = dataView.metadata.objects['GMOColumnChartTitle']; 
                if (dataView.metadata.objects && showTitle.hasOwnProperty('show')) { 
-                   return <IDataLabelSettings>showTitle['show']; 
+                   return <boolean>showTitle['show']; 
                } 
            } else { 
-               return <IDataLabelSettings>true; 
+               return true; 
            } 
        } 
-       return <IDataLabelSettings>true; 
+       return true; 
    } 
  
    /* This function returns the title text given for the title in the format window */ 
@@ -5094,20 +5051,20 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        return 12; 
    } 
    // This function returns on/off status of the legend show primary measure 
-   private getShowPrimaryMeasure(dataView: DataView): IDataLabelSettings { 
+   private getShowPrimaryMeasure(dataView: DataView): boolean { 
        let dvmetadata=dataView.metadata 
        let dvmobjects=dvmetadata.objects 
        if (dataView && dvmetadata && dvmobjects) { 
            if (dvmobjects && dvmobjects.hasOwnProperty('legend')) { 
                let showTitle = dvmobjects['legend']; 
                if (dvmobjects && showTitle.hasOwnProperty('primaryMeasureOnoff')) { 
-                   return <IDataLabelSettings>showTitle['primaryMeasureOnoff']; 
+                   return <boolean>showTitle['primaryMeasureOnoff']; 
                } 
            } else { 
-               return <IDataLabelSettings>true; 
+               return true; 
            } 
        } 
-       return <IDataLabelSettings>true; 
+       return true; 
    } 
  
    private getLabelSettingsOptions(enumeration: any, labelSettings: VisualDataLabelsSettings, series?: StackedChartGMOSeries, showAll?: boolean): any { 
@@ -5185,7 +5142,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
  
    public calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[] { 
         
-       
        let totalLabelSettings: totalLabelSettings = this.getTotalLabelSettings(this.dataViews[0]); 
        let secondaryLabelSettings: secondaryLabelSettings = this.getSecondaryLabelSettings(this.dataViews[1]); 
        let tertiaryLabelSettings: tertiaryLabelSettings = this.getTertiaryLabelSettings(this.dataViews[3]); 
@@ -5195,7 +5151,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
  
        let data = this.data; 
        let legendPosition = parseFloat(this.root.select('.legend').attr('orientation')); 
- 
  
        let customTitleHeight = parseFloat(this.root.select('.Title_Div_Text').style('height')); 
        if (isNaN(customTitleHeight)) { 
@@ -5375,7 +5330,7 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        let interactivity = this.interactivity; 
        if (interactivity) { 
            if (interactivity.dragDataPoint) { 
-               chartContext.onDragStart = (event: DragEvent, datum: StackedChartGMODataPoint) => { 
+               (chartContext as any).onDragStart = (event: DragEvent, datum: StackedChartGMODataPoint) => { 
                    if (!datum?.identity) 
                        return; 
  
@@ -5406,7 +5361,7 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
                d3.select(ColumnChartSvg) 
                    .on('click', dragMove) 
                    .style('touch-action', 'none'); 
-               let drag = d3Drag<SVGElement, unknown>() 
+               let drag = d3Drag() 
                    .on("drag", dragMove); 
                //set drag interaction on the visual 
                this.svg.call(drag); 
@@ -5452,7 +5407,7 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
                dataPointColor = dataPoints.length > i && dataPoints[i].color; 
            } 
  
-           legendDataPoints.push({ 
+           legendDataPoints.push(<any>{ 
                color: dataPointColor, 
                icon: LegendIcon.Box, 
                label: formattedLabel, 
@@ -5466,9 +5421,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        return { dataPoints: legendDataPoints }; 
    } 
  
-   public overrideXScale(xProperties: IAxisProperties): void { 
-       this.xAxisProperties = xProperties; 
-   } 
    public calculateAxes( 
        categoryAxisProperties: DataViewObject, 
        valueAxisProperties: DataViewObject, 
@@ -5512,13 +5464,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            textProperties); 
        return axes; 
    } 
- /*  private static getTooltipData(value: any): VisualTooltipDataItem[] { 
-       return [{ 
-           displayName: value.category, 
-           value: value.value.toString(), 
-           color: value.color 
-       }]; 
-   }*/ 
    public render(suppressAnimations: boolean, resize: boolean): CartesianVisualRenderResultGMO { 
        let maxMarginFactor = this.getMaxMarginFactor(); 
        this.leftRightMarginLimit = this.viewport.width * maxMarginFactor; 
@@ -5549,17 +5494,35 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            numIterations = 0; 
        while (!doneWithMargins && numIterations < maxIterations) { 
            numIterations++; 
-           tickLabelMargins = AxisHelper.getTickLabelMargins( 
-               { width: this.viewportIn.width, height: this.viewport.height }, this.leftRightMarginLimit, 
-               TextMeasurementService.measureSvgTextWidth, TextMeasurementService.measureSvgTextHeight, { x: this.xAxisProperties, y1: this.yAxisProperties }, 
-               this.bottomMarginLimit, this.textProperties, 
-               this.isXScrollBarVisible || this.isYScrollBarVisible, showY1OnRight, 
-               renderXAxis, renderY1Axis, false); 
+           // Modern chartutils (8.x) takes a SINGLE options object here; the
+           // legacy 2018 code passed 13 positional args, which made the library
+           // read `options.axes` as undefined -> "Cannot read properties of
+           // undefined (reading 'x')". Rebuilt as the options object it expects.
+           tickLabelMargins = AxisHelper.getTickLabelMargins({
+               viewport: { width: this.viewportIn.width, height: this.viewport.height },
+               yMarginLimit: this.leftRightMarginLimit,
+               textWidthMeasurer: TextMeasurementService.measureSvgTextWidth,
+               textHeightMeasurer: TextMeasurementService.measureSvgTextHeight,
+               axes: { x: this.xAxisProperties, y1: this.yAxisProperties },
+               bottomMarginLimit: this.bottomMarginLimit,
+               properties: this.textProperties,
+               scrollbarVisible: this.isXScrollBarVisible || this.isYScrollBarVisible,
+               showOnRight: showY1OnRight,
+               renderXAxis: renderXAxis,
+               renderY1Axis: renderY1Axis,
+               renderY2Axis: false,
+           }); 
            // We look at the y axes as main and second sides, if the y axis orientation is right so the main side represents the right side 
-           let maxMainYaxisSide = showY1OnRight ? tickLabelMargins.yRight : tickLabelMargins.yLeft, 
-               maxSecondYaxisSide = showY1OnRight ? tickLabelMargins.yLeft : tickLabelMargins.yRight, 
-               xMax = tickLabelMargins.xMax; 
- 
+           // NOTE: chartutils 8.x getTickLabelMargins returns { top, left, right, bottom } 
+           // where `top` is the x-axis (bottom) label height, `left`/`right` are the 
+           // y-axis label widths. The legacy 2018 API returned { xMax, yLeft, yRight }. 
+           // Reading the old names yields `undefined` -> `undefined + 10 = NaN`, which 
+           // propagated into margin.left/right and produced a NaN category-axis width 
+           // ("M0,6V0HNaNV6" / "translate(NaN, y)"). Map to the 8.x property names. 
+           let maxMainYaxisSide = (showY1OnRight ? tickLabelMargins.right : tickLabelMargins.left) || 0, 
+               maxSecondYaxisSide = (showY1OnRight ? tickLabelMargins.left : tickLabelMargins.right) || 0, 
+               xMax = tickLabelMargins.top || 0; 
+
            maxMainYaxisSide += 10; 
            maxSecondYaxisSide += 10; 
            xMax += 12; 
@@ -5615,20 +5578,8 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        //let allDataPoints: StackedChartGMODataPoint[] = []; 
        let behaviorOptions: ColumnGMOBehaviorOptions = undefined; 
        let data = this.data; 
-       debugger 
-       //var t0=performance.now(); 
- 
-       // if (this.interactivityService) { 
-       //     for (let i = 0, ilen = data.series.length; i < ilen; i++) { 
-       //         allDataPoints = allDataPoints.concat(data.series[i].data); 
-       //     } 
-       // } 
-       //var t1=performance.now(); 
-       //console.log('in tooltip function' + (t1-t0)) 
-       debugger 
        this.renderChart(mainAxisScale, this.xAxisProperties, this.yAxisProperties, tickLabelMargins, chartHasAxisLabels, axisLabels, suppressAnimations); 
- 
- 
+
        this.updateAxis(); 
        if (this.data.labelSettings.show) { 
           // let selectedtext = []; 
@@ -5661,7 +5612,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            let dataLabelText; 
            let formattedDataLabelText = ""; 
  
- 
            let vis = []; 
            for (let i = 0; i <= allBoxesLength; i++) 
                vis[i] = 0; 
@@ -5671,7 +5621,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
                let boxY; 
                let boxCenterX; 
                let boxCenterY; 
- 
  
                if (dataLabelPoints[all] != 0) { 
                    let b = 0; 
@@ -5739,7 +5688,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        let FifthLabelSettings: FifthLabelSettings = this.getFifthLabelSettings(this.dataViews[5]); 
        let SixthLabelSettings: SixthLabelSettings = this.getSixthLabelSettings(this.dataViews[6]); 
  
- 
        let dataCategories = this.data.categories; 
        let dataSeries = this.data.series; 
        let aggregatedValues = []; 
@@ -5763,7 +5711,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            (this.dataViews[4] && this.dataViews[4].categorical && this.dataViews[4].categorical.values ? 1 : 0) 
            + (this.dataViews[5] && this.dataViews[5].categorical && this.dataViews[5].categorical.values ? 1 : 0) + 
            (this.dataViews[6] && this.dataViews[6].categorical && this.dataViews[6].categorical.values ? 1 : 0); 
- 
  
        let measureCounter = numberOfMeasures, yAxisForLabels = 20, yAxisMultiplier = 27; 
  
@@ -5836,7 +5783,7 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        } 
        
        //secondary 
-let  value=this.dataViews[1].categorical.values 
+let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[1].categorical.values 
        if (value) { 
            let dvcvalue=this.dataViews[1].categorical 
            if (noAxis) { 
@@ -5877,7 +5824,7 @@ let  value=this.dataViews[1].categorical.values
                .text(secondaryLabelSettings.titleText) 
        } 
        //tertiary 
-       let dvcvalues=this.dataViews[3].categorical.values 
+       let dvcvalues=this.dataViews[3] && this.dataViews[3].categorical && this.dataViews[3].categorical.values 
        if (dvcvalues) { 
            if (noAxis) { 
                let totalValuesLength = dvcvalues.length; 
@@ -5917,7 +5864,7 @@ let  value=this.dataViews[1].categorical.values
        } 
  
        //quarternary 
-       value=this.dataViews[4].categorical.values 
+       value=this.dataViews[4] && this.dataViews[4].categorical && this.dataViews[4].categorical.values 
        if (value) { 
            if (noAxis) { 
                let totalValuesLength = value.length; 
@@ -5960,7 +5907,7 @@ let  value=this.dataViews[1].categorical.values
                .text(quaternaryLabelSettings.titleText) 
        } 
        //fifth 
-       value=this.dataViews[5].categorical.values 
+       value=this.dataViews[5] && this.dataViews[5].categorical && this.dataViews[5].categorical.values 
        if (value) { 
            if (noAxis) { 
                let totalValuesLength = value.length; 
@@ -6001,7 +5948,7 @@ let  value=this.dataViews[1].categorical.values
        } 
         
        //sixth 
-       value=this.dataViews[6].categorical.values 
+       value=this.dataViews[6] && this.dataViews[6].categorical && this.dataViews[6].categorical.values 
        if (value) { 
            if (noAxis) { 
                let totalValuesLength = value.length; 
@@ -6101,7 +6048,7 @@ let  value=this.dataViews[1].categorical.values
            } 
             
            //secondary 
-           if (this.dataViews[1].categorical.values) { 
+           if (this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[1].categorical.values) { 
                let formatString = '0'; 
                formatString = this.dataViews[1].categorical.values[0].source.format; 
                let formatter = valueFormatter.create({ format: formatString, value: secondaryLabelSettings.displayUnits, precision: secondaryLabelSettings.textPrecision }); 
@@ -6140,7 +6087,7 @@ let  value=this.dataViews[1].categorical.values
            } 
  
            //tertiary 
-           if ( this.dataViews[3].categorical.values) { 
+           if ( this.dataViews[3] && this.dataViews[3].categorical && this.dataViews[3].categorical.values) { 
                let formatString = '0'; 
                formatString = this.dataViews[3].categorical.values[0].source.format; 
                let formatter = valueFormatter.create({ format: formatString, value: tertiaryLabelSettings.displayUnits, precision: tertiaryLabelSettings.textPrecision }); 
@@ -6177,7 +6124,7 @@ let  value=this.dataViews[1].categorical.values
            } 
  
            //quarternary 
-           value=this.dataViews[4].categorical.values 
+           value=this.dataViews[4] && this.dataViews[4].categorical && this.dataViews[4].categorical.values 
            if (value) { 
                let formatString = '0'; 
                formatString = value[0].source.format; 
@@ -6214,7 +6161,7 @@ let  value=this.dataViews[1].categorical.values
                    .text(quatText); 
            } 
            //fifth 
-           value=this.dataViews[5].categorical.values 
+           value=this.dataViews[5] && this.dataViews[5].categorical && this.dataViews[5].categorical.values 
            if (value) { 
                let formatString = '0'; 
                formatString = value[0].source.format; 
@@ -6252,7 +6199,7 @@ let  value=this.dataViews[1].categorical.values
            } 
             
            //sixth 
-           value=this.dataViews[6].categorical.values 
+           value=this.dataViews[6] && this.dataViews[6].categorical && this.dataViews[6].categorical.values 
            if (value) { 
                let formatString = '0'; 
                formatString = value[0].source.format; 
@@ -6425,7 +6372,6 @@ let  value=this.dataViews[1].categorical.values
            this.svg.style('margin-top', legendHeight + 'px'); 
        } 
  
- 
        behaviorOptions = { 
            datapoints: globalallDataPoints, 
            bars: columnChartDrawInfo.shapesSelection, 
@@ -6494,7 +6440,6 @@ let  value=this.dataViews[1].categorical.values
            } 
        }); 
  
-       
        let bottomMarginLimit = this.bottomMarginLimit; 
        let xFontSize: any; 
        xFontSize = this.categoryAxisProperties['fontSize'] 
@@ -6546,7 +6491,6 @@ let  value=this.dataViews[1].categorical.values
         
        xAllTicks.selectAll('text').style('fill', this.getCategoryAxisFill().solid.color).style('font-size',font_size); 
  
-       
      // let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar); 
        if (xZeroTick) { 
            let xZeroColor = this.getValueAxisFill(); 
@@ -6570,7 +6514,7 @@ let  value=this.dataViews[1].categorical.values
                    TextMeasurementService.getTailoredTextOrDefault, 
                    CartesianChartGMO.AxisTextProperties, 
                    !xAxis.willLabelsFit && AxisHelper.isOrdinalScale(xAxis.scale), 
-                   bottomMarginLimit === tickLabelMargins.xMax, 
+                   bottomMarginLimit === tickLabelMargins.top, 
                    xAxis, 
                    this.margin, 
                    this.isXScrollBarVisible || this.isYScrollBarVisible); 
@@ -6582,7 +6526,6 @@ let  value=this.dataViews[1].categorical.values
        } 
        xAxisGraphicsElement.selectAll('g.tick').selectAll('line').style({ 'display': 'block', 'fill': 'black' }) 
  
-                    
        if (this.shouldRenderAxis(xAxis)) { 
            this.xAxisGraphicsContext.selectAll('*').style('visibility', 'visible'); 
  
@@ -6628,14 +6571,13 @@ let  value=this.dataViews[1].categorical.values
                    yAllTicks.selectAll('line').style({ 'stroke': yZeroColor }) 
                } 
            } 
-           if (tickLabelMargins.yLeft >= leftRightMarginLimit) { 
+           if (tickLabelMargins.left >= leftRightMarginLimit) { 
                y1AxisGraphicsElement.selectAll('text') 
                    .call(AxisHelper.LabelLayoutStrategy.clip, 
                        // Can't use padding space to render text, so subtract that from available space for ellipses calculations 
                        leftRightMarginLimit - 40, 
                        TextMeasurementService.svgEllipsis); 
            } 
- 
  
        } 
        else { 
@@ -6775,8 +6717,8 @@ let  value=this.dataViews[1].categorical.values
        // Adjust margins if ticks are not going to be shown on either axis 
        let xAxis = $(this.element).find('.x.axis'); 
  
-       if (AxisHelper.getRecommendedNumberOfTicksForXAxis(this.viewportIn.width) === 0 
-           && AxisHelper.getRecommendedNumberOfTicksForYAxis(this.viewportIn.height) === 0) { 
+       if ((AxisHelper.getRecommendedNumberOfTicksForXAxis(this.viewportIn.width) as number) === 0 
+           && (AxisHelper.getRecommendedNumberOfTicksForYAxis(this.viewportIn.height) as number) === 0) { 
            this.margin = { 
                top: 0, 
                right: 0, 
@@ -6792,19 +6734,13 @@ let  value=this.dataViews[1].categorical.values
    private updateAxis(): void { 
  
        let totalLabelSettings: totalLabelSettings = this.getTotalLabelSettings(this.dataViews[0]); 
-      /* let secondaryLabelSettings: secondaryLabelSettings = this.getSecondaryLabelSettings(this.dataViews[1]); 
-       let tertiaryLabelSettings: tertiaryLabelSettings = this.getTertiaryLabelSettings(this.dataViews[3]); 
-       let quaternaryLabelSettings: quaternaryLabelSettings = this.getQuaternaryLabelSettings(this.dataViews[4]); 
-       let FifthLabelSettings: quaternaryLabelSettings = this.getFifthLabelSettings(this.dataViews[5]); 
-       let SixthLabelSettings: quaternaryLabelSettings = this.getSixthLabelSettings(this.dataViews[6]);*/ 
- 
+
        let legendPosition = parseFloat(this.root.select('.legend').attr('orientation')); 
        let customTitleHeight = this.root.select('.Title_Div_Text') && this.root.select('.Title_Div_Text').style('height') && parseFloat(this.root.select('.Title_Div_Text').style('height')); 
        if (isNaN(customTitleHeight)) { 
            customTitleHeight = 0; 
        } 
        let legendHeight = parseFloat(this.root.select('.legend').style('height')) - 20; 
- 
  
        let legendWidth = parseFloat(this.root.select('.legend').style('width')); 
  
@@ -6814,7 +6750,6 @@ let  value=this.dataViews[1].categorical.values
            (this.dataViews[4] && this.dataViews[4].categorical && this.dataViews[4].categorical.values ? 1 : 0) 
            + (this.dataViews[5] && this.dataViews[5].categorical && this.dataViews[5].categorical.values ? 1 : 0) + 
            (this.dataViews[6] && this.dataViews[6].categorical && this.dataViews[6].categorical.values ? 1 : 0) 
- 
  
        let customHeight; 
  
@@ -6947,25 +6882,6 @@ let  value=this.dataViews[1].categorical.values
        } 
    } 
  
-   public getVisualCategoryAxisIsScalar(): boolean { 
-       return this.data ? this.data.scalarCategoryAxis : false; 
-   } 
- 
-   public getSupportedCategoryAxisType(): string { 
-       let metaDataColumn = this.data ? this.data.categoryMetadata : undefined; 
-       let valueType = AxisHelper.getCategoryValueType(metaDataColumn); 
-       let isOrdinal = AxisHelper.isOrdinal(valueType); 
-       return isOrdinal ? axisType.categorical : axisType.both; 
-   } 
- 
-   public setFilteredData(startIndex: number, endIndex: number): CartesianData { 
-       let data = Prototype.inherit(this.data); 
-       data.series = ColumnChartGMO.sliceSeries(data.series, endIndex, startIndex); 
-       data.categories = data.categories.slice(startIndex, endIndex); 
-       this.columnChart.setData(data); 
-       return data; 
-   } 
- 
    public static getLabelFill(labelColor: string, isInside: boolean, isCombo: boolean): string { 
        if (labelColor) { 
            return labelColor; 
@@ -7000,9 +6916,6 @@ let  value=this.dataViews[1].categorical.values
    } 
 } 
  
-
 } 
 
 export import Visual = powerbi.extensibility.visual.Visual; 
-
- 

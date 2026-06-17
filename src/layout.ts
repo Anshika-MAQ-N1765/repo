@@ -12,7 +12,6 @@ import { dataRoleHelper as DataRoleHelper } from "powerbi-visuals-utils-dataview
 import { valueType } from "powerbi-visuals-utils-typeutils";
 import ValueType = valueType.ValueType;
 
-
 /* ================= AXIS TYPES ================= */
 
 namespace powerbi.extensibility.visual.axisType {

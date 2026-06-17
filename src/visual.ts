@@ -1907,14 +1907,11 @@ export class StackedChartGMOStrategy implements IColumnChartStrategyGMO {
        let seriesMerged = seriesEnter.merge(seriesSelection); 
  
        seriesMerged.style('fill', (d: ColumnChartSeries) => d.color); 
+
+       seriesSelection.exit().remove();
  
-       seriesSelection.exit().remove(); 
- 
-       this.TooltipServiceWrapper.addTooltip(seriesMerged, 
-           ((tooltipEvent: TooltipEventArgs<any>) => (tooltipEvent && tooltipEvent.data ? tooltipEvent.data.tooltip : undefined))); 
- 
-       return seriesMerged; 
-   } 
+       return seriesMerged;
+   }   
  
    public ColumnUtilDrawDefaultShapes(data, series, layout, itemCS, filterZeros, hasSelection) { 
        let dataSelector: (d: ColumnChartSeries) => any[]; 
@@ -1997,9 +1994,20 @@ export class StackedChartGMOStrategy implements IColumnChartStrategyGMO {
        } 
        if (!this.animator || !useAnimation || result.failed) { 
            shapes = this.ColumnUtilDrawDefaultShapes(data, series, stackedColumnLayout, StackedChartGMOStrategy.classes.item, !this.animator, this.interactivityService && this.interactivityService.hasSelection()); 
-       } 
+       }  
+
+       // Per-region tooltips. Each rect is bound to a ColumnChartDataPoint that
+       // carries its own tooltipInfo (Category, Series when a Legend is assigned,
+       // and the measure value). Attaching here - after BOTH the animator and the
+       // default-shape paths converge on `shapes` - guarantees every shaded
+       // rectangle gets a tooltip. (The previous attach was on the series <g> and
+       // read `.tooltip`, which data points don't have, so nothing ever showed.)
+       if (this.TooltipServiceWrapper && shapes) {
+           this.TooltipServiceWrapper.addTooltip(shapes,
+               (tooltipEvent: TooltipEventArgs<any>) => (tooltipEvent && tooltipEvent.data ? tooltipEvent.data.tooltipInfo : undefined));
+       }
  
-       ColumnUtil.applyInteractivity(shapes, this.graphicsContext.onDragStart); 
+       ColumnUtil.applyInteractivity(shapes, this.graphicsContext.onDragStart);
  
        return { 
            eventGroup: this.graphicsContext.mainGraphicsContext, 
@@ -6600,17 +6608,21 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
            let yZeroTick = y1AxisGraphicsElement.selectAll('g.tick').filter((data) => data === 0); 
            let yAllTicks = y1AxisGraphicsElement.selectAll('g.tick'); 
            yAllTicks.selectAll('text').style('fill', this.getValueAxisFill().solid.color).style('font-size', 10); 
- 
-           if (yZeroTick) { 
-               yZeroTick.selectAll('line').attr('y2', 1); 
-               yAllTicks.selectAll('line').style({ 'stroke': 'rgb(119, 119, 119)', 'opacity': '0.3' }) 
-               yZeroTick.selectAll('line').style({ 'stroke': 'rgb(119, 119, 119)', 'opacity': '0.8' }) 
-               let yZeroColor = "rgb(119, 119, 119)"; 
-               if (yZeroColor) { 
-                   yZeroTick.selectAll('line').style({ 'stroke': yZeroColor }) 
-                   yAllTicks.selectAll('line').style({ 'stroke': yZeroColor }) 
-               } 
-           } 
+
+           if (yZeroTick) {
+               yZeroTick.selectAll('line').attr('y2', 1);
+               // Uniform light-grey horizontal gridlines (old-version style) for every
+               // tick INCLUDING 0% and 100%. The dark zero-line emphasis is dropped so
+               // the two reference lines read as two separate light lines rather than a
+               // bold baseline.
+               yAllTicks.selectAll('line').style({ 'stroke': 'rgb(119, 119, 119)', 'opacity': '0.3' })
+               yZeroTick.selectAll('line').style({ 'stroke': 'rgb(119, 119, 119)', 'opacity': '0.3' })
+           }
+           // The Y axis must not render its vertical domain/baseline path: it connects
+           // the 0% and 100% gridlines down one side into a rectangle. Strip it after
+           // the axis is drawn (d3 v7 re-creates it on every call/transition).
+           y1AxisGraphicsElement.selectAll('path.domain').remove();
+           
            if (tickLabelMargins.left >= leftRightMarginLimit) { 
                y1AxisGraphicsElement.selectAll('text') 
                    .call(AxisHelper.LabelLayoutStrategy.clip, 

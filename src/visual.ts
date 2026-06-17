@@ -675,76 +675,95 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
            legendTitle.exit().remove(); 
        } 
  
-       if (data.dataPoints.length) { 
-           let virtualizedDataPoints = data.dataPoints.slice(this.legendDataStartIndex, this.legendDataStartIndex + layout.numberOfItems); 
-           let iconRadius = TextMeasurementService.estimateSvgTextHeight(GMOSVGLegend.getTextProperties(false, '', this.data.fontSize)) / GMOSVGLegend.LegendIconRadiusFactor; 
-           iconRadius = (this.legendFontSizeMarginValue > GMOSVGLegend.DefaultTextMargin) && iconRadius > GMOSVGLegend.LegendIconRadius 
-               ? iconRadius : 
-               GMOSVGLegend.LegendIconRadius; 
-           let legendItems = group 
-               .selectAll(GMOSVGLegend.LegendItem.selector) 
-               .data(virtualizedDataPoints) 
-           let itemsEnter = legendItems.enter() 
-               .append('g') 
-               .classed(GMOSVGLegend.LegendItem.class, true); 
+       if (data.dataPoints.length) {
+           let virtualizedDataPoints = data.dataPoints.slice(this.legendDataStartIndex, this.legendDataStartIndex + layout.numberOfItems);
+           let iconRadius = TextMeasurementService.estimateSvgTextHeight(GMOSVGLegend.getTextProperties(false, '', this.data.fontSize)) / GMOSVGLegend.LegendIconRadiusFactor;
+           iconRadius = (this.legendFontSizeMarginValue > GMOSVGLegend.DefaultTextMargin) && iconRadius > GMOSVGLegend.LegendIconRadius
+               ? iconRadius :
+               GMOSVGLegend.LegendIconRadius;
+           let legendItems = group
+               .selectAll(GMOSVGLegend.LegendItem.selector)
+               .data(virtualizedDataPoints);
+           let itemsEnter = legendItems.enter()
+               .append('g')
+               .classed(GMOSVGLegend.LegendItem.class, true);
  
-           itemsEnter 
-               .append('circle') 
-               .classed(GMOSVGLegend.LegendIcon.class, true); 
-           itemsEnter 
-               .append('text').text((d: LegendDataPoint) => d.tooltip).attr({ 
-                   'x': (d: LegendDataPoint) => d.textPosition.x, 
-                   'y': (d: LegendDataPoint) => d.textPosition.y + 1, 
-               }).style('fill', data.labelColor) 
-               .style('font-size', PixelConverter.fromPoint(data.fontSize)) 
-               .classed(GMOSVGLegend.LegendText.class, true); 
+           itemsEnter
+               .append('circle')
+               .classed(GMOSVGLegend.LegendIcon.class, true);
+           itemsEnter
+               .append('text')
+               .classed(GMOSVGLegend.LegendText.class, true);
+           itemsEnter
+               .append('title');
+           itemsEnter
+               .style({
+                   'font-family': GMOSVGLegend.DefaultFontFamily
+               });
  
-           itemsEnter 
-               .append('title') 
-               .text((d: LegendDataPoint) => d.tooltip); 
-           itemsEnter 
-               .style({ 
-                   'font-family': GMOSVGLegend.DefaultFontFamily 
-               }); 
+           // d3 v4+ no longer folds entered nodes back into the update selection
+           // (d3 v3 did automatically). Merge enter+update and apply every visual
+           // attribute to the merged set. Without this the colour swatch (circle
+           // fill/cx/cy/r) -- which the legacy code set on the update selection only
+           // -- never paints on the first render (labels show, colours don't), and
+           // positions go stale on subsequent renders.
+           let mergedItems = itemsEnter.merge(legendItems as any);
  
-           let textElement = legendItems.selectAll('.legend > #legendGroup > .legendItem > .legendText'); 
-           if (textElement.length) { 
-               for (let i = 0; i < textElement.length; i++) { 
-                   let SVGTextElement = <SVGTextElement>textElement[i][0] 
-                   TextMeasurementService.wordBreak(SVGTextElement, this.maxLegendTextLength, 150); 
-                   let tSpanElements = SVGTextElement.childNodes.length; 
-                   for (let j = 0; j < tSpanElements; j++) { 
-                       (<HTMLElement>SVGTextElement.childNodes[j]).setAttribute('x', SVGTextElement.getAttribute('x')); 
-                   } 
-                   if (SVGTextElement.childNodes && SVGTextElement.childNodes[0]) { 
-                       (<HTMLElement>SVGTextElement.childNodes[0]).setAttribute('y', '0'); 
-                   } 
-               } 
-           } 
-           legendItems 
-               .select(GMOSVGLegend.LegendIcon.selector) 
-               .attr({ 
-                   'cx': (d: LegendDataPoint, i) => d.glyphPosition.x, 
-                   'cy': (d: LegendDataPoint) => d.glyphPosition.y, 
-                   'r': iconRadius, 
-               }) 
-               .style({ 
-                   'fill': (d: LegendDataPoint) => { 
-                       if (hasSelection && !d.selected) 
-                           return LegendBehavior.dimmedLegendColor; 
-                       else 
-                           return d.color; 
-                   } 
-               }); 
-           if (this.interactivityService) { 
-               let iconsSelection = legendItems.select(GMOSVGLegend.LegendIcon.selector); 
-               let behaviorOptions: LegendBehaviorOptions = { 
-                   legendItems: legendItems, 
-                   legendIcons: iconsSelection, 
-                   clearCatcher: this.clearCatcher, 
-               }; 
+           mergedItems
+               .select(GMOSVGLegend.LegendText.selector)
+               .text((d: LegendDataPoint) => d.tooltip)
+               .attr({
+                   'x': (d: LegendDataPoint) => d.textPosition.x,
+                   'y': (d: LegendDataPoint) => d.textPosition.y + 1,
+               })
+               .style('fill', data.labelColor)
+               .style('font-size', PixelConverter.fromPoint(data.fontSize));
+           mergedItems
+               .select('title')
+               .text((d: LegendDataPoint) => d.tooltip);
  
-               this.interactivityService.bind(data.dataPoints, new LegendBehavior(), behaviorOptions, { isLegend: true }); 
+           // Wrap long legend labels onto multiple lines. In d3 v3 this loop ran via
+           // selection.length / numeric indexing; d3 v7 selections have neither, so
+           // drive it from the real text nodes. Without this, a long value renders on
+           // one line and overlaps the next legend item.
+           if (this.maxLegendTextLength) {
+               let textNodes = mergedItems.selectAll(GMOSVGLegend.LegendText.selector).nodes();
+               for (let i = 0; i < textNodes.length; i++) {
+                   let SVGTextElement = <SVGTextElement>textNodes[i];
+                   TextMeasurementService.wordBreak(SVGTextElement, this.maxLegendTextLength, 150);
+                   let tSpanElements = SVGTextElement.childNodes.length;
+                   for (let j = 0; j < tSpanElements; j++) {
+                       (<HTMLElement>SVGTextElement.childNodes[j]).setAttribute('x', SVGTextElement.getAttribute('x'));
+                   }
+                   if (SVGTextElement.childNodes && SVGTextElement.childNodes[0]) {
+                       (<HTMLElement>SVGTextElement.childNodes[0]).setAttribute('y', '0');
+                   }
+               }
+           }
+           mergedItems
+               .select(GMOSVGLegend.LegendIcon.selector)
+               .attr({
+                   'cx': (d: LegendDataPoint, i) => d.glyphPosition.x,
+                   'cy': (d: LegendDataPoint) => d.glyphPosition.y,
+                   'r': iconRadius,
+               })
+               .style({
+                   'fill': (d: LegendDataPoint) => {
+                       if (hasSelection && !d.selected)
+                           return LegendBehavior.dimmedLegendColor;
+                       else
+                           return d.color;
+                   }
+               });
+           if (this.interactivityService) {
+               let iconsSelection = mergedItems.select(GMOSVGLegend.LegendIcon.selector);
+               let behaviorOptions: LegendBehaviorOptions = {
+                   legendItems: mergedItems,
+                   legendIcons: iconsSelection,
+                   clearCatcher: this.clearCatcher,
+               };
+ 
+               this.interactivityService.bind(data.dataPoints, new LegendBehavior(), behaviorOptions, { isLegend: true });
            } 
  
            legendItems.exit().remove(); 

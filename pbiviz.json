@@ -5,7 +5,7 @@
         "displayName": "100per-Stackchart",
         "guid": "PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2",
         "visualClassName": "Visual",
-        "version": "1.1.0.0",
+        "version": "1.1.1.0",
         "description": "100 percent Stacked Chart is used for comparing the contribution of each value in total value.",
         "supportUrl": "https://github.com/maqsoftware/PowerBI-visuals/issues/",
         "gitHubUrl": "https://github.com/maqsoftware/PowerBI-visuals/"
@@ -25,5 +25,5 @@
     "capabilities":"capabilities.json",
     "dependencies":null,
     "stringResources":[],
-    "version":"1.1.0.0"
+    "version":"1.0.0.0"
 }

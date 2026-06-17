@@ -2958,16 +2958,30 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                const categories: any = cat.categories;
                const catLen: number = categories && categories[0] && categories[0].values
                    ? categories[0].values.length : 0;
-
+// A series only belongs in the chart/legend when its Primary measure
+               // (Y) carries at least one non-null value. Modern Power BI groups by
+               // Series across ALL bound measures, so a series like "0-N/A (did not
+               // attend)" (null Y but a non-null secondary measure) is still emitted as
+               // a group. The API 1.x original keyed its legend off the Y-only mapping
+               // and never showed such series. Mirror that by keeping only Y-bearing
+               // groups - applied symmetrically to the flat values array AND the
+               // grouped() override so series indices stay aligned with the legend
+               // downstream (seriesCount === legend.length in createDataPoints).
+               const yColHasData = (c: any): boolean =>
+                   hasRole(c, 'Y') && !!c.values && c.values.some((v: any) => v != null);
+               const keptGroups: any[] = origGroups.filter(
+                   (g: any) => (g.values || []).some((c: any) => yColHasData(c)));
+ 
                // (a) Y-only categorical clone -> stacking chart sees exactly what it
                //     sees today when only the Primary measure is bound.
-               const yOnlyValues: any = allValues.filter((c: any) => hasRole(c, 'Y'));
+               const yOnlyValues: any = allValues.filter((c: any) => yColHasData(c));
                yOnlyValues.source = allValues.source;
-               yOnlyValues.grouped = () => origGroups.map((g: any) => {
+               yOnlyValues.grouped = () => keptGroups.map((g: any) => {
                    const ng: any = Object.assign({}, g);
                    ng.values = (g.values || []).filter((c: any) => hasRole(c, 'Y'));
                    return ng;
                });
+
                const chartDataView: any = Object.assign({}, host0);
                chartDataView.categorical = Object.assign({}, cat, { values: yOnlyValues });
                normalized[0] = chartDataView;

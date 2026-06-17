@@ -64,9 +64,9 @@ class LegendCardSettings extends FormattingSettingsCard {
     fontSize = createNumberInput("fontSize", "Text size", 11);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
  
-    slices: Array<FormattingSettingsSlice> = [this.labelColor, this.labelDisplayUnits, this.fontSize, this.labelPrecision];
+    slices: Array<FormattingSettingsSlice> = [this.showAxisTitle, this.labelColor, this.labelDisplayUnits, this.fontSize, this.labelPrecision];
 }
- 
+
 class TextWrapCardSettings extends FormattingSettingsCard {
     name = "textWrap";
     displayName = "X-Axis Text Wrap";

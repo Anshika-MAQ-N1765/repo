@@ -6558,7 +6558,14 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                .text((d, i) => xAxis.values[i]); 
        } 
        xAxisGraphicsElement.selectAll('g.tick').selectAll('line').style({ 'display': 'block', 'fill': 'black' }) 
- 
+       
+       // The X (category) axis must never render a domain/baseline SVG line. Modern
+       // d3 (v7) draws path.domain with a visible stroke by default (d3 v3 did not),
+       // and it is re-created on every axis call/transition, so removing it here -
+       // after the axis is drawn - is more reliable than a static CSS rule. Showing
+       // or hiding the axis (below) then only affects the labels/ticks.
+       xAxisGraphicsElement.selectAll('path.domain').remove();
+
        if (this.shouldRenderAxis(xAxis)) { 
            this.xAxisGraphicsContext.selectAll('*').style('visibility', 'visible'); 
  

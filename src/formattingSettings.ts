@@ -54,6 +54,7 @@ class LegendCardSettings extends FormattingSettingsCard {
 }class CategoryAxisCardSettings extends FormattingSettingsCard {
     name = "categoryAxis";
     displayName = "X Axis";
+    showAxisTitle = createToggle("showAxisTitle", "Title", false);
  
     show = createToggle("show", "Show", false);
     topLevelSlice = this.show;

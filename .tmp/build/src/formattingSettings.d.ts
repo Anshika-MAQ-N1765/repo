@@ -18,6 +18,7 @@ declare class LegendCardSettings extends FormattingSettingsCard {
 declare class CategoryAxisCardSettings extends FormattingSettingsCard {
     name: string;
     displayName: string;
+    showAxisTitle: formattingSettings.ToggleSwitch;
     show: formattingSettings.ToggleSwitch;
     topLevelSlice: formattingSettings.ToggleSwitch;
     labelColor: formattingSettings.ColorPicker;

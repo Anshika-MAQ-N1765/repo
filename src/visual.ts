@@ -8,6 +8,15 @@ import { VisualFormattingSettingsModel } from "./formattingSettings";
 type DataViewObjects = powerbiApi.DataViewObjects; type DataViewObject = powerbiApi.DataViewObject; type DataViewObjectPropertyIdentifier = powerbiApi.DataViewObjectPropertyIdentifier; type DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn; type DataView = powerbiApi.DataView; type IViewport = powerbiApi.IViewport; type NumberRange = powerbiApi.NumberRange; type VisualObjectInstance = powerbiApi.VisualObjectInstance; type VisualTooltipDataItem = powerbiApi.extensibility.VisualTooltipDataItem; type IColorPalette = powerbiApi.extensibility.IColorPalette; type Selector = powerbiApi.data.Selector; type ImageValue = powerbiApi.ImageValue; type UpdateSelection<G = any> = d3.selection.Update; type Selection<G = any> = d3.Selection; interface ClassAndSelector extends CssConstants.ClassAndSelector { selector: string; class: string; }
  
 function createClassAndSelector(className: string): ClassAndSelector { const cs = CssConstants.createClassAndSelector(className); return { ...cs, selector: cs.selectorName, class: cs.className, }; }
+
+// Capitalize the first letter of every word in a display name / title while
+// preserving the remaining characters (so existing acronyms like "ID" are not
+// lowercased). Used to "titlize" the category, series and measure names shown in
+// tooltips and as on-chart measure labels.
+function toTitleCase(text: string): string {
+    if (text == null) { return text; }
+    return String(text).replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
  
 const NewDataLabelUtils = dataLabelUtils; const Legend = legend; const LegendPosition = legendInterfaces.LegendPosition; type LegendPositionType = legendInterfaces.LegendPosition; type LegendData = legendInterfaces.LegendData; type LegendDataPoint = legendInterfaces.LegendDataPoint; const legendProps = legendInterfaces.legendProps; const SVGLegend = svgLegend.SVGLegend;
 // Read the legend behavior from the SHARED global `powerbi` (populated by
@@ -2599,53 +2608,8 @@ export class Visual implements IVisual {
        //     this.settingsAxis.axis.x.padding = this.settingsAxis.border.halfOfTop; 
        // } 
    } 
- 
-   /** 
-    * Renders a runtime error directly onto the visual surface so that failures 
-    * are visible (with the failing call stack) instead of showing a blank visual. 
-    * This method must never throw itself. 
-    */ 
-   private renderFatalError(phase: string, error: any, element?: HTMLElement): void { 
-       try { 
-           const host: HTMLElement = 
-               element 
-               || <HTMLElement>(<any>this.element) 
-               || (this.options && <HTMLElement>(<any>this.options.element)) 
-               || document.body; 
-           if (!host) { 
-               return; 
-           } 
-           while (host.firstChild) { 
-               host.removeChild(host.firstChild); 
-           } 
-           const message: string = 
-               error && (error.stack || error.message) 
-                   ? (error.stack || error.message) 
-                   : String(error); 
-           const container: HTMLDivElement = document.createElement('div'); 
-           container.setAttribute( 
-               'style', 
-               'box-sizing:border-box;width:100%;height:100%;overflow:auto;' 
-               + 'padding:12px;font-family:Segoe UI,sans-serif;font-size:12px;' 
-               + 'color:#a80000;background:#fff3f3;'); 
-           const title: HTMLDivElement = document.createElement('div'); 
-           title.setAttribute('style', 'font-weight:600;margin-bottom:6px;'); 
-           title.textContent = 'Visual error during ' + phase + '()'; 
-           const pre: HTMLPreElement = document.createElement('pre'); 
-           pre.setAttribute('style', 'white-space:pre-wrap;word-break:break-word;margin:0;color:#5c0000;'); 
-           pre.textContent = message; 
-           container.appendChild(title); 
-           container.appendChild(pre); 
-           host.appendChild(container); 
-           // eslint-disable-next-line no-console 
-           console.error('[100per-Stackchart] ' + phase + '() failed:', error); 
-       } catch (ignored) { 
-           // The error renderer must never throw. 
-       } 
-   } 
- 
+
    constructor(options: VisualConstructorOptions) { 
-     try { 
        this.categoryAxisType = null; 
        this.tooltipsEnabled = true; 
        this.root = d3.select(options.element); 
@@ -2739,12 +2703,8 @@ export class Visual implements IVisual {
        this.mainGraphicsContext = this.mainGraphicsG.append('svg'); 
        this.ColorPalette = options.host.colorPalette; 
        this.legend = new GMOSVGLegend(element, LegendPosition.Top, this.interactivityService, true); 
-     } catch (e) { 
-         this.renderFatalError('constructor', e, options && options.element); 
-     } 
 } 
    public update(options: VisualUpdateOptions) { 
-     try { 
        Visual.totalHeight = options.viewport.height; 
              if (options.dataViews && options.dataViews.length > 0) {
                      this.formattingSettingsModel = this.formattingSettingsService.populateFormattingSettingsModel(VisualFormattingSettingsModel, options.dataViews[0]);
@@ -2787,6 +2747,22 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
            this.root.select('.Title_Div_Text').style({ 'display': 'none' }); 
            return; 
        } 
+       else if (!dataViews[0].categorical || !dataViews[0].categorical.categories 
+           || dataViews[0].categorical.categories.length === 0 
+           || !dataViews[0].categorical.categories[0]) { 
+           // A 100% stacked chart needs a Category (the X axis). If only a measure is
+           // bound (e.g. Primary added before Category) there is no category, and
+           // downstream code (getLegend -> withSeries(categories[0], ...)) would throw.
+           // Show a recoverable prompt instead; the next update that includes a
+           // Category clears it automatically.
+           this.updateCount = 0; 
+           this.root.select('.errorMessage').text('Please select Category data'); 
+           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' }); 
+           this.root.select('.legend').style({ 'display': 'none' }); 
+           this.svg.style({ 'display': 'none' }); 
+           this.root.select('.Title_Div_Text').style({ 'display': 'none' }); 
+           return; 
+       } 
        else if (dataViews[0].categorical.categories && dataViews[0].categorical.categories[0].values.length == 0 && dataViews[0].categorical.values && dataViews[0].categorical.values[0].values.length == 0) { 
            this.updateCount = 0; 
            this.root.select('.errorMessage').text('No data available'); 
@@ -2822,27 +2798,40 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
            resize = true; 
        } 
        this.dataView = options.dataViews[0]; 
-       // ---- Multi-measure delivery (one dataView per dataViewMapping) ----
-       // capabilities.json declares 7 dataViewMappings: a MAIN categorical mapping
-       // (Category x Series, grouping ONLY the Primary measure Y) followed by 6
-       // value-only mappings (secondary, sampleSize, tertiary, quaternary, fifth,
-       // sixth). Power BI delivers one dataView per mapping, so the extra measures
-       // arrive at fixed indices [1]=secondary [2]=sampleSize [3]=tertiary
-       // [4]=quaternary [5]=fifth [6]=sixth - exactly like the frozen API 1.x
-       // original. Keeping ONLY Y in the main mapping is also what makes the built-in
-       // "Show as table" render Category rows x Series columns (+ each measure as its
-       // own column) instead of every measure repeated for every series value.
-       // Here we:
+       // ---- Multi-measure delivery (API 5.x: ONE categorical dataView) ----
+       // capabilities.json declares a SINGLE categorical mapping that groups every
+       // bound measure (Y + secondary/tertiary/quaternary/fifth/sixth + sampleSize)
+       // by Series. Modern Power BI (API 5.x) delivers exactly one categorical
+       // dataView and DROPS value-only categorical mappings entirely, so all extra
+       // measures arrive packed inside dataViews[0].categorical.values (grouped by
+       // Series) rather than as separate per-mapping dataViews. Here we:
        //   (a) rebuild dataViews[0] as a Y-only, null-Y-series-filtered view so a
        //       series whose Primary measure is entirely null (e.g. "0-N/A (did not
        //       attend)") never reaches the legend; and
-       //   (b) place each extra measure's dataView at its fixed index (using the
-       //       real per-mapping dataViews, with a synthesis fallback for the legacy
-       //       single-mapping case where all measures are packed into dataViews[0]).
+       //   (b) synthesize one aggregated-per-category dataView for each extra
+       //       measure at its fixed index ([1]=secondary [2]=sampleSize
+       //       [3]=tertiary [4]=quaternary [5]=fifth [6]=sixth), so the rest of the
+       //       code keeps reading this.dataViews[n] exactly like the frozen API 1.x
+       //       original. (A copy fallback handles the legacy per-mapping case.)
        {
            const host0: any = options.dataViews[0];
            const cat: any = host0 && host0.categorical;
            const allValues: any = cat && cat.values ? cat.values : null;
+           // ---- Titlize display names ONCE, at the single point where we read the
+           //      dataView. Every categorical source (category, series, every
+           //      measure) is a reference into `metadata.columns`, so capitalizing
+           //      the first letter of each word HERE flows by reference to every
+           //      place the name is rendered - tooltips, on-chart measure titles,
+           //      legend title and axis titles - with no per-site toTitleCase()
+           //      calls. (User-typed custom measure titles in the format pane are
+           //      left exactly as typed.)
+           if (host0 && host0.metadata && Array.isArray(host0.metadata.columns)) {
+               for (const col of host0.metadata.columns) {
+                   if (col && typeof col.displayName === 'string') {
+                       col.displayName = toTitleCase(col.displayName);
+                   }
+               }
+           }
            // A SINGLE column can carry MULTIPLE roles at once. When the same field
            // is dropped into several measure wells (e.g. "Sum of Sales" assigned to
            // Primary + Secondary + Quaternary), modern Power BI returns ONE column
@@ -3119,18 +3108,20 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
        this.margin = this.visualOptions.margin; 
        this.calculateAxesProperties(this.visualOptions); 
        this.render(true, resize); 
-     } catch (e) { this.renderFatalError('update', e); } 
    } 
    private shouldRenderAxis(axisProperties: IAxisProperties, propertyName: string = "show"): boolean { 
 
       if (!axisProperties) { 
            return false; 
        } 
- 
-       else if (axisProperties.isCategoryAxis && (!this.categoryAxisProperties || this.categoryAxisProperties[propertyName] == null || this.categoryAxisProperties[propertyName])) { 
+       // Honor the format-pane default, which is OFF for the axis title. Treat an
+       // UNSET property as not-shown; render only when the user has explicitly
+       // turned it on. (Previously an unset value still rendered the title, so it
+       // appeared on first load until the user toggled it on and then off again.)
+       else if (axisProperties.isCategoryAxis && this.categoryAxisProperties && this.categoryAxisProperties[propertyName]) { 
            return axisProperties.values && axisProperties.values.length > 0; 
        } 
-       else if (!axisProperties.isCategoryAxis && (!this.valueAxisProperties || this.valueAxisProperties[propertyName] == null || this.valueAxisProperties[propertyName])) { 
+       else if (!axisProperties.isCategoryAxis && this.valueAxisProperties && this.valueAxisProperties[propertyName]) { 
            return axisProperties.values && axisProperties.values.length > 0; 
        } 
  
@@ -4250,9 +4241,7 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        try {
            this.applyDynamicFormatting();
        } catch (e) {
-           // The format pane must never break the visual surface.
-           // eslint-disable-next-line no-console
-           console.error('[100per-Stackchart] getFormattingModel() dynamic step failed:', e);
+           // The format pane must never break the visual surface; ignore failures.
        }
        return this.formattingSettingsService.buildFormattingModel(this.formattingSettingsModel);
    }

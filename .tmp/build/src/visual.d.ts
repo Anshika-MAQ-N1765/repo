@@ -994,12 +994,6 @@ declare namespace powerbi.extensibility.visual {
         private get viewportIn();
         private static substractMargin;
         applyViewportSettings(): void;
-        /**
-         * Renders a runtime error directly onto the visual surface so that failures
-         * are visible (with the failing call stack) instead of showing a blank visual.
-         * This method must never throw itself.
-         */
-        private renderFatalError;
         constructor(options: VisualConstructorOptions);
         update(options: VisualUpdateOptions): void;
         private shouldRenderAxis;

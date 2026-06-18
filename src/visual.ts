@@ -1996,17 +1996,6 @@ export class StackedChartGMOStrategy implements IColumnChartStrategyGMO {
            shapes = this.ColumnUtilDrawDefaultShapes(data, series, stackedColumnLayout, StackedChartGMOStrategy.classes.item, !this.animator, this.interactivityService && this.interactivityService.hasSelection()); 
        }  
 
-       // Per-region tooltips. Each rect is bound to a ColumnChartDataPoint that
-       // carries its own tooltipInfo (Category, Series when a Legend is assigned,
-       // and the measure value). Attaching here - after BOTH the animator and the
-       // default-shape paths converge on `shapes` - guarantees every shaded
-       // rectangle gets a tooltip. (The previous attach was on the series <g> and
-       // read `.tooltip`, which data points don't have, so nothing ever showed.)
-       if (this.TooltipServiceWrapper && shapes) {
-           this.TooltipServiceWrapper.addTooltip(shapes,
-               (tooltipEvent: TooltipEventArgs<any>) => (tooltipEvent && tooltipEvent.data ? tooltipEvent.data.tooltipInfo : undefined));
-       }
- 
        ColumnUtil.applyInteractivity(shapes, this.graphicsContext.onDragStart);
  
        return { 
@@ -2930,19 +2919,23 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
            resize = true; 
        } 
        this.dataView = options.dataViews[0]; 
-       // ---- Multi-measure delivery (modern Power BI emits ONE dataView) ----
-       // This visual was originally written for API 1.x, where each of its 7
-       // dataViewMappings produced its own dataView (so dataViews[1]=secondary,
-       // [3]=tertiary, etc.). Modern Power BI (API 5.x) emits a SINGLE dataView
-       // and DROPS value-only categorical mappings entirely (confirmed at runtime:
-       // dataViews.length===1 with only the Y role present). So every measure must
-       // be delivered together inside dataViews[0].categorical.values (grouped by
-       // Series), and we reconstruct here exactly what the renderer expects:
-       //   (a) a Y-ONLY categorical clone for the stacking chart, so the existing
-       //       converter (which indexes the flat values array) is unaffected; and
-       //   (b) one synthesized, aggregated-per-category dataView for each extra
-       //       measure, placed at its fixed index: [1]=secondary [2]=sampleSize
-       //       [3]=tertiary [4]=quaternary [5]=fifth [6]=sixth.
+       // ---- Multi-measure delivery (one dataView per dataViewMapping) ----
+       // capabilities.json declares 7 dataViewMappings: a MAIN categorical mapping
+       // (Category x Series, grouping ONLY the Primary measure Y) followed by 6
+       // value-only mappings (secondary, sampleSize, tertiary, quaternary, fifth,
+       // sixth). Power BI delivers one dataView per mapping, so the extra measures
+       // arrive at fixed indices [1]=secondary [2]=sampleSize [3]=tertiary
+       // [4]=quaternary [5]=fifth [6]=sixth - exactly like the frozen API 1.x
+       // original. Keeping ONLY Y in the main mapping is also what makes the built-in
+       // "Show as table" render Category rows x Series columns (+ each measure as its
+       // own column) instead of every measure repeated for every series value.
+       // Here we:
+       //   (a) rebuild dataViews[0] as a Y-only, null-Y-series-filtered view so a
+       //       series whose Primary measure is entirely null (e.g. "0-N/A (did not
+       //       attend)") never reaches the legend; and
+       //   (b) place each extra measure's dataView at its fixed index (using the
+       //       real per-mapping dataViews, with a synthesis fallback for the legacy
+       //       single-mapping case where all measures are packed into dataViews[0]).
        {
            const host0: any = options.dataViews[0];
            const cat: any = host0 && host0.categorical;
@@ -2995,7 +2988,15 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                normalized[0] = chartDataView;
                this.dataView = chartDataView;
 
-               // (b) synthesize an aggregated-per-category dataView per extra measure.
+               // (b) Deliver the extra measures. capabilities.json declares them as
+               //     their OWN value-only dataViewMappings, so Power BI hands them
+               //     over as separate dataViews at fixed indices ([1]=secondary
+               //     [2]=sampleSize [3]=tertiary [4]=quaternary [5]=fifth [6]=sixth) -
+               //     exactly like the frozen API 1.x original (this.dataViews =
+               //     options.dataViews). We use those directly. ONLY if every measure
+               //     was instead packed into THIS grouped dataView (legacy single-
+               //     mapping delivery) do we synthesize an aggregated-per-category
+               //     column per measure as a fallback.
                const ROLE_TO_INDEX: { [role: string]: number } = {
                    secondaryMeasure: 1,
                    sampleSize: 2,
@@ -3004,31 +3005,43 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                    fifthMeasure: 5,
                    sixthMeasure: 6,
                };
-               for (const role in ROLE_TO_INDEX) {
-                   let srcCol: any = null;
-                   for (const g of origGroups) {
-                       const found = (g.values || []).find((c: any) => hasRole(c, role));
-                       if (found) { srcCol = found; break; }
+               const mainHasExtraMeasures: boolean = !!(origGroups[0] &&
+                   (origGroups[0].values || []).some(
+                       (c: any) => Object.keys(ROLE_TO_INDEX).some((r) => hasRole(c, r))));
+               if (!mainHasExtraMeasures) {
+                   // Real per-mapping delivery: copy the measure dataViews as-is at
+                   // their fixed indices (dataViews[0] already replaced by the Y-only
+                   // chart view above).
+                   for (let i = 1; i < options.dataViews.length; i++) {
+                       normalized[i] = options.dataViews[i];
                    }
-                   if (!srcCol) { continue; }
-                   const sums: any[] = new Array(catLen).fill(null);
-                   for (const g of origGroups) {
-                       const col = (g.values || []).find((c: any) => hasRole(c, role));
-                       if (!col || !col.values) { continue; }
-                       for (let c = 0; c < catLen; c++) {
-                           const v = col.values[c];
-                           if (v != null) {
-                               const n = typeof v === 'number' ? v : (parseFloat(v) || 0);
-                               sums[c] = (sums[c] == null ? 0 : sums[c]) + n;
+               } else {
+                   for (const role in ROLE_TO_INDEX) {
+                       let srcCol: any = null;
+                       for (const g of origGroups) {
+                           const found = (g.values || []).find((c: any) => hasRole(c, role));
+                           if (found) { srcCol = found; break; }
+                       }
+                       if (!srcCol) { continue; }
+                       const sums: any[] = new Array(catLen).fill(null);
+                       for (const g of origGroups) {
+                           const col = (g.values || []).find((c: any) => hasRole(c, role));
+                           if (!col || !col.values) { continue; }
+                           for (let c = 0; c < catLen; c++) {
+                               const v = col.values[c];
+                               if (v != null) {
+                                   const n = typeof v === 'number' ? v : (parseFloat(v) || 0);
+                                   sums[c] = (sums[c] == null ? 0 : sums[c]) + n;
+                               }
                            }
                        }
+                       const synthValues: any = [{ source: srcCol.source, values: sums }];
+                       synthValues.source = undefined;
+                       normalized[ROLE_TO_INDEX[role]] = <any>{
+                           metadata: { columns: [srcCol.source], objects: host0.metadata ? host0.metadata.objects : null },
+                           categorical: { categories: categories, values: synthValues },
+                       };
                    }
-                   const synthValues: any = [{ source: srcCol.source, values: sums }];
-                   synthValues.source = undefined;
-                   normalized[ROLE_TO_INDEX[role]] = <any>{
-                       metadata: { columns: [srcCol.source], objects: host0.metadata ? host0.metadata.objects : null },
-                       categorical: { categories: categories, values: synthValues },
-                   };
                }
            } else {
                normalized[0] = host0;
@@ -5613,7 +5626,12 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
  
        if (this.tooltipsEnabled) 
            this.TooltipServiceWrapper.addTooltip(columnChartDrawInfo.shapesSelection, 
-               ((tooltipEvent: TooltipEventArgs<any>) => (tooltipEvent.data.tooltipInfo))); 
+               // tooltiputils v6 calls the delegate with the BOUND DATUM directly
+               // (signature `(datapoint: T) => VisualTooltipDataItem[]`), NOT a
+               // TooltipEventArgs wrapper. Reading `tooltipEvent.data.tooltipInfo`
+               // threw "Cannot read properties of undefined (reading 'tooltipInfo')"
+               // because the argument already IS the data point. Read it directly.
+               ((dataPoint: ColumnChartDataPoint) => (dataPoint ? dataPoint.tooltipInfo : undefined))); 
        //TooltipManager.addTooltip(columnChartDrawInfo.shapesSelection, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo); 
  
        //let allDataPoints: StackedChartGMODataPoint[] = []; 
@@ -6530,7 +6548,17 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
  
        let font_size = Number(this.categoryAxisProperties['fontSize']) ? Number(this.categoryAxisProperties['fontSize']) : 11 
         
-       xAllTicks.selectAll('text').style('fill', this.getCategoryAxisFill().solid.color).style('font-size',font_size); 
+       // d3 v7's axis generator stamps font-family="sans-serif" and font-size="10"
+       // onto the axis <g> (d3 v3 / the old version never did this). Those inherit
+       // down onto the tick <text>, overriding Power BI's Segoe UI and making the
+       // category labels render in a different (generic sans-serif) font than the
+       // old version. Clear the injected attributes and re-assert Segoe UI + the
+       // intended size so the x-axis values match the old look.
+       xAxisGraphicsElement.attr('font-family', null).attr('font-size', null);
+       xAllTicks.selectAll('text')
+           .style('fill', this.getCategoryAxisFill().solid.color)
+           .style('font-family', 'Segoe UI')
+           .style('font-size', font_size + 'px'); 
  
      // let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar); 
        if (xZeroTick) { 
@@ -6607,7 +6635,14 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
            } 
            let yZeroTick = y1AxisGraphicsElement.selectAll('g.tick').filter((data) => data === 0); 
            let yAllTicks = y1AxisGraphicsElement.selectAll('g.tick'); 
-           yAllTicks.selectAll('text').style('fill', this.getValueAxisFill().solid.color).style('font-size', 10); 
+           // Same d3 v7 axis-font neutralisation as the x-axis so the percent labels
+           // (0% / 100%) render in Segoe UI like the old version instead of d3's
+           // injected generic sans-serif.
+           y1AxisGraphicsElement.attr('font-family', null).attr('font-size', null);
+           yAllTicks.selectAll('text')
+               .style('fill', this.getValueAxisFill().solid.color)
+               .style('font-family', 'Segoe UI')
+               .style('font-size', '10px'); 
 
            if (yZeroTick) {
                yZeroTick.selectAll('line').attr('y2', 1);

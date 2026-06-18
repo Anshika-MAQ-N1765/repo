@@ -393,15 +393,144 @@
           "group": {
             "by": "Series",
             "select": [
-              { "bind": { "to": "Y" } },
-              { "bind": { "to": "secondaryMeasure" } },
-              { "bind": { "to": "tertiaryMeasure" } },
-              { "bind": { "to": "quaternaryMeasure" } },
-              { "bind": { "to": "fifthMeasure" } },
-              { "bind": { "to": "sixthMeasure" } },
-              { "bind": { "to": "sampleSize" } }
-            ]
+              { "bind": { "to": "Y" } }
+            ],
+            "dataReductionAlgorithm": {
+              "top": {}
+            }
           }
+        }
+      }
+    },
+    {
+      "conditions": [
+        {
+          "Category": { "max": 1 },
+          "Series": { "max": 1 },
+          "Y": { "max": 1 },
+          "secondaryMeasure": { "max": 1 },
+          "tertiaryMeasure": { "max": 1 },
+          "quaternaryMeasure": { "max": 1 },
+          "fifthMeasure": { "max": 1 },
+          "sixthMeasure": { "max": 1 },
+          "sampleSize": { "max": 1 }
+        }
+      ],
+      "categorical": {
+        "values": {
+          "select": [
+            { "bind": { "to": "secondaryMeasure" } }
+          ]
+        }
+      }
+    },
+    {
+      "conditions": [
+        {
+          "Category": { "max": 1 },
+          "Series": { "max": 1 },
+          "Y": { "max": 1 },
+          "secondaryMeasure": { "max": 1 },
+          "tertiaryMeasure": { "max": 1 },
+          "quaternaryMeasure": { "max": 1 },
+          "fifthMeasure": { "max": 1 },
+          "sixthMeasure": { "max": 1 },
+          "sampleSize": { "max": 1 }
+        }
+      ],
+      "categorical": {
+        "values": {
+          "select": [
+            { "bind": { "to": "sampleSize" } }
+          ]
+        }
+      }
+    },
+    {
+      "conditions": [
+        {
+          "Category": { "max": 1 },
+          "Series": { "max": 1 },
+          "Y": { "max": 1 },
+          "secondaryMeasure": { "max": 1 },
+          "tertiaryMeasure": { "max": 1 },
+          "quaternaryMeasure": { "max": 1 },
+          "fifthMeasure": { "max": 1 },
+          "sixthMeasure": { "max": 1 },
+          "sampleSize": { "max": 1 }
+        }
+      ],
+      "categorical": {
+        "values": {
+          "select": [
+            { "bind": { "to": "tertiaryMeasure" } }
+          ]
+        }
+      }
+    },
+    {
+      "conditions": [
+        {
+          "Category": { "max": 1 },
+          "Series": { "max": 1 },
+          "Y": { "max": 1 },
+          "secondaryMeasure": { "max": 1 },
+          "tertiaryMeasure": { "max": 1 },
+          "quaternaryMeasure": { "max": 1 },
+          "fifthMeasure": { "max": 1 },
+          "sixthMeasure": { "max": 1 },
+          "sampleSize": { "max": 1 }
+        }
+      ],
+      "categorical": {
+        "values": {
+          "select": [
+            { "bind": { "to": "quaternaryMeasure" } }
+          ]
+        }
+      }
+    },
+    {
+      "conditions": [
+        {
+          "Category": { "max": 1 },
+          "Series": { "max": 1 },
+          "Y": { "max": 1 },
+          "secondaryMeasure": { "max": 1 },
+          "tertiaryMeasure": { "max": 1 },
+          "quaternaryMeasure": { "max": 1 },
+          "fifthMeasure": { "max": 1 },
+          "sixthMeasure": { "max": 1 },
+          "sampleSize": { "max": 1 }
+        }
+      ],
+      "categorical": {
+        "values": {
+          "select": [
+            { "bind": { "to": "fifthMeasure" } }
+          ]
+        }
+      }
+    },
+    {
+      "conditions": [
+        {
+          "Category": { "max": 1 },
+          "Series": { "max": 1 },
+          "Y": { "max": 1 },
+          "secondaryMeasure": { "max": 1 },
+          "tertiaryMeasure": { "max": 1 },
+          "quaternaryMeasure": { "max": 1 },
+          "fifthMeasure": { "max": 1 },
+          "sixthMeasure": { "max": 1 },
+          "sampleSize": { "max": 1 }
+        }
+      ],
+      "categorical": {
+        "values": {
+          "select": [
+            { "bind": { "to": "sixthMeasure" } }
+          ]
         }
       }
     }

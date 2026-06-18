@@ -1371,33 +1371,6 @@ export interface ColumnChartDrawInfoGMO {
    axisOptions: ColumnAxisOptionsGMO; 
    labelDataPoints: LabelDataPointGMO[]; 
 } 
-export interface ColumnChartContext { 
-   height: number; 
-   width: number; 
-   duration: number; 
-   margin: IMargin; 
-   /** A group for graphics can be placed that won't be clipped to the data area of the chart. */ 
-   unclippedGraphicsContext: Selection<any>; 
-   /** A SVG for graphics that should be clipped to the data area, e.g. data bars, columns, lines */ 
-   mainGraphicsContext: Selection<any>; 
-   layout: CategoryLayout; 
-   animator: IColumnChartAnimator; 
-   onDragStart?: (datum: ColumnChartDataPoint) => void; 
-   interactivityService: IInteractivityService; 
-   viewportHeight: number; 
-   viewportWidth: number; 
-   is100Pct: boolean; 
-   isComboChart: boolean; 
-} 
-export interface IColumnChartStrategy { 
-   setData(data: ColumnChartData): void; 
-   setupVisualProps(columnChartProps: ColumnChartContext): void; 
-   setXScale(forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureXDomain?: NumberRange): IAxisProperties; 
-   setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureYDomain?: NumberRange): IAxisProperties; 
-   drawColumns(useAnimation: boolean): ColumnChartDrawInfo; 
-   selectColumn(selectedColumnIndex: number, lastSelectedColumnIndex: number): void; 
-   getClosestColumnIndex(x: number, y: number): number; 
-} 
  
 export interface IColumnChartConverterStrategy { 
    getLegend(colors: IColorPalette, defaultLegendLabelColor: string, defaultColor?: string): LegendSeriesInfo; 
@@ -1409,14 +1382,6 @@ export interface LegendSeriesInfo {
    legend: LegendData; 
    seriesSources: DataViewMetadataColumn[]; 
    seriesObjects: DataViewObjects[][]; 
-} 
- 
-export interface ColumnChartDrawInfo { 
-   eventGroup: Selection<any>; 
-   shapesSelection: Selection<any>; 
-   viewport: IViewport; 
-   axisOptions: ColumnAxisOptions; 
-   labelDataPoints: LabelDataPointGMO[]; 
 } 
  
 export interface ColumnChartContextGMO { 
@@ -2199,14 +2164,6 @@ export const enum NewRectOrientationGMO {
    HorizontalRightBased, 
 } 
  
-export interface LabelParentRect { 
-   /** The rectangle this data label belongs to */ 
-   rect: IRect; 
-   /** The orientation of the parent rectangle */ 
-   orientation: NewRectOrientationGMO; 
-   /** Valid positions to place the label ordered by preference */ 
-   validPositions: RectLabelPositionGMO[]; 
-} 
 export interface ISizeGMO { 
    width: number; 
    height: number; 
@@ -2312,17 +2269,6 @@ export enum StackedChartGMOType {
    stackedColumn = flagColumn | flagStacked, 
 } 
  
-export interface ColumnAxisGMOOptions { 
-   xScale: Selection<number>; 
-   yScale: Selection<number>; 
-   seriesOffsetScale?: Selection<number>; 
-   columnWidth: number; 
-   /** Used by clustered only since categoryWidth !== columnWidth */ 
-   categoryWidth?: number; 
-   isScalar: boolean; 
-   margin: IMargin; 
-} 
- 
 export interface IColumnGMOLayout { 
    shapeLayout: { 
        width: (d: StackedChartGMODataPoint) => number; 
@@ -2344,24 +2290,6 @@ export interface IColumnGMOLayout {
    }; 
 } 
  
-export interface StackedChartGMOContext { 
-   height: number; 
-   width: number; 
-   duration: number; 
-   hostService: any; 
-   margin: IMargin; 
-   mainGraphicsContext: Selection<any>; 
-   labelGraphicsContext: Selection<any>; 
-   layout: CategoryLayout; 
-   animator: IColumnChartAnimatorGMO; 
-   onDragStart?: (datum: StackedChartGMODataPoint) => void; 
-   interactivityService: IInteractivityService; 
-   viewportHeight: number; 
-   viewportWidth: number; 
-   is100Pct: boolean; 
-   isComboChart: boolean; 
-} 
- 
 export interface IStackedChartGMOStrategy { 
    setData(data: StackedChartGMOData): void; 
    setupVisualProps(columnChartProps: ColumnChartContextGMO): void; 
@@ -2372,26 +2300,6 @@ export interface IStackedChartGMOStrategy {
    getClosestColumnIndex(x: number, y: number): number; 
 } 
  
-export interface IColumnChartConverterGMOStrategy { 
-   getLegend(colors: IColorPalette, defaultLegendLabelColor: string, defaultColor?: string): LegendSeriesInfo; 
-   getValueBySeriesAndCategory(series: number, category: number): number; 
-   getMeasureNameByIndex(series: number, category: number): string; 
-   hasHighlightValues(series: number): boolean; 
-   getHighlightBySeriesAndCategory(series: number, category: number): number; 
-} 
- 
-export interface LegendSeriesGMOInfo { 
-   legend: LegendData; 
-   seriesSources: DataViewMetadataColumn[]; 
-   seriesObjects: DataViewObjects[][]; 
-} 
- 
-export interface ColumnChartDrawGMOInfo { 
-   shapesSelection: Selection<any>; 
-   viewport: IViewport; 
-   axisOptions: ColumnAxisOptions; 
-   labelDataPoints: LabelDataPointGMO[]; 
-} 
 let RoleNames = { 
    category: 'Category', 
    series: 'Series', 
@@ -2674,11 +2582,6 @@ export class Visual implements IVisual {
        }; 
    } 
  
-   public updateVisualMetadata(x: IAxisProperties, y: IAxisProperties, margin) { 
-       this.xAxisProperties = x; 
-       this.yAxisProperties = y; 
-       this.margin = margin; 
-   } 
    public applyViewportSettings(): void { 
        if ( this.viewport.height < 370 || this.viewport.width < 390 ) { 
            this.categoryAxisProperties['fontSize'] = this.categoryAxisProperties['fontSize'] > 16 ? 16 : this.categoryAxisProperties['fontSize']; 
@@ -2951,7 +2854,10 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
            // (tertiary = "Count of Month") still worked.
            const hasRole = (col: any, role: string): boolean => {
                const r = col && col.source && col.source.roles;
-               return !!(r && r[role]);
+               if (!r) { return false; }
+               if (r[role]) { return true; }
+               const wanted = role.toLowerCase();
+               return Object.keys(r).some((k) => !!r[k] && k.toLowerCase() === wanted);
            };
            const normalized: DataView[] = [];
            if (allValues && typeof allValues.grouped === 'function') {
@@ -3949,7 +3855,6 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
            let categories = dvCategories.categories && dvCategories.categories.length > 0 ? dvCategories.categories[0] : null; 
            let values = dvCategories.values; 
            let valueColumn = values[seriesIndex]; 
-           //let index = this.getIndexOfValue(values[categoryIndex]); 
            let iValueFormatter = valueFormatter.create({ format: valueColumn && valueColumn.source ? valueColumn.source.format : undefined }); 
 
            // Category tooltip item 
@@ -3980,13 +3885,6 @@ let dvCategorySourceName = categories && categories.length > 0 && categories[0].
        } 
 
        return tooltipDataItems; 
-   } 
-   public getIndexOfValue(values: DataViewValueColumn): number { 
-       for (var i = 0; i < values.values.length; i++) { 
-           if (values.values[i] != null) 
-               return i; 
-       } 
-       return 0; 
    } 
    private createDataPoints( 
         
@@ -4348,170 +4246,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        return this.data && (this.data.hasDynamicSeries || (this.data.series && this.data.series.length > 1)); 
    } 
  
-   public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, series?: StackedChartGMOSeries): VisualObjectInstanceEnumeration { 
-       let objectEnumeration: VisualObjectInstance[] = []; 
-       try { 
-       let sampleFilterSettings = this.getSampleFilterSettings(this.dataViews[0]); 
-       let textWrapSettings: textWrapSettings = this.getTextWrapSettings(this.dataViews[0]); 
-       let measureTitlesSettings: measureTitlesSettings = this.getMeasureTitlesSettings(this.dataViews[0]); 
-       let totalLabelSettings: totalLabelSettings = this.getTotalLabelSettings(this.dataViews[0]); 
-       let secondaryLabelSettings: secondaryLabelSettings = this.getSecondaryLabelSettings(this.dataViews[1]); 
-       let tertiaryLabelSettings: tertiaryLabelSettings = this.getTertiaryLabelSettings(this.dataViews[3]); 
-       let quaternaryLabelSettings: quaternaryLabelSettings = this.getQuaternaryLabelSettings(this.dataViews[4]); 
-       let FifthLabelSettings: FifthLabelSettings = this.getFifthLabelSettings(this.dataViews[5]); 
-       let SixthLabelSettings: SixthLabelSettings = this.getSixthLabelSettings(this.dataViews[6]); 
- 
-       switch (options.objectName) { 
-           case 'dataPoint': 
-              // let categoricalDataView: DataViewCategorical = this.data && this.dataViewCat ? this.dataViewCat : null; 
-               this.enumerateDataPoints(objectEnumeration); 
-               break; 
-           case 'categoryAxis': 
-               this.getCategoryAxisValues(objectEnumeration); 
-               break; 
-           case 'textWrap': 
-               objectEnumeration.push({ 
-                   objectName: 'textWrap', 
-                   displayName: 'X-Axis text wrap', 
-                   selector: series && series.identity ? series.identity.getSelector() : null, 
-                   properties: { 
-                       show: textWrapSettings.show, 
-                   } 
-               }); 
-               break; 
-           case 'measureTitles': 
-               objectEnumeration.push({ 
-                   objectName: 'measureTitles', 
-                   displayName: 'Measure Titles', 
-                   selector: series && series.identity ? series.identity.getSelector() : null, 
-                   properties: { 
-                       ellipses: measureTitlesSettings.ellipsesStrength, 
-                   } 
-               }); 
-               break; 
-           case 'valueAxis': 
-               this.getValueAxisValues(objectEnumeration); 
-               break; 
- 
-           case 'labels': 
-               this.enumerateDataLabels(objectEnumeration); 
-               break; 
- 
-           case 'totalLabels': 
-               objectEnumeration.push({ 
-                   objectName: 'totalLabels', 
-                   displayName: 'Total Labels', 
-                   selector: series && series.identity ? series.identity.getSelector() : null, 
-                   properties: { 
-                       show: totalLabelSettings.show, 
-                       titleText: totalLabelSettings.titleText, 
-                       color: totalLabelSettings.color, 
-                       labelDisplayUnits: totalLabelSettings.displayUnits, 
-                       labelPrecision: totalLabelSettings.textPrecision, 
-                       fontSize: totalLabelSettings.fontSize 
-                   } 
-               }); 
-               break; 
-           case 'secondaryLabels': 
-               objectEnumeration.push({ 
-                   objectName: 'secondaryLabels', 
-                   displayName: 'Secondary Labels', 
-                   selector: series && series.identity ? series.identity.getSelector() : null, 
-                   properties: { 
-                       titleText: secondaryLabelSettings.titleText, 
-                       color: secondaryLabelSettings.color, 
-                       labelDisplayUnits: secondaryLabelSettings.displayUnits, 
-                       labelPrecision: secondaryLabelSettings.textPrecision, 
-                       fontSize: secondaryLabelSettings.fontSize 
-                   } 
-               }); 
-               break; 
-           case 'tertiaryLabels': 
-               objectEnumeration.push({ 
-                   objectName: 'tertiaryLabels', 
-                   displayName: 'Tertiary Labels', 
-                   selector: series && series.identity ? series.identity.getSelector() : null, 
-                   properties: { 
-                       titleText: tertiaryLabelSettings.titleText, 
-                       color: tertiaryLabelSettings.color, 
-                       labelDisplayUnits: tertiaryLabelSettings.displayUnits, 
-                       labelPrecision: tertiaryLabelSettings.textPrecision, 
-                       fontSize: tertiaryLabelSettings.fontSize 
-                   } 
-               }); 
-               break; 
-           case 'quaternaryLabels': 
-               objectEnumeration.push({ 
-                   objectName: 'quaternaryLabels', 
-                   displayName: 'Quaternary Labels', 
-                   selector: series && series.identity ? series.identity.getSelector() : null, 
-                   properties: { 
-                       titleText: quaternaryLabelSettings.titleText, 
-                       color: quaternaryLabelSettings.color, 
-                       labelDisplayUnits: quaternaryLabelSettings.displayUnits, 
-                       labelPrecision: quaternaryLabelSettings.textPrecision, 
-                       fontSize: quaternaryLabelSettings.fontSize 
-                   } 
-               }); 
-               break; 
-           case 'FifthLabels': 
-               objectEnumeration.push({ 
-                   objectName: 'FifthLabels', 
-                   displayName: 'Fifth Labels', 
-                   selector: series && series.identity ? series.identity.getSelector() : null, 
-                   properties: { 
-                       titleText: FifthLabelSettings.titleText, 
-                       color: FifthLabelSettings.color, 
-                       labelDisplayUnits: FifthLabelSettings.displayUnits, 
-                       labelPrecision: FifthLabelSettings.textPrecision, 
-                       fontSize: FifthLabelSettings.fontSize 
-                   } 
-               }); 
-               break; 
-           case 'SixthLabels': 
-               objectEnumeration.push({ 
-                   objectName: 'SixthLabels', 
-                   displayName: 'Sixth Labels', 
-                   selector: series && series.identity ? series.identity.getSelector() : null, 
-                   properties: { 
-                       titleText: SixthLabelSettings.titleText, 
-                       color: SixthLabelSettings.color, 
-                       labelDisplayUnits: SixthLabelSettings.displayUnits, 
-                       labelPrecision: SixthLabelSettings.textPrecision, 
-                       fontSize: SixthLabelSettings.fontSize 
-                   } 
-               }); 
-               break; 
-           case 'legend': 
- 
-               this.getLegendValue(objectEnumeration); 
-               break; 
-           // MAQCode 
-           case 'GMOColumnChartTitle': 
-               objectEnumeration.push({ 
-                   objectName: 'GMOColumnChartTitle', 
-                   displayName: 'Stacked Chart title', 
-                   selector: series && series.identity ? series.identity.getSelector() : null, 
-                   properties: { 
-                       show: this.getShowTitle(this.dataViews[0]), 
-                       titleText: this.getTitleText(this.dataViews[0]), 
-                       tooltipText: this.getTooltipText(this.dataViews[0]), 
-                       fill1: this.getTitleFill(this.dataViews[0]), 
-                       backgroundColor: this.getTitleBgcolor(this.dataViews[0]), 
-                       fontSize: this.getTitleSize(this.dataViews[0]), 
-                   } 
-               }); 
-               break; 
- 
-       } 
-       } catch (e) { 
-           // The format pane must never break the visual surface. 
-           // eslint-disable-next-line no-console 
-           console.error('[100per-Stackchart] enumerateObjectInstances() failed:', e); 
-       } 
-       return objectEnumeration; 
-   } 
-
    public getFormattingModel(): powerbiApi.visuals.FormattingModel {
        try {
            this.applyDynamicFormatting();
@@ -4551,37 +4285,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            if (dvs[6]) { model.sixthLabelsCard.titleText.value = this.getSixthLabelSettings(dvs[6]).titleText; }
        }
    }
- 
-   private getLegendValue(enumeration: VisualObjectInstance[], series?: StackedChartGMOSeries): void { 
- 
-       if (!this.hasLegend()) 
-           return; 
-       let show = dataViewObject.getValue<boolean>(this.legendObjectProperties, legendProps.show, false); 
-       let showTitle = dataViewObject.getValue<boolean>(this.legendObjectProperties, legendProps.showTitle, false); 
-       //let primaryMeasureOnOff = this.getShowPrimaryMeasure(this.dataView); 
-       let titleText = dataViewObject.getValue<string>(this.legendObjectProperties, legendProps.titleText, this.layerLegendData ? this.layerLegendData.title : ''); 
-       let legendLabelColor = dataViewObject.getValue<string>(this.legendObjectProperties, legendProps.labelColor, this.layerLegendData.labelColor);  //changed last argument from red to this 
-       this.legendLabelFontSize = dataViewObject.getValue<number>(this.legendObjectProperties, legendProps.fontSize, Visual.LegendLabelFontSizeDefault); 
-       //let labelDisplayUnits = this.getLegendDispalyUnits(this.dataViews[0], 'labelDisplayUnits'); 
-       let labelPrecision = this.getLegendDispalyUnits(this.dataViews[0], 'labelPrecision'); 
-      // let position = this.getLegendDispalyUnits(this.dataViews[0], 'position'); 
-       if (labelPrecision && labelPrecision > 20) { 
-           labelPrecision = 20; 
-       } 
- 
-       enumeration.push({ 
-           selector: series && series.identity ? series.identity.getSelector() : null, 
-           properties: { 
-               show: show, 
-               position: LegendPosition[this.legend.getOrientation()], 
-               showTitle: showTitle, 
-               titleText: titleText, 
-               labelColor: legendLabelColor, 
-               fontSize: this.legendLabelFontSize 
-           }, 
-           objectName: 'legend' 
-       }); 
-   } 
  
    private getSampleFilterSettings(dataView: DataView): sampleFilterSettings { 
        let objects: DataViewObjects = null; 
@@ -4729,51 +4432,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
    public getDefaultFifthLabelSettings(): FifthLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
    public getDefaultSixthLabelSettings(): SixthLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
  
-   //Get Measure value 
-   public measureValue(measure, measureFormat, legendObjectProperties, modelingPrecision) { 
-       let displayUnits, modelPrecisionValue: number = 0; 
-       if (legendObjectProperties && legendObjectProperties['labelPrecision']) { 
-           let precisionValue = legendObjectProperties['labelPrecision']; 
-           if (!precisionValue) { 
-               if (modelingPrecision) 
-                   modelPrecisionValue = modelingPrecision; 
-           } 
-           else { 
-               modelPrecisionValue = precisionValue; 
-           } 
- 
-           if (modelPrecisionValue > 20) 
-               modelPrecisionValue = 20; 
-           if (precisionValue > 20) 
-               precisionValue = 20; 
-       } 
-       else { 
-           if (modelingPrecision) { 
-               modelPrecisionValue = modelingPrecision; 
-           } 
-           else { 
-               modelPrecisionValue = 0; 
-           } 
-       } 
-       if (legendObjectProperties && legendObjectProperties['labelDisplayUnits']) { 
-           displayUnits = legendObjectProperties['labelDisplayUnits']; 
-       } 
-       else { 
-           displayUnits = 0; 
-       } 
- 
-       let itemValue = valueFormatter.format(measure, measureFormat); 
-       let formattedValue; 
-       if (measureFormat && measureFormat.search('%') > 0) { 
-           formattedValue = itemValue; 
-       } 
-       else { 
-           formattedValue = this.format(parseInt(measure, 10), displayUnits, modelPrecisionValue, 'sample'); 
-           if (isNaN(parseInt(itemValue, 10)) || isNaN(parseInt(itemValue[itemValue.length - 1], 10))) 
-               formattedValue = this.addSpecialCharacters(formattedValue, itemValue); 
-       } 
-       return formattedValue; 
-   } 
    // This function is to perform KMB formatting on values 
    public format(d: number, displayunitValue: number, precisionValue: number, columnType: string) { 
        let result: string; 
@@ -4831,144 +4489,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        let parts = x.toString().split("."); 
        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ","); 
        return parts.join("."); 
-   } 
-   public addSpecialCharacters(sKMBValue, title) { 
-       let displayValue: string = '', specialcharacters: string = '', titlelength: number = title.length; 
-       //Append characters front 
-       if (isNaN(parseInt(title[0], 10))) { 
-           for (let iLoop = 0; iLoop < title.length; iLoop++) { 
-               if (isNaN(parseInt(title[iLoop], 10))) { 
-                   specialcharacters += title[iLoop]; 
-               } 
-               else break; 
-           } 
-           displayValue = specialcharacters + sKMBValue; 
-       } 
-       //Append characters end 
-       if (isNaN(parseInt(title[title.length - 1], 10))) { 
-           let specialarray = [], index: number = 0; 
-           for (let iLoop = titlelength - 1; iLoop >= 0; iLoop--) { 
-               if (isNaN(parseInt(title[iLoop], 10))) { 
-                   specialarray[index] = title[iLoop]; 
-                   index++; 
-               } 
-               else break; 
-           } 
-           for (let iLoop = specialarray.length - 1; iLoop >= 0; iLoop--) { 
-               specialcharacters += specialarray[iLoop]; 
-           } 
-           displayValue = sKMBValue + specialcharacters; 
-       } 
- 
-       return displayValue.trim(); 
-   } 
-   private getCategoryAxisValues(enumeration: VisualObjectInstance[], series?: StackedChartGMOSeries): void { 
-       if (!this.categoryAxisProperties) { 
-           return; 
-       } 
-     //  let supportedType = axisType.both; 
-       let isScalar = true; 
-       let logPossible = false; 
-       let scaleOptions = [axisScale.log, axisScale.linear];//until options can be update in propPane, show all options 
-       if (!isScalar) { 
-           if (this.categoryAxisProperties) { 
-               this.categoryAxisProperties['start'] = null; 
-               this.categoryAxisProperties['end'] = null; 
-           } 
-       } 
- 
-       let instance: VisualObjectInstance = { 
-           selector: series && series.identity ? series.identity.getSelector() : null, 
-           properties: {}, 
-           objectName: 'categoryAxis', 
-           validValues: { 
-               axisScale: scaleOptions 
-           } 
-       }; 
-       instance.properties['show'] = this.categoryAxisProperties && this.categoryAxisProperties['show'] != null ? this.categoryAxisProperties['show'] : true; 
-       instance.properties['axisScale'] = (this.categoryAxisProperties && this.categoryAxisProperties['axisScale'] != null && logPossible) ? this.categoryAxisProperties['axisScale'] : axisScale.linear; 
-       instance.properties['labelDisplayUnits'] = this.categoryAxisProperties && this.categoryAxisProperties['labelDisplayUnits'] != null ? this.categoryAxisProperties['labelDisplayUnits'] : Visual.LabelDisplayUnitsDefault; 
-       instance.properties['showAxisTitle'] = this.categoryAxisProperties && this.categoryAxisProperties['showAxisTitle'] != null ? this.categoryAxisProperties['showAxisTitle'] : true; 
-       instance.properties['fontSize'] = this.categoryAxisProperties && this.categoryAxisProperties['fontSize'] != null ? this.categoryAxisProperties['fontSize'] : 11; 
-       enumeration.push({ 
-           selector: series && series.identity ? series.identity.getSelector() : null, 
-           properties: { 
-               show: this.categoryAxisProperties && this.categoryAxisProperties['show'] != null ? this.categoryAxisProperties['show'] : true, 
-               labelDisplayUnits: this.categoryAxisProperties && this.categoryAxisProperties['labelDisplayUnits'] != null ? this.categoryAxisProperties['labelDisplayUnits'] : Visual.LabelDisplayUnitsDefault, 
-               showAxisTitle: this.categoryAxisProperties && this.categoryAxisProperties['showAxisTitle'] != null ? this.categoryAxisProperties['showAxisTitle'] : true, 
-               axisStyle: this.categoryAxisProperties && this.categoryAxisProperties['axisStyle'] ? this.categoryAxisProperties['axisStyle'] : axisStyle.showTitleOnly, 
-               fontSize : this.categoryAxisProperties && this.categoryAxisProperties['fontSize'] ? this.categoryAxisProperties['fontSize'] : 11, 
-               labelColor: this.getCategoryAxisFill().solid.color, 
-           }, 
- 
-           objectName: 'categoryAxis', 
-           validValues: { 
-               axisStyle: this.categoryAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly] 
-           } 
-       }); 
-   } 
-   private getValueAxisValues(enumeration: VisualObjectInstance[], series?: StackedChartGMOSeries): void { 
-    //   let scaleOptions = [axisScale.log, axisScale.linear];  //until options can be update in propPane, show all options 
-       let logPossible = false; 
-       enumeration.push({ 
-           selector: series && series.identity ? series.identity.getSelector() : null, 
-           properties: { 
-               show: this.valueAxisProperties && this.valueAxisProperties['show'] != null ? this.valueAxisProperties['show'] : true, 
-               axisScale: (this.valueAxisProperties && this.valueAxisProperties['axisScale'] != null && logPossible) ? this.valueAxisProperties['axisScale'] : axisScale.linear, 
-               start: this.valueAxisProperties ? this.valueAxisProperties['start'] : null, 
-               end: this.valueAxisProperties ? this.valueAxisProperties['end'] : null, 
-               showAxisTitle: this.valueAxisProperties && this.valueAxisProperties['showAxisTitle'] != null ? this.valueAxisProperties['showAxisTitle'] : true, 
-               labelDisplayUnits: this.valueAxisProperties && this.valueAxisProperties['labelDisplayUnits'] != null ? this.valueAxisProperties['labelDisplayUnits'] : Visual.LabelDisplayUnitsDefault, 
-               axisStyle: this.valueAxisProperties && this.valueAxisProperties['axisStyle'] != null ? this.valueAxisProperties['axisStyle'] : axisStyle.showTitleOnly, 
-               labelColor: this.getValueAxisFill().solid.color 
- 
-           }, 
- 
-           objectName: 'valueAxis', 
-           validValues: { 
-               axisStyle: this.valueAxisHasUnitType ? [axisStyle.showTitleOnly, axisStyle.showUnitOnly, axisStyle.showBoth] : [axisStyle.showTitleOnly] 
-           }, 
-       }); 
- 
-   } 
- 
-   private enumerateDataLabels(enumeration: VisualObjectInstance[]): void { 
-       if (this.dataView.metadata.objects && this.dataView.metadata.objects['labels']) { 
-           let data = this.data, 
-               labelSettings = this.data.labelSettings, 
-               seriesCount = data.series.length, 
-               showLabelPerSeries = !data.hasDynamicSeries && (seriesCount > 1 || !data.categoryMetadata) && this.seriesLabelFormattingEnabled; 
-           let labelsObj = this.dataView.metadata.objects ? <DataLabelObject>this.dataView.metadata.objects['labels'] : null; 
-           labelSettings.precision = labelsObj ? labelsObj.labelPrecision : 0; 
-           labelSettings.fontSize = labelsObj.fontSize ? labelsObj.fontSize : 12; 
-           for (let i = 0; i < seriesCount; i++) { 
-               let series = data.series[i], 
-                   labelSettings: VisualDataLabelsSettings = (series.labelSettings) ? series.labelSettings : this.data.labelSettings; 
-           } 
-           enumeration.push({ 
-               objectName: 'labels', 
-               properties: { 
-                   show: labelsObj.show, 
-                   color: labelsObj.color ? labelsObj.color.solid.color : '#000', 
-                   labelPrecision: labelsObj.labelPrecision ? labelsObj.labelPrecision : "", 
-                   fontSize: labelsObj.fontSize ? labelsObj.fontSize : 10 
-               }, 
-               selector: null 
-           }) 
-       } 
-       else { 
-           enumeration.push({ 
-               objectName: 'labels', 
-               properties: { 
-                   show: false, 
-                   color: null, 
-                   labelPrecision: 0, 
-                   fontSize: 10 
-               }, 
-               selector: null 
-           }) 
-       } 
- 
    } 
    // MAQ Code 
    // This function returns on/off status of the funnel title properties 
@@ -5103,95 +4623,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            } 
        } 
        return 12; 
-   } 
-   // This function returns on/off status of the legend show primary measure 
-   private getShowPrimaryMeasure(dataView: DataView): boolean { 
-       let dvmetadata=dataView.metadata 
-       let dvmobjects=dvmetadata.objects 
-       if (dataView && dvmetadata && dvmobjects) { 
-           if (dvmobjects && dvmobjects.hasOwnProperty('legend')) { 
-               let showTitle = dvmobjects['legend']; 
-               if (dvmobjects && showTitle.hasOwnProperty('primaryMeasureOnoff')) { 
-                   return <boolean>showTitle['primaryMeasureOnoff']; 
-               } 
-           } else { 
-               return true; 
-           } 
-       } 
-       return true; 
-   } 
- 
-   private getLabelSettingsOptions(enumeration: any, labelSettings: VisualDataLabelsSettings, series?: StackedChartGMOSeries, showAll?: boolean): any { 
-       return { 
-           enumeration: enumeration, 
-           dataLabelsSettings: labelSettings, 
-           show: true, 
-           displayUnits: !EnumExtensions.hasFlag(this.chartType, flagStacked100), 
-           precision: true, 
-           selector: series && series.identity ? series.identity.getSelector() : null, 
-           showAll: showAll, 
-           fontSize: true, 
-       }; 
-   } 
- 
-   private enumerateDataPoints(enumeration: VisualObjectInstance[]): void { 
-       let data = this.data; 
-       let data2 = Visual.legendInfo; 
-       if (!data) 
-           return; 
- 
-       let seriesCount = data2.dataPoints.length; 
-       let color; 
-       let dataPointObj; 
-       if (seriesCount === 0) 
-           return; 
-       if (data.hasDynamicSeries || seriesCount > 1 || !data.categoryMetadata) { 
-           for (let i = 0; i < seriesCount; i++) { 
- 
-               let series = data2.dataPoints[i]; 
-               enumeration.push({ 
-                   objectName: 'dataPoint', 
- 
-                   displayName: series.label, 
-                   selector: series.identity['selector'], 
-                   properties: { 
-                       fill: { 
-                           solid: { 
-                               color: series.color 
-                           } 
-                       } 
-                   }, 
-               }); 
-           } 
-       } 
- 
-       else { 
-           // For single-category, single-measure column charts, the user can color the individual bars. 
-           let singleSeriesData = data.series[0].data; 
-           let categoryFormatter = data.categoryFormatter; 
- 
-           // Add default color and show all slices 
-           enumeration.push({ 
-               objectName: 'dataPoint', 
-               selector: null, 
-               properties: { 
-                   defaultColor: { solid: { color: data.defaultDataPointColor } } 
-               } 
-           }) 
-           for (let i = 0; i < singleSeriesData.length; i++) { 
-               let singleSeriesDataPoints = singleSeriesData[i], 
-                   categoryValue: any = data.categories[i]; 
-               enumeration.push({ 
-                   objectName: 'dataPoint', 
-                   displayName: categoryFormatter ? categoryFormatter.format(categoryValue) : categoryValue, 
-                   selector: ColorHelper.normalizeSelector(singleSeriesDataPoints.identity['selector']), 
-                   properties: { 
-                       fill: { solid: { color: singleSeriesDataPoints.color } } 
-                   }, 
-               }); 
-           } 
-       } 
- 
    } 
  
    public calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[] { 
@@ -6969,15 +6400,6 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
        } 
    } 
  
-   public static getLabelFill(labelColor: string, isInside: boolean, isCombo: boolean): string { 
-       if (labelColor) { 
-           return labelColor; 
-       } 
-       if (isInside && !isCombo) { 
-           return NewDataLabelUtils.defaultInsideLabelColor; 
-       } 
-       return NewDataLabelUtils.defaultLabelColor; 
-   } 
    public getLegendDispalyUnits(dataView: DataView, propertyName: string) { 
        let property: any = [], displayOption; 
        if (dataView && dataView.metadata && dataView.metadata.objects) { 

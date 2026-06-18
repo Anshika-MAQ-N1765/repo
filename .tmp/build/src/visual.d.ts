@@ -425,33 +425,6 @@ declare namespace powerbi.extensibility.visual {
         axisOptions: ColumnAxisOptionsGMO;
         labelDataPoints: LabelDataPointGMO[];
     }
-    export interface ColumnChartContext {
-        height: number;
-        width: number;
-        duration: number;
-        margin: IMargin;
-        /** A group for graphics can be placed that won't be clipped to the data area of the chart. */
-        unclippedGraphicsContext: Selection<any>;
-        /** A SVG for graphics that should be clipped to the data area, e.g. data bars, columns, lines */
-        mainGraphicsContext: Selection<any>;
-        layout: CategoryLayout;
-        animator: IColumnChartAnimator;
-        onDragStart?: (datum: ColumnChartDataPoint) => void;
-        interactivityService: IInteractivityService;
-        viewportHeight: number;
-        viewportWidth: number;
-        is100Pct: boolean;
-        isComboChart: boolean;
-    }
-    export interface IColumnChartStrategy {
-        setData(data: ColumnChartData): void;
-        setupVisualProps(columnChartProps: ColumnChartContext): void;
-        setXScale(forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureXDomain?: NumberRange): IAxisProperties;
-        setYScale(is100Pct: boolean, forcedTickCount?: number, forcedYDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureYDomain?: NumberRange): IAxisProperties;
-        drawColumns(useAnimation: boolean): ColumnChartDrawInfo;
-        selectColumn(selectedColumnIndex: number, lastSelectedColumnIndex: number): void;
-        getClosestColumnIndex(x: number, y: number): number;
-    }
     export interface IColumnChartConverterStrategy {
         getLegend(colors: IColorPalette, defaultLegendLabelColor: string, defaultColor?: string): LegendSeriesInfo;
         getValueBySeriesAndCategory(series: number, category: number): number;
@@ -461,13 +434,6 @@ declare namespace powerbi.extensibility.visual {
         legend: LegendData;
         seriesSources: DataViewMetadataColumn[];
         seriesObjects: DataViewObjects[][];
-    }
-    export interface ColumnChartDrawInfo {
-        eventGroup: Selection<any>;
-        shapesSelection: Selection<any>;
-        viewport: IViewport;
-        axisOptions: ColumnAxisOptions;
-        labelDataPoints: LabelDataPointGMO[];
     }
     export interface ColumnChartContextGMO {
         height: number;
@@ -622,14 +588,6 @@ declare namespace powerbi.extensibility.visual {
         /** Horizontal rectangle with base at the right. */
         HorizontalRightBased = 4
     }
-    export interface LabelParentRect {
-        /** The rectangle this data label belongs to */
-        rect: IRect;
-        /** The orientation of the parent rectangle */
-        orientation: NewRectOrientationGMO;
-        /** Valid positions to place the label ordered by preference */
-        validPositions: RectLabelPositionGMO[];
-    }
     export interface ISizeGMO {
         width: number;
         height: number;
@@ -716,16 +674,6 @@ declare namespace powerbi.extensibility.visual {
         stackedBar,
         stackedColumn
     }
-    export interface ColumnAxisGMOOptions {
-        xScale: Selection<number>;
-        yScale: Selection<number>;
-        seriesOffsetScale?: Selection<number>;
-        columnWidth: number;
-        /** Used by clustered only since categoryWidth !== columnWidth */
-        categoryWidth?: number;
-        isScalar: boolean;
-        margin: IMargin;
-    }
     export interface IColumnGMOLayout {
         shapeLayout: {
             width: (d: StackedChartGMODataPoint) => number;
@@ -746,23 +694,6 @@ declare namespace powerbi.extensibility.visual {
             height: (d: StackedChartGMODataPoint) => number;
         };
     }
-    export interface StackedChartGMOContext {
-        height: number;
-        width: number;
-        duration: number;
-        hostService: any;
-        margin: IMargin;
-        mainGraphicsContext: Selection<any>;
-        labelGraphicsContext: Selection<any>;
-        layout: CategoryLayout;
-        animator: IColumnChartAnimatorGMO;
-        onDragStart?: (datum: StackedChartGMODataPoint) => void;
-        interactivityService: IInteractivityService;
-        viewportHeight: number;
-        viewportWidth: number;
-        is100Pct: boolean;
-        isComboChart: boolean;
-    }
     export interface IStackedChartGMOStrategy {
         setData(data: StackedChartGMOData): void;
         setupVisualProps(columnChartProps: ColumnChartContextGMO): void;
@@ -771,24 +702,6 @@ declare namespace powerbi.extensibility.visual {
         drawColumns(useAnimation: boolean): ColumnChartDrawInfoGMO;
         selectColumn(selectedColumnIndex: number, lastSelectedColumnIndex: number): void;
         getClosestColumnIndex(x: number, y: number): number;
-    }
-    export interface IColumnChartConverterGMOStrategy {
-        getLegend(colors: IColorPalette, defaultLegendLabelColor: string, defaultColor?: string): LegendSeriesInfo;
-        getValueBySeriesAndCategory(series: number, category: number): number;
-        getMeasureNameByIndex(series: number, category: number): string;
-        hasHighlightValues(series: number): boolean;
-        getHighlightBySeriesAndCategory(series: number, category: number): number;
-    }
-    export interface LegendSeriesGMOInfo {
-        legend: LegendData;
-        seriesSources: DataViewMetadataColumn[];
-        seriesObjects: DataViewObjects[][];
-    }
-    export interface ColumnChartDrawGMOInfo {
-        shapesSelection: Selection<any>;
-        viewport: IViewport;
-        axisOptions: ColumnAxisOptions;
-        labelDataPoints: LabelDataPointGMO[];
     }
     export let StackedChartGMOProps: {
         dataPoint: {
@@ -1080,7 +993,6 @@ declare namespace powerbi.extensibility.visual {
         private _viewportIn;
         private get viewportIn();
         private static substractMargin;
-        updateVisualMetadata(x: IAxisProperties, y: IAxisProperties, margin: any): void;
         applyViewportSettings(): void;
         /**
          * Renders a runtime error directly onto the visual surface so that failures
@@ -1112,7 +1024,6 @@ declare namespace powerbi.extensibility.visual {
         private static normalizeNonFiniteNumber;
         private static getStackedMultiplier;
         createTooltipInfo(seriesIndex: number, categoryIndex: number): VisualTooltipDataItem[];
-        getIndexOfValue(values: DataViewValueColumn): number;
         private createDataPoints;
         private static getDataPointColor;
         private static getStackedLabelColor;
@@ -1121,10 +1032,8 @@ declare namespace powerbi.extensibility.visual {
         setData(dataViews: DataView[]): void;
         calculateLegend(): LegendData;
         hasLegend(): boolean;
-        enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions, series?: StackedChartGMOSeries): VisualObjectInstanceEnumeration;
         getFormattingModel(): powerbiApi.visuals.FormattingModel;
         private applyDynamicFormatting;
-        private getLegendValue;
         private getSampleFilterSettings;
         private getTextWrapSettings;
         private getMeasureTitlesSettings;
@@ -1145,22 +1054,14 @@ declare namespace powerbi.extensibility.visual {
         getDefaultQuaternaryLabelSettings(): quaternaryLabelSettings;
         getDefaultFifthLabelSettings(): FifthLabelSettings;
         getDefaultSixthLabelSettings(): SixthLabelSettings;
-        measureValue(measure: any, measureFormat: any, legendObjectProperties: any, modelingPrecision: any): any;
         format(d: number, displayunitValue: number, precisionValue: number, columnType: string): string;
         numberWithCommas(x: any): any;
-        addSpecialCharacters(sKMBValue: any, title: any): string;
-        private getCategoryAxisValues;
-        private getValueAxisValues;
-        private enumerateDataLabels;
         private getShowTitle;
         private getTitleText;
         private getTooltipText;
         private getTitleFill;
         private getTitleBgcolor;
         private getTitleSize;
-        private getShowPrimaryMeasure;
-        private getLabelSettingsOptions;
-        private enumerateDataPoints;
         calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[];
         getPreferredPlotArea(isScalar: boolean, categoryCount: number, categoryThickness: number): IViewport;
         private ApplyInteractivity;
@@ -1182,7 +1083,6 @@ declare namespace powerbi.extensibility.visual {
         private getUnitType;
         private addUnitTypeToAxisLabel;
         onClearSelection(): void;
-        static getLabelFill(labelColor: string, isInside: boolean, isCombo: boolean): string;
         getLegendDispalyUnits(dataView: DataView, propertyName: string): any;
     }
     export {};

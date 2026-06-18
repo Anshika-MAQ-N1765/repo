@@ -64,8 +64,6 @@ declare type IColorInfo = any;
 declare type IVisual = powerbi.extensibility.visual.IVisual;
 declare type VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 declare type VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
-declare type EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
-declare type VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 
 declare namespace powerbi.extensibility.visual {
     interface ChartAxesLabels {

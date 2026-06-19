@@ -27,53 +27,8 @@ namespace powerbi.extensibility.visual {
             this.selector = selector;
             this.highlight = highlight;
             this.key = JSON.stringify({ selector: selector ? selector.data : null, highlight: highlight });
-            //this.keyWithoutHighlight = JSON.stringify({ selector: selector ? selector.getKey(selector) : null });
         }
 
-     /*   public equals(other: SelectionId): boolean {
-            if (!this.selector || !other.selector) {
-                return (!this.selector === !other.selector) && this.highlight === other.highlight;
-            }
-            return this.highlight === other.highlight &&  this.selector.equals(this.selector, other.selector);
-        }
-
-        /*public static isEqual(one: SelectionId, other: SelectionId): boolean {
-            if (one === other)
-                return true;
-            if (one == null || other == null)
-                return false;
-            return one.equals(other);
-        }
-
-        /**
-         * Checks equality against other for all identifiers existing in this.
-         */
-       /* public includes(other: SelectionId, ignoreHighlight: boolean = false): boolean {
-            let thisSelector = this.selector;
-            let otherSelector = other.selector;
-            if (!thisSelector || !otherSelector) {
-                return false;
-            }
-            let thisData = thisSelector.data;
-            let otherData = otherSelector.data;
-            if (!thisData && (thisSelector.metadata && thisSelector.metadata !== otherSelector.metadata))
-                return false;
-            if (!ignoreHighlight && this.highlight !== other.highlight)
-                return false;
-            if (thisData) {
-                if (!otherData)
-                    return false;
-                if (thisData.length > 0) {
-                    for (let i = 0, ilen = thisData.length; i < ilen; i++) {
-                        var thisValue = <DataViewScopeIdentity>thisData[i];
-                        if (!otherData.some((otherValue: DataViewScopeIdentity) => DataViewScopeIdentity.equals(thisValue, otherValue)))
-                            return false;
-                    }
-                }
-            }
-            return true;
-        }
-*/
         public getKey(): string {
             return this.key;
         }
@@ -119,9 +74,6 @@ namespace powerbi.extensibility.visual {
             }
 
             let selectorsByColumn: Selector = {};
-           // if (!_.isEmpty(dataMap))
-             //   selectorsByColumn.dataMap = dataMap;
-                //selectorsByColumn.data.map= dataMap;
             if (measureId)
                 selectorsByColumn.metadata = measureId;
             if (!dataMap && !measureId)

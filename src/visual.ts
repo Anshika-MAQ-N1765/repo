@@ -9,19 +9,15 @@ type DataViewObjects = powerbiApi.DataViewObjects; type DataViewObject = powerbi
  
 function createClassAndSelector(className: string): ClassAndSelector { const cs = CssConstants.createClassAndSelector(className); return { ...cs, selector: cs.selectorName, class: cs.className, }; }
 
-// Capitalize the first letter of every word in a display name / title while
-// preserving the remaining characters (so existing acronyms like "ID" are not
-// lowercased). Used to "titlize" the category, series and measure names shown in
-// tooltips and as on-chart measure labels.
+// Title-case a display name, preserving existing acronyms (e.g. "ID" stays "ID").
 function toTitleCase(text: string): string {
     if (text == null) { return text; }
     return String(text).replace(/\b\w/g, (ch) => ch.toUpperCase());
 }
  
 const NewDataLabelUtils = dataLabelUtils; const Legend = legend; const LegendPosition = legendInterfaces.LegendPosition; type LegendPositionType = legendInterfaces.LegendPosition; type LegendData = legendInterfaces.LegendData; type LegendDataPoint = legendInterfaces.LegendDataPoint; const legendProps = legendInterfaces.legendProps; const SVGLegend = svgLegend.SVGLegend;
-// Read the legend behavior from the SHARED global `powerbi` (populated by
-// legacyUtils). visual.ts has its own file-local `powerbi` namespace, so we must
-// go through globalThis to see members published by the other modules.
+// Resolved from the shared global `powerbi` (populated by legacyUtils); this
+// file's own `powerbi` namespace is module-local and can't see published members.
 const LegendBehavior = (globalThis as any).powerbi?.extensibility?.utils?.chart?.legend?.LegendBehavior;
 type LegendBehaviorOptions = any;
 const valueFormatter = formattingUtils.valueFormatter;
@@ -64,10 +60,8 @@ export interface VisualBackground {
 }
  
     const ValueType = valueType.ValueType;
-    // These members live in OTHER modules' `namespace powerbi {}` blocks, which in
-    // the ES-module build are file-local. The publish footers in layout.ts,
-    // Columnutil.ts and selectionId.ts copy them onto the SHARED globalThis.powerbi,
-    // and the side-effect imports above guarantee those run before this point.
+    // Published onto globalThis.powerbi by layout.ts / Columnutil.ts / selectionId.ts
+    // (their footers run first via the side-effect imports above).
     const ColumnUtil = (globalThis as any).powerbi?.extensibility?.utils?.ColumnUtil;
     const CartesianHelper = (globalThis as any).powerbi?.extensibility?.utils?.CartesianHelper;
     const axisType = (globalThis as any).powerbi?.extensibility?.visual?.axisType;
@@ -2350,7 +2344,6 @@ export let StackedChartGMOProps = {
        tooltipText: <DataViewObjectPropertyIdentifier>{ objectName: 'title', propertyName: 'tooltipText' }, 
        showTooltip: <DataViewObjectPropertyIdentifier>{ objectName: 'title', propertyName: 'showTooltip' }, 
    }, 
-   // MAQCode 
    show: { objectName: 'GMOColumnChartTitle', propertyName: 'show' }, 
    titleText: { objectName: 'GMOColumnChartTitle', propertyName: 'titleText' }, 
    titleFill: { objectName: 'GMOColumnChartTitle', propertyName: 'fill1' }, 
@@ -2750,11 +2743,9 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        else if (!dataViews[0].categorical || !dataViews[0].categorical.categories 
            || dataViews[0].categorical.categories.length === 0 
            || !dataViews[0].categorical.categories[0]) { 
-           // A 100% stacked chart needs a Category (the X axis). If only a measure is
-           // bound (e.g. Primary added before Category) there is no category, and
-           // downstream code (getLegend -> withSeries(categories[0], ...)) would throw.
-           // Show a recoverable prompt instead; the next update that includes a
-           // Category clears it automatically.
+           // A 100% stacked chart needs a Category. With only a measure bound (e.g.
+           // Primary added before Category) downstream code would throw, so show a
+           // recoverable prompt; the next update that includes a Category clears it.
            this.updateCount = 0; 
            this.root.select('.errorMessage').text('Please select Category data'); 
            this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' }); 
@@ -2798,33 +2789,22 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
            resize = true; 
        } 
        this.dataView = options.dataViews[0]; 
-       // ---- Multi-measure delivery (API 5.x: ONE categorical dataView) ----
-       // capabilities.json declares a SINGLE categorical mapping that groups every
-       // bound measure (Y + secondary/tertiary/quaternary/fifth/sixth + sampleSize)
-       // by Series. Modern Power BI (API 5.x) delivers exactly one categorical
-       // dataView and DROPS value-only categorical mappings entirely, so all extra
-       // measures arrive packed inside dataViews[0].categorical.values (grouped by
-       // Series) rather than as separate per-mapping dataViews. Here we:
-       //   (a) rebuild dataViews[0] as a Y-only, null-Y-series-filtered view so a
-       //       series whose Primary measure is entirely null (e.g. "0-N/A (did not
-       //       attend)") never reaches the legend; and
-       //   (b) synthesize one aggregated-per-category dataView for each extra
-       //       measure at its fixed index ([1]=secondary [2]=sampleSize
-       //       [3]=tertiary [4]=quaternary [5]=fifth [6]=sixth), so the rest of the
-       //       code keeps reading this.dataViews[n] exactly like the frozen API 1.x
-       //       original. (A copy fallback handles the legacy per-mapping case.)
+       // ---- Multi-measure delivery (API 5.x) ----
+       // The single grouped categorical mapping packs every bound measure into
+       // dataViews[0].categorical.values (API 5.x drops value-only mappings). We
+       // rebuild dataViews[0] as a Y-only view (so a series with an all-null Primary
+       // measure never reaches the legend) and synthesize an aggregated-per-category
+       // view for each extra measure at a fixed index ([1]=secondary [2]=sampleSize
+       // [3]=tertiary [4]=quaternary [5]=fifth [6]=sixth), matching the API 1.x
+       // shape the rest of the code expects.
        {
            const host0: any = options.dataViews[0];
            const cat: any = host0 && host0.categorical;
            const allValues: any = cat && cat.values ? cat.values : null;
-           // ---- Titlize display names ONCE, at the single point where we read the
-           //      dataView. Every categorical source (category, series, every
-           //      measure) is a reference into `metadata.columns`, so capitalizing
-           //      the first letter of each word HERE flows by reference to every
-           //      place the name is rendered - tooltips, on-chart measure titles,
-           //      legend title and axis titles - with no per-site toTitleCase()
-           //      calls. (User-typed custom measure titles in the format pane are
-           //      left exactly as typed.)
+           // Title-case every column displayName ONCE here. Each categorical source
+           // references metadata.columns, so this flows by reference to tooltips,
+           // on-chart titles, legend and axes. (Custom titles typed in the format
+           // pane are read separately and stay as typed.)
            if (host0 && host0.metadata && Array.isArray(host0.metadata.columns)) {
                for (const col of host0.metadata.columns) {
                    if (col && typeof col.displayName === 'string') {
@@ -2832,15 +2812,9 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                    }
                }
            }
-           // A SINGLE column can carry MULTIPLE roles at once. When the same field
-           // is dropped into several measure wells (e.g. "Sum of Sales" assigned to
-           // Primary + Secondary + Quaternary), modern Power BI returns ONE column
-           // with roles {Y:true, secondaryMeasure:true, quaternaryMeasure:true} -
-           // it does NOT duplicate the column. So we must test each role
-           // INDEPENDENTLY (hasRole) rather than pick a single "first" role; the old
-           // roleOf approach silently dropped every role after the first, which is
-           // why secondary/quaternary rows went missing while a single-role column
-           // (tertiary = "Count of Month") still worked.
+           // One column can carry several measure roles at once (the same field
+           // dropped into Primary + Secondary returns ONE column with both role
+           // flags), so test each role independently rather than picking the first.
            const hasRole = (col: any, role: string): boolean => {
                const r = col && col.source && col.source.roles;
                if (!r) { return false; }
@@ -2854,22 +2828,16 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                const categories: any = cat.categories;
                const catLen: number = categories && categories[0] && categories[0].values
                    ? categories[0].values.length : 0;
-// A series only belongs in the chart/legend when its Primary measure
-               // (Y) carries at least one non-null value. Modern Power BI groups by
-               // Series across ALL bound measures, so a series like "0-N/A (did not
-               // attend)" (null Y but a non-null secondary measure) is still emitted as
-               // a group. The API 1.x original keyed its legend off the Y-only mapping
-               // and never showed such series. Mirror that by keeping only Y-bearing
-               // groups - applied symmetrically to the flat values array AND the
-               // grouped() override so series indices stay aligned with the legend
-               // downstream (seriesCount === legend.length in createDataPoints).
+               // Keep only series whose Primary measure (Y) has data, so a series
+               // like "0-N/A" (null Y, non-null secondary) is dropped from the legend
+               // as it was under API 1.x. Applied to both the flat values array and
+               // the grouped() override so series indices stay aligned with the legend.
                const yColHasData = (c: any): boolean =>
                    hasRole(c, 'Y') && !!c.values && c.values.some((v: any) => v != null);
                const keptGroups: any[] = origGroups.filter(
                    (g: any) => (g.values || []).some((c: any) => yColHasData(c)));
  
-               // (a) Y-only categorical clone -> stacking chart sees exactly what it
-               //     sees today when only the Primary measure is bound.
+               // (a) Y-only clone: the stacking chart sees only the Primary measure.
                const yOnlyValues: any = allValues.filter((c: any) => yColHasData(c));
                yOnlyValues.source = allValues.source;
                yOnlyValues.grouped = () => keptGroups.map((g: any) => {
@@ -2883,15 +2851,10 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                normalized[0] = chartDataView;
                this.dataView = chartDataView;
 
-               // (b) Deliver the extra measures. capabilities.json declares them as
-               //     their OWN value-only dataViewMappings, so Power BI hands them
-               //     over as separate dataViews at fixed indices ([1]=secondary
-               //     [2]=sampleSize [3]=tertiary [4]=quaternary [5]=fifth [6]=sixth) -
-               //     exactly like the frozen API 1.x original (this.dataViews =
-               //     options.dataViews). We use those directly. ONLY if every measure
-               //     was instead packed into THIS grouped dataView (legacy single-
-               //     mapping delivery) do we synthesize an aggregated-per-category
-               //     column per measure as a fallback.
+               // (b) Deliver each extra measure at its fixed index. Normally every
+               //     measure is packed into this grouped dataView, so we synthesize an
+               //     aggregated-per-category column per role. (If a host instead
+               //     delivered them as separate dataViews, copy those as-is.)
                const ROLE_TO_INDEX: { [role: string]: number } = {
                    secondaryMeasure: 1,
                    sampleSize: 2,
@@ -2904,9 +2867,8 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                    (origGroups[0].values || []).some(
                        (c: any) => Object.keys(ROLE_TO_INDEX).some((r) => hasRole(c, r))));
                if (!mainHasExtraMeasures) {
-                   // Real per-mapping delivery: copy the measure dataViews as-is at
-                   // their fixed indices (dataViews[0] already replaced by the Y-only
-                   // chart view above).
+                   // Separate per-mapping delivery: copy as-is (dataViews[0] already
+                   // replaced by the Y-only chart view above).
                    for (let i = 1; i < options.dataViews.length; i++) {
                        normalized[i] = options.dataViews[i];
                    }
@@ -2975,7 +2937,6 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        if (dataViews.length > 0) { 
            this.populateObjectProperties(dataViews); 
        } 
-       // MAQ Code 
        let GMOColumnChartTitleOnOffStatus: boolean = false 
            , titleText: string = "" 
            , tooltiptext: string = "" 
@@ -3013,10 +2974,8 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
                .attr('title', tooltiptext); 
        } 
  
-       // MAQ Code Ends 
-       // Feed the reconstructed dataViews (Y-only chart view at [0] + synthesized
-       // per-measure views at [1..6]) to setData so the stacking converter sees a
-       // single Y measure per series group, exactly as in the working chart.
+       // Feed the reconstructed dataViews (Y-only at [0] + synthesized per-measure
+       // views at [1..6]) so the stacking converter sees one Y measure per series.
        this.setData(this.dataViews); 
        if (this.data.categories.length == 0) { 
            this.updateCount = 0; 
@@ -3114,10 +3073,8 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
       if (!axisProperties) { 
            return false; 
        } 
-       // Honor the format-pane default, which is OFF for the axis title. Treat an
-       // UNSET property as not-shown; render only when the user has explicitly
-       // turned it on. (Previously an unset value still rendered the title, so it
-       // appeared on first load until the user toggled it on and then off again.)
+       // Render the axis title only when explicitly turned on, matching the
+       // format-pane default (off). An unset value counts as off.
        else if (axisProperties.isCategoryAxis && this.categoryAxisProperties && this.categoryAxisProperties[propertyName]) { 
            return axisProperties.values && axisProperties.values.length > 0; 
        } 
@@ -4246,10 +4203,8 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        return this.formattingSettingsService.buildFormattingModel(this.formattingSettingsModel);
    }
  
-   // Injects data-driven values into the formatting model right before it is
-   // built: one "Data colors" swatch per value shown in the legend, plus the
-   // measure-label titles taken from each bound column when the user hasn't
-   // typed an override.
+   // Injects data-driven values into the formatting model: one "Data colors"
+   // swatch per legend value, plus measure-label titles from each bound column.
    private applyDynamicFormatting(): void {
        const model = this.formattingSettingsModel;
  
@@ -4337,9 +4292,8 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        return labelSettings; 
    } 
  
-   // Shared body for the secondary..sixth measure label settings. These five
-   // settings are identical except for the property-bag they read from
-   // (StackedChartGMOProps.<name>Labels), so the common logic lives here.
+   // Shared body for the secondary..sixth measure label settings, which differ
+   // only in the property-bag (StackedChartGMOProps.<name>Labels) they read from.
    private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: any): any {
        if (!dataView || !dataView.categorical) { return labelSettings; }
        if (dataView.categorical.values) {
@@ -4427,10 +4381,9 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        switch (displayunitValue) { 
            case 0: 
                { 
-                   // Auto display units. d3 v3's formatPrefix().scale()/.symbol and
-                   // d3.round were all removed in d3 v4+, so compute the K/M/bn/T
-                   // suffix directly. Mirrors the explicit cases below to keep the
-                   // same output (and uses numberWithCommas for grouping). 
+                   // Auto display units: d3's formatPrefix/round were removed in
+                   // v4+, so compute the K/M/bn/T suffix directly (matches the
+                   // explicit cases below, with numberWithCommas for grouping).
                    let abs = Math.abs(d); 
                    if (abs >= 1000000000000) { 
                        result = this.numberWithCommas((d / 1000000000000).toFixed(precisionValue)) + 'T'; 
@@ -4479,8 +4432,7 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ","); 
        return parts.join("."); 
    } 
-   // MAQ Code 
-   // This function returns on/off status of the funnel title properties 
+   // Returns the on/off status of the chart-title property. 
    private getShowTitle(dataView: DataView): boolean { 
        if (dataView && dataView.metadata && dataView.metadata.objects) { 
            if (dataView.metadata.objects && dataView.metadata.objects.hasOwnProperty('GMOColumnChartTitle')) { 
@@ -4515,7 +4467,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        if (dataView && dataView.categorical && dataView.categorical.values && dataView.categorical.values.source) { 
            returnTitleDetails = dataView.categorical.values.source.displayName; 
        } 
-      // let iLength = 0; 
        if (dataView && dataView.categorical && dataView.categorical.values) { 
            for (let iLength = 0; iLength < dataView.categorical.values.length; iLength++) { 
                if (dataView.categorical.values[iLength].source && dataView.categorical.values[iLength].source.roles.hasOwnProperty('Y')) { 
@@ -4562,7 +4513,6 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        } 
        return <string>'Your tooltip text goes here'; 
    } 
-   // MAQCode 
    // This function returns the font colot selected for the title in the format window 
    private getTitleFill(dataView: DataView): Fill { 
        let dvmetadata=dataView.metadata 
@@ -4986,13 +4936,9 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
                renderY1Axis: renderY1Axis,
                renderY2Axis: false,
            }); 
-           // We look at the y axes as main and second sides, if the y axis orientation is right so the main side represents the right side 
-           // NOTE: chartutils 8.x getTickLabelMargins returns { top, left, right, bottom } 
-           // where `top` is the x-axis (bottom) label height, `left`/`right` are the 
-           // y-axis label widths. The legacy 2018 API returned { xMax, yLeft, yRight }. 
-           // Reading the old names yields `undefined` -> `undefined + 10 = NaN`, which 
-           // propagated into margin.left/right and produced a NaN category-axis width 
-           // ("M0,6V0HNaNV6" / "translate(NaN, y)"). Map to the 8.x property names. 
+           // chartutils 8.x getTickLabelMargins returns { top, left, right, bottom }
+           // (top = x-axis label height, left/right = y-axis label widths), not the
+           // legacy { xMax, yLeft, yRight }. Map to the 8.x names to avoid NaN margins.
            let maxMainYaxisSide = (showY1OnRight ? tickLabelMargins.right : tickLabelMargins.left) || 0, 
                maxSecondYaxisSide = (showY1OnRight ? tickLabelMargins.left : tickLabelMargins.right) || 0, 
                xMax = tickLabelMargins.top || 0; 
@@ -5046,11 +4992,8 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
  
        if (this.tooltipsEnabled) 
            this.TooltipServiceWrapper.addTooltip(columnChartDrawInfo.shapesSelection, 
-               // tooltiputils v6 calls the delegate with the BOUND DATUM directly
-               // (signature `(datapoint: T) => VisualTooltipDataItem[]`), NOT a
-               // TooltipEventArgs wrapper. Reading `tooltipEvent.data.tooltipInfo`
-               // threw "Cannot read properties of undefined (reading 'tooltipInfo')"
-               // because the argument already IS the data point. Read it directly.
+               // tooltiputils v6 passes the bound datum directly
+               // ((datapoint) => VisualTooltipDataItem[]), not a TooltipEventArgs wrapper.
                ((dataPoint: ColumnChartDataPoint) => (dataPoint ? dataPoint.tooltipInfo : undefined))); 
        //TooltipManager.addTooltip(columnChartDrawInfo.shapesSelection, (tooltipEvent: TooltipEvent) => tooltipEvent.data.tooltipInfo); 
  

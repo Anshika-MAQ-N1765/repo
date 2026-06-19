@@ -70,7 +70,6 @@ namespace powerbi.extensibility.utils {
         y2?: string;
     }
 
-    //import columnChartProps = 
     export namespace ColumnUtil {
         export const DimmedOpacity = 0.4;
         export const DefaultOpacity = 1.0;
@@ -372,8 +371,6 @@ export interface ColumnChartDataPoint extends CartesianDataPoint, SelectableData
         }
 
         export function applyInteractivity(columns: d3.Selection<any>, onDragStart): void {
-            //debug.assertValue(columns, 'columns');
-
             if (onDragStart) {
                 columns
                     .attr('draggable', 'true')

@@ -48,7 +48,7 @@ namespace powerbi.extensibility.utils.CartesianHelper {
         hasHighlights?: boolean;
     }
 
-    /* ==== AXIS PROPERTY READERS (UPDATED) ==== */
+    /* ==== AXIS PROPERTY READERS ==== */
 
     export function getCategoryAxisProperties(
         metadata: DataViewMetadata,
@@ -147,7 +147,7 @@ namespace powerbi.extensibility.utils.CartesianHelper {
     }
 }
 
-/* ================= ROLE UTIL (UPDATED) ================= */
+/* ================= ROLE UTIL ================= */
 
 namespace powerbi.extensibility.visual.roleUtils {
 

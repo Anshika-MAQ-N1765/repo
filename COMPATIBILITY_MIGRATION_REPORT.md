@@ -18,7 +18,7 @@
 
 ---
 
-## 0. TL;DR — The 5 bugs that will bite every legacy visual
+## 0. TL;DR — The bugs & decisions that bite every legacy visual
 
 | # | Symptom | Root cause | Fix class |
 |---|---------|-----------|-----------|
@@ -27,6 +27,14 @@
 | 3 | Secondary/tertiary/etc. measures never render | API 5.x emits **ONE** dataView and **drops value-only categorical mappings** | **Re-architect multi-dataView → single grouped + reconstruct** |
 | 4 | Some measure rows missing when one field feeds several wells | A single column carries **multiple roles at once**; the host does not duplicate it | **Test each role independently (`hasRole`)** |
 | 5 | "Fixed" bug reappears at identical stack offsets after re-import | Power BI **cached the stale package** | **Bump `version` every rebuild** |
+| 6 | Format pane empty / `enumerateObjectInstances` ignored | API 5.x replaces it with the **formatting-model API** (`getFormattingModel`) | **Port to `FormattingSettingsService` cards** |
+| 7 | A toggle that's "off by default" still renders until toggled twice | Render gate treats an **unset** property as on, but the pane default is off | **Align pane defaults with render gates** |
+| 8 | Whole report crashes (`additionalProjections`) when adding a 2nd mapping kind | The host query generator **can't mix** a `categorical` and a `table` mapping over the same roles | **One mapping kind only** (see §4.4) |
+
+> **Two reversed decisions** (don't repeat the early mistakes — see §8): a DOM-wiping
+> on-canvas error renderer makes failures **permanent**, and shipped `console.*`
+> diagnostics are noise. Let errors reach the host's **recoverable** boundary, and keep
+> diagnostics **transient**.
 
 ---
 
@@ -78,6 +86,40 @@ declare const $: any;  // jQuery
 - `apiVersion` → `5.3.0`.
 - Replace `.api/v1.13.0/PowerBI-visuals.d.ts` with the `/// <reference types="powerbi-visuals-api" />` triple-slash directive.
 - `tslint.json` → `eslint.config.mjs` (flat config, `eslint-plugin-powerbi-visuals`).
+- Drop `externalJS` (set to `null`): D3/jQuery/lodash are no longer host-injected globals;
+  they are bundled (or shimmed — see §1.2 / §7).
+
+### 1.4 Property pane: `enumerateObjectInstances` → formatting-model API
+API 5.x deprecates `enumerateObjectInstances()`/`enumerateObjectInstancesToReduce()` in
+favour of the **formatting-model API**. Replace the hand-built instance arrays with typed
+**cards** consumed by `FormattingSettingsService`.
+
+```ts
+// formattingSettings.ts — one card per capabilities object, slices = its properties.
+class CategoryAxisCardSettings extends formattingSettings.SimpleCard {
+  name = "categoryAxis";                 // MUST equal the capabilities object name
+  showAxisTitle = new formattingSettings.ToggleSwitch({ name: "showAxisTitle", value: false });
+  // …
+  slices = [this.showAxisTitle, /* … */];
+}
+export class VisualFormattingSettingsModel extends formattingSettings.Model { cards = [ /* … */ ]; }
+
+// visual.ts
+private fmtService = new FormattingSettingsService();
+public update(o) { this.model = this.fmtService.populateFormattingSettingsModel(VisualFormattingSettingsModel, o.dataViews[0]); }
+public getFormattingModel() { return this.fmtService.buildFormattingModel(this.model); }
+```
+
+**Migration rules of thumb**
+- `card.name` / `slice.name` **must** match the `capabilities.json` object/property names,
+  or values silently won't persist.
+- **Dynamic, data-driven slices** (e.g. one color picker per series, per-measure label
+  titles) are injected at runtime by mutating `card.slices` right before
+  `buildFormattingModel` — keep that in a `try/catch` so a pane error can't blank the chart.
+- **Default parity (bug #7).** A formatting default of `false` only sets the *pane* default;
+  if the renderer's gate still treats an **unset** value as "on" (`prop == null || prop`),
+  the feature shows until the user toggles it twice. Make the render gate **explicit**:
+  `render only when prop === true`, matching the card default.
 
 ---
 
@@ -106,7 +148,35 @@ if (valueColumn && valueColumn.source) { /* measure item */ }
 
 **Rule of thumb:** every `.source`, `.source.displayName`, `.source.groupName`,
 `.objects`, and `.values[i]` deref in tooltip/label/legend code must be guarded.
-Also wrap `enumerateObjectInstances` in `try/catch` so a format-pane error never blanks the visual.
+
+### 2.1 Guard required roles & binding order
+A user can bind a measure **before** the required grouping role (e.g. Primary measure
+before Category). The dataView then has `categorical.values` but **no** `categorical.categories`,
+and any code doing `categories[0]` (legend/selection builders) throws. Detect the
+incomplete state early and show a recoverable prompt instead of throwing:
+
+```ts
+if (!dv.categorical?.categories?.length) {
+  this.showMessage("Please select Category data");   // next update with a Category clears it
+  return;
+}
+```
+
+> Generalize: enumerate the roles your renderer assumes exist and bail **cleanly** for any
+> partial binding. The host re-runs `update()` when the user completes the binding.
+
+### 2.2 Display-name handling (titles) — do it once, by reference
+Every categorical `source` is a **reference into `metadata.columns`**. To transform display
+names (e.g. Title-Case for tooltips/labels/legend/axes) do it **once**, mutating
+`metadata.columns[i].displayName` at the single point where you read the dataView — the
+change then flows by reference to every render site with no per-call-site edits. There is no
+native `String` title-caser; a one-liner suffices (and preserves acronyms):
+
+```ts
+const toTitleCase = (s: string) => s == null ? s : String(s).replace(/\b\w/g, c => c.toUpperCase());
+for (const col of dv.metadata?.columns ?? []) if (typeof col.displayName === "string") col.displayName = toTitleCase(col.displayName);
+```
+> CSS `text-transform` can't reach **host-rendered** tooltips, so transform the data, not the DOM.
 
 ---
 
@@ -224,12 +294,37 @@ this.dataViews = normalized;        // and feed setData(this.dataViews)
 ### 4.3 The decisive tool: an in-host diagnostic `console.log`
 A green local jsdom test does **not** reflect real host behavior. A one-line, version-tagged
 diagnostic in `update()` was what overturned the wrong "indices shift" hypothesis and
-revealed the single-dataView truth. **Always tag it with the package version** and remove it
-once confirmed:
+revealed the single-dataView truth.
 
 ```ts
 console.log(`[DIAG v${VER}] hostLen=${dvs.length} raw=[${rawRoles}] reconstructed=${synth}`);
 ```
+
+> **Transient only.** Tag it with the package version, read it once in Power BI Desktop's
+> DevTools, then **delete it**. Shipped `console.*` is noise and was later stripped from this
+> visual entirely (see §8). Use it to *discover* host behavior, never to *document* it.
+
+### 4.4 Dead-end: you cannot serve both a chart mapping and a "table" mapping
+A tempting idea is to add a second `dataViewMapping` of kind `table` so the host's
+**Show-as-table** shows flat columns while the grouped `categorical` mapping still drives the
+chart. **This crashes the entire report** before your code runs:
+
+```
+TypeError: Cannot read properties of undefined (reading 'additionalProjections')
+  at QueryGenerator.rewriteQuery (…)
+```
+
+The host's query generator builds **one** query and cannot reconcile two mapping *kinds* over
+the same roles. Two hard constraints make this unavoidable:
+
+1. The capabilities schema makes a categorical `values` block a strict `oneOf` —
+   `group` **or** `select`, never both. So "grouped for the chart **and** flat for the table"
+   is not expressible in a single mapping.
+2. API 5.x **drops** the extra value-only/secondary mappings anyway (§4).
+
+**Takeaway:** pick **one** mapping shape — the single grouped `categorical` mapping (§4.2).
+If a flat tabular export is required, build it **in-visual** (e.g. a custom export), do not
+add a second host mapping. Cosmetic "Show as table" duplication is the accepted trade-off.
 
 ---
 
@@ -253,9 +348,18 @@ const roleOf = c => Object.keys(c.source.roles).find(k => c.source.roles[k]);  /
 ```
 **Right:**
 ```ts
-const hasRole = (c, role) => !!(c?.source?.roles && c.source.roles[role]);     // per-role
+const hasRole = (c, role) => {
+  const r = c?.source?.roles; if (!r) return false;
+  if (r[role]) return true;                          // exact match
+  const want = role.toLowerCase();                   // …or case-insensitive fallback
+  return Object.keys(r).some(k => r[k] && k.toLowerCase() === want);
+};
 … find(c => hasRole(c, role))
 ```
+
+> **Case matters too.** `capabilities.json` role names (e.g. lowercase `secondaryMeasure`)
+> may not match the casing the host stamps on `source.roles`. A case-insensitive `hasRole`
+> avoids silently missing rows when the two disagree.
 
 ---
 
@@ -285,32 +389,58 @@ Verify the running build with the version-tagged diagnostic (§4.3) before debug
 
 ---
 
-## 8. Defensive rendering — `renderFatalError`
+## 8. Error handling — let the host recover; don't wipe the DOM
 
-Add a never-throwing error surface so a runtime failure shows the **stack on the visual**
-instead of a blank rectangle. Wrap `constructor`, `update`, and `enumerateObjectInstances`:
+> **Reversed decision.** An early version of this migration added a `renderFatalError`
+> helper that, on any throw, **cleared the visual's DOM** and painted the stack on the
+> canvas. It looked helpful but was actively harmful, so it was **removed**. Record the
+> reasoning so other migrations don't reintroduce it.
+
+**Why the on-canvas error renderer was removed**
+- The visual builds its SVG/DOM **once in the constructor**. A handler that does
+  `while (host.firstChild) host.removeChild(...)` destroys that scaffold, so the **next**
+  `update()` has nothing to draw into — a one-off transient error becomes **permanent**.
+- It masked Power BI's own error boundary, which is **recoverable**: the host re-invokes
+  `update()` on the next data/resize change. Swallowing the throw prevented that recovery.
+
+**What to do instead**
+- Let exceptions propagate to the host. You lose nothing in diagnosis — Power BI Desktop's
+  DevTools still shows the stack — and the visual **recovers** on the next update.
+- Guard *expected* partial states explicitly (see §2.1) with a recoverable message; reserve
+  exceptions for genuinely unexpected failures.
+- Keep one **narrow, silent** `try/catch` only around the format-pane build
+  (`getFormattingModel`), because a pane error must not blank the chart surface — but it must
+  not wipe the DOM or log either:
 
 ```ts
-try { … } catch (e) { this.renderFatalError('update', e); }
+public getFormattingModel() {
+  try { this.applyDynamicFormatting(); } catch { /* never break the surface */ }
+  return this.fmtService.buildFormattingModel(this.model);
+}
 ```
 
-This single helper saved hours during the migration by surfacing the failing phase + stack
-directly in Power BI.
+- **No shipped `console.*`.** Diagnostics are a debugging tool (§4.3), not a shipping feature;
+  strip them before packaging.
 
 ---
 
 ## 9. Migration checklist (copy into each visual's PR)
 
-- [ ] `apiVersion` → 5.3.0; deps bumped; `eslint.config.mjs` replaces `tslint.json`.
+- [ ] `apiVersion` → 5.3.0; deps bumped; `eslint.config.mjs` replaces `tslint.json`; `externalJS: null`.
 - [ ] `legacyShim.d.ts` added; `/// <reference types="powerbi-visuals-api" />` in entry files.
 - [ ] Cross-file globals bridged via `globalThis.powerbi` + side-effect imports.
+- [ ] Property pane ported to the formatting-model API (`getFormattingModel` + `FormattingSettingsService`); `card.name`/`slice.name` match capabilities; dynamic slices injected at build time.
+- [ ] Pane defaults match render gates (a default-off toggle renders only when `=== true`).
 - [ ] All `.source` / `.source.displayName` / `.source.groupName` derefs guarded.
+- [ ] Required-role / binding-order guards added (e.g. measure-before-category bails cleanly).
+- [ ] Display-name transforms (title-case, etc.) applied once on `metadata.columns`, by reference.
 - [ ] `getTickLabelMargins()` consumers mapped to `{top,left,right,bottom}` with `|| 0`.
 - [ ] Multi-measure mappings collapsed to ONE grouped mapping; reconstruction in `update()`.
-- [ ] Role tests use `hasRole(col, role)` (per-role), never first-role-wins.
-- [ ] Version-tagged in-host diagnostic added, confirmed, then **removed**.
+- [ ] Exactly one dataViewMapping *kind* (no categorical + table mix — see §4.4).
+- [ ] Role tests use case-insensitive `hasRole(col, role)` (per-role), never first-role-wins.
+- [ ] Version-tagged in-host diagnostic used transiently, then **removed**; no shipped `console.*`.
 - [ ] `version` bumped for every rebuild; cache-clearing import steps documented.
-- [ ] `renderFatalError` wraps constructor / update / enumerate.
+- [ ] **No** DOM-wiping error renderer; errors propagate to the host; only a silent `try/catch` around the format-pane build.
 - [ ] `tsc --noEmit` clean **and** `pbiviz package` succeeds; re-imported & visually verified.
 
 ---
@@ -326,3 +456,13 @@ directly in Power BI.
 | 1.0.6.0 | Single grouped mapping + per-measure reconstruction |
 | 1.0.7.0 | `hasRole` multi-role fix (secondary/quaternary rows) |
 | 1.0.8.0 | Dead-code cleanup; unified measure-label settings; final clean build |
+| 1.1.x | Property pane ported to formatting-model API; per-series color & measure-title slices injected dynamically |
+| 1.1.x | Centralized Title-Case on `metadata.columns`; case-insensitive `hasRole` |
+| 1.1.x | Required-role guard (measure-before-category); axis-title default aligned with render gate |
+| 1.1.x | **Reverted** additive `table` mapping (host `additionalProjections` crash — §4.4) |
+| 1.1.x | **Removed** `renderFatalError` + all `console.*`; rely on host recovery (§8) |
+| 1.1.x | Comment/dead-code cleanup across `visual.ts`, `selectionId.ts`, `Columnutil.ts`; README added |
+
+> Note: the 1.1.x rows collapse several incremental package bumps; consult the commit history
+> for exact per-build versions. The **decisions** (not the numbers) are what transfer to other
+> visuals.

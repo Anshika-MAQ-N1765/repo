@@ -2646,165 +2646,392 @@ export class Visual implements IVisual {
                , 'top': this.viewport.height / 2 + 'px', 'position': 'relative' 
                , 'width': '100%' 
            }); 
+       this.svg = d3.select(options.element)
+           .append('svg')
+           .style('position', 'absolute').classed('cartesianChart', true);
+       this.margin = {
+           top: 1,
+           right: 1,
+           bottom: 1,
+           left: 1
+       };
+       this.yAxisOrientation = yAxisPosition.left;
+       let element = this.element = options.element;
+       element.setAttribute("class", Visual.ColumnChartClassName);
+       this.adjustMargins();
+       let showLinesOnX = this.scrollY = true;
  
-       this.svg = d3.select(options.element) 
-           .append('svg') 
-           .style('position', 'absolute').classed('cartesianChart', true); 
-       this.margin = { 
-           top: 1, 
-           right: 1, 
-           bottom: 1, 
-           left: 1 
-       }; 
-       this.yAxisOrientation = yAxisPosition.left; 
-       let element = this.element = options.element; 
-       element.setAttribute("class", Visual.ColumnChartClassName); 
-       this.adjustMargins(); 
-       let showLinesOnX = this.scrollY = true; 
+       let showLinesOnY = this.scrollX = true;
  
-       let showLinesOnY = this.scrollX = true; 
+       this.mainGraphicsContext = this.svg.append('g').classed('columnChartMainGraphicsContext', true);
+       let axisGraphicsContext = this.axisGraphicsContext = this.svg.append('g')
+           .classed(this.AxisGraphicsContextClassName, true);
  
-       this.mainGraphicsContext = this.svg.append('g').classed('columnChartMainGraphicsContext', true); 
-       let axisGraphicsContext = this.axisGraphicsContext = this.svg.append('g') 
-           .classed(this.AxisGraphicsContextClassName, true); 
+       this.svgScrollable = this.svg.append('svg')
+           .classed('svgScrollable', true)
+           .style('overflow', 'hidden');
  
-       this.svgScrollable = this.svg.append('svg') 
-           .classed('svgScrollable', true) 
-           .style('overflow', 'hidden'); 
+       this.labelGraphicsContext = this.svgScrollable.append('g')
+           .classed('labelGraphicsContext', true);
+       let axisGraphicsContextScrollable = this.axisGraphicsContextScrollable = this.svgScrollable.append('g')
+           .classed(this.AxisGraphicsContextClassName, true);
  
-       this.labelGraphicsContext = this.svgScrollable.append('g') 
-           .classed('labelGraphicsContext', true); 
-       let axisGraphicsContextScrollable = this.axisGraphicsContextScrollable = this.svgScrollable.append('g') 
-           .classed(this.AxisGraphicsContextClassName, true); 
+       this.clearCatcher = appendClearCatcher(this.axisGraphicsContextScrollable);
+       let axisGroup = showLinesOnX ? axisGraphicsContextScrollable : axisGraphicsContext;
  
-       this.clearCatcher = appendClearCatcher(this.axisGraphicsContextScrollable); 
-       let axisGroup = showLinesOnX ? axisGraphicsContextScrollable : axisGraphicsContext; 
+       this.backgroundGraphicsContext = axisGraphicsContext.append('svg:image');
+       this.xAxisGraphicsContext = axisGroup.append('g').attr('class', 'x axis');
+       this.y1AxisGraphicsContext = axisGroup.append('g').attr('class', 'y axis');
  
-       this.backgroundGraphicsContext = axisGraphicsContext.append('svg:image'); 
-       this.xAxisGraphicsContext = axisGroup.append('g').attr('class', 'x axis'); 
-       this.y1AxisGraphicsContext = axisGroup.append('g').attr('class', 'y axis'); 
+       this.xAxisGraphicsContext.classed('showLinesOnAxis', showLinesOnX);
+       this.y1AxisGraphicsContext.classed('showLinesOnAxis', showLinesOnY);
  
-       this.xAxisGraphicsContext.classed('showLinesOnAxis', showLinesOnX); 
-       this.y1AxisGraphicsContext.classed('showLinesOnAxis', showLinesOnY); 
+       this.xAxisGraphicsContext.classed('hideLinesOnAxis', !showLinesOnX);
+       this.y1AxisGraphicsContext.classed('hideLinesOnAxis', !showLinesOnY);
+       this.interactivityService = createInteractivityService(this.hostService);
+       this.isComboChart = false;
+       this.mainGraphicsG = this.axisGraphicsContextScrollable.append('g')
+           .classed(Visual.MainGraphicsContextClassName, true);
+       this.mainGraphicsContext = this.mainGraphicsG.append('svg');
+              this.ColorPalette = options.host.colorPalette;
+       this.legend = new GMOSVGLegend(element, LegendPosition.Top, this.interactivityService, true);
+}
+   // Rebuild matrix data into the categorical shape expected by the renderer.
+   // Use category-grain subtotals for non-additive measures such as DISTINCTCOUNT.
+   private matrixToCategorical(dv: any): any {
+       const matrix: any = dv.matrix;
+       const valueSources: any[] = (matrix && matrix.valueSources) || [];
+       const M: number = valueSources.length;
+       const rowLevels: any[] = (matrix && matrix.rows && matrix.rows.levels) || [];
+       const colLevels: any[] = (matrix && matrix.columns && matrix.columns.levels) || [];
+       const categorySource: any = rowLevels[0] && rowLevels[0].sources ? rowLevels[0].sources[0]
+           : (dv.metadata && dv.metadata.columns ? dv.metadata.columns[0] : { displayName: '' });
+       // Series source: capabilities uses columns=[Series] (new), older nested shape put
+       // it as the 2nd ROW level. Try columns first, then rows[1].
+       const seriesSource: any =
+           (colLevels[0] && colLevels[0].sources && colLevels[0].sources[0]) ||
+           (rowLevels[1] && rowLevels[1].sources && rowLevels[1].sources[0]) || null;
+       const rootChildren: any[] = (matrix && matrix.rows && matrix.rows.root && matrix.rows.root.children) || [];
+       const colChildren: any[] = (matrix && matrix.columns && matrix.columns.root && matrix.columns.root.children) || [];
  
-       this.xAxisGraphicsContext.classed('hideLinesOnAxis', !showLinesOnX); 
-       this.y1AxisGraphicsContext.classed('hideLinesOnAxis', !showLinesOnY); 
-       this.interactivityService = createInteractivityService(this.hostService); 
-       this.isComboChart = false; 
-       this.mainGraphicsG = this.axisGraphicsContextScrollable.append('g') 
-           .classed(Visual.MainGraphicsContextClassName, true); 
-       this.mainGraphicsContext = this.mainGraphicsG.append('svg'); 
-       this.ColorPalette = options.host.colorPalette; 
-       this.legend = new GMOSVGLegend(element, LegendPosition.Top, this.interactivityService, true); 
-} 
-   public update(options: VisualUpdateOptions) { 
-       Visual.totalHeight = options.viewport.height; 
-             if (options.dataViews && options.dataViews.length > 0) {
+       // role name -> value-source index (first column carrying that role)
+       const roleIndex: { [role: string]: number } = {};
+       let yIndex = -1;
+       for (let m = 0; m < M; m++) {
+           const roles: any = valueSources[m] && valueSources[m].roles ? valueSources[m].roles : {};
+           for (const r in roles) { if (roles[r] && roleIndex[r] === undefined) { roleIndex[r] = m; } }
+           if (roles && roles['Y'] && yIndex < 0) { yIndex = m; }
+       }
+       if (yIndex < 0) { yIndex = 0; }
+ 
+       // read measure m from a matrix node's value bag (nested shape: keyed by measure idx)
+       const nodeVal = (node: any, m: number): any => {
+           if (!node || !node.values) { return null; }
+           const cell: any = node.values[m];
+           return cell && cell.value !== undefined ? cell.value : null;
+       };
+       // read a row node's value at a flattened column-leaf position (rows/cols shape)
+       const nodeAt = (node: any, leafPos: number): any => {
+           if (!node || !node.values || leafPos == null) { return null; }
+           const cell: any = node.values[leafPos];
+           return cell && cell.value !== undefined ? cell.value : null;
+       };
+ 
+       // Flatten the column hierarchy into ordered leaves. With columns=[Series] and
+       // values=[measures], the measures are the innermost column level, so each answer
+       // node has one child per measure. A row node's .values dict is keyed by this leaf
+       // position (depth-first). The across-answer grand total (the model's level-grain
+       // value — correct for non-additive measures) rides on an isSubtotal answer node.
+       const seriesLeafPos: { [key: string]: { [m: number]: number } } = {};
+       const subtotalLeafByMeasure: { [m: number]: number } = {};
+       let hasSubtotalColumn = false;
+       const seriesList: { key: string; name: any; identity: any; objects: any }[] = [];
+       const seriesPos: { [key: string]: number } = {};
+       let leafPos = 0;
+       for (const sNode of colChildren) {
+           const measureKids: any[] = sNode.children || [];
+           const emit = (mi: number) => {
+               if (sNode.isSubtotal) {
+                   subtotalLeafByMeasure[mi] = leafPos;
+                   hasSubtotalColumn = true;
+               } else {
+                   const key = String(sNode.value);
+                   if (seriesPos[key] === undefined) {
+                       seriesPos[key] = seriesList.length;
+                       seriesList.push({ key, name: sNode.value, identity: sNode.identity, objects: sNode.objects });
+                       seriesLeafPos[key] = {};
+                   }
+                   seriesLeafPos[key][mi] = leafPos;
+               }
+               leafPos++;
+           };
+           if (measureKids.length > 0) {
+               for (const mNode of measureKids) {
+                   emit(typeof mNode.levelSourceIndex === 'number' ? mNode.levelSourceIndex : 0);
+               }
+           } else {
+               for (let m = 0; m < M; m++) { emit(m); }
+           }
+       }
+       const useColumns: boolean = leafPos > 0;
+ 
+       // Nested-rows fallback: series are the row nodes' children.
+       if (!useColumns) {
+           for (const cn of rootChildren) {
+               for (const sn of (cn.children || [])) {
+                   if (sn && sn.isSubtotal) { continue; }
+                   const key = String(sn.value);
+                   if (seriesPos[key] === undefined) {
+                       seriesPos[key] = seriesList.length;
+                       seriesList.push({ key, name: sn.value, identity: sn.identity, objects: sn.objects });
+                   }
+               }
+           }
+       }
+       const hasSeriesLevel: boolean = seriesList.length > 0;
+       const S: number = Math.max(1, seriesList.length);
+ 
+       // (1) categories (level-0 row nodes)
+       const catNames: any[] = [];
+       const catIdentities: any[] = [];
+       const catObjects: any[] = [];
+       for (const cn of rootChildren) {
+           catNames.push(cn.value === undefined ? null : cn.value);
+           catIdentities.push(cn.identity);
+           catObjects.push(cn.objects);
+       }
+       const N: number = catNames.length;
+       const categoryColumn: any = { source: categorySource, values: catNames, identity: catIdentities };
+       if (catObjects.some((o) => !!o)) { categoryColumn.objects = catObjects; }
+ 
+       // (2b) nested fallback: per-category lookup seriesKey -> series node
+       const seriesNodeByCat: { [k: string]: any }[] = [];
+       if (!useColumns) {
+           for (let ci = 0; ci < N; ci++) {
+               const map: { [k: string]: any } = {};
+               for (const sn of (rootChildren[ci].children || [])) { if (sn && sn.isSubtotal) { continue; } map[String(sn.value)] = sn; }
+               seriesNodeByCat.push(map);
+           }
+       }
+ 
+       // (3) grouped value columns, series-major (M measure columns per series)
+       const valueColumns: any = [];
+       const makeMeasureSource = (base: any, seriesName: any): any => {
+           const src: any = {};
+           for (const k in base) { src[k] = base[k]; }
+           if (hasSeriesLevel) { src.groupName = seriesName; }
+           return src;
+       };
+       for (let s = 0; s < seriesList.length; s++) {
+           const seriesName: any = seriesList[s].name;
+           for (let m = 0; m < M; m++) {
+               const vals: any[] = new Array(N).fill(null);
+               for (let ci = 0; ci < N; ci++) {
+                   if (useColumns) {
+                       const lp = seriesLeafPos[seriesList[s].key];
+                       vals[ci] = lp ? nodeAt(rootChildren[ci], lp[m]) : null;
+                   } else {
+                       vals[ci] = nodeVal(seriesNodeByCat[ci][seriesList[s].key], m);
+                   }
+               }
+               const col: any = { source: makeMeasureSource(valueSources[m], seriesName), values: vals };
+               col.identity = seriesList[s].identity;
+               valueColumns.push(col);
+           }
+       }
+       // No Series bound: emit a single group of raw per-category measures.
+       if (seriesList.length === 0) {
+           for (let m = 0; m < M; m++) {
+               const vals: any[] = new Array(N).fill(null);
+               for (let ci = 0; ci < N; ci++) { vals[ci] = nodeVal(rootChildren[ci], m); }
+               valueColumns.push({ source: makeMeasureSource(valueSources[m], undefined), values: vals });
+           }
+       }
+       if (hasSeriesLevel && seriesSource) { valueColumns.source = seriesSource; }
+       valueColumns.grouped = () => {
+           const groups: any[] = [];
+           for (let s = 0; s < S; s++) {
+               const g: any = { values: valueColumns.slice(s * M, s * M + M) };
+               if (seriesList[s]) { g.name = seriesList[s].name; g.identity = seriesList[s].identity; g.objects = seriesList[s].objects; }
+               groups.push(g);
+           }
+           return groups;
+       };
+ 
+       // (4) category-grain totals per role (model-computed; correct for non-additive).
+       // rows/cols shape: the across-answer total is the isSubtotal COLUMN slot on each
+       // level row node. Nested fallback: the level node's own .values or isSubtotal child.
+       const subtotalNodeForCat = (ci: number): any => {
+           const cn: any = rootChildren[ci];
+           if (cn && cn.values) { return cn; }
+           for (const sn of ((cn && cn.children) || [])) { if (sn && sn.isSubtotal) { return sn; } }
+           return null;
+       };
+       const readGrainForMeasure = (m: number): any[] => {
+           const arr: any[] = new Array(N).fill(null);
+           for (let ci = 0; ci < N; ci++) {
+               arr[ci] = useColumns
+                   ? nodeAt(rootChildren[ci], subtotalLeafByMeasure[m])
+                   : nodeVal(subtotalNodeForCat(ci), m);
+           }
+           return arr;
+       };
+       const anyNonNull = (arr: any[]): boolean => !!arr && arr.some((v) => v != null);
+       const qnameOf = (m: number): string =>
+           (valueSources[m] && (valueSources[m].queryName || valueSources[m].displayName)) || '';
+       const grain: { [role: string]: any[] } = {};
+       for (const role in roleIndex) {
+           let m: number = roleIndex[role];
+           let arr: any[] = readGrainForMeasure(m);
+           // A measure dropped into two field wells (e.g. the Primary measure ALSO added
+           // as a secondary label) makes the host emit a duplicate, data-less value source
+           // for the second role, so its subtotal column reads null -> the label showed 0.
+           // Fall back to any value source with the SAME queryName that does carry subtotal
+           // data, so the duplicate label shows the real total instead of 0/blank.
+           if (!anyNonNull(arr)) {
+               const qn = qnameOf(m);
+               for (let m2 = 0; m2 < M; m2++) {
+                   if (m2 !== m && qn && qnameOf(m2) === qn) {
+                       const alt = readGrainForMeasure(m2);
+                       if (anyNonNull(alt)) { arr = alt; m = m2; break; }
+                   }
+               }
+           }
+           grain[role] = arr;
+       }
+ 
+       // (5) metadata.columns so the downstream role scan still finds Category/Series/Y/...
+       const columns: any[] = [];
+       if (categorySource) { columns.push(categorySource); }
+       if (seriesSource) { columns.push(seriesSource); }
+       for (let m = 0; m < M; m++) { columns.push(valueSources[m]); }
+ 
+       const out: any = {
+           metadata: { columns, objects: dv.metadata ? dv.metadata.objects : null },
+           categorical: { categories: [categoryColumn], values: valueColumns },
+           matrix,
+       };
+       out._categoryGrainTotals = grain;
+       out.categorical._categoryGrainTotals = grain;
+       (out as any)._diag = {
+           shape: useColumns ? 'rows/cols' : 'nested',
+           N, S: seriesList.length, M,
+           hasSubtotalColumn,
+           vsRoles: valueSources.map((vs: any) => {
+               const r = vs && vs.roles ? Object.keys(vs.roles).filter((k) => vs.roles[k]) : [];
+               return (r.join('+') || '?');
+           }),
+           grainTertiary: grain['tertiaryMeasure'] || null,
+           grainSecondary: grain['secondaryMeasure'] || null,
+           grainSixth: grain['sixthMeasure'] || null,
+       };
+       return out;
+   }
+   public update(options: VisualUpdateOptions) {
+       Visual.totalHeight = options.viewport.height;
+       // Adapt matrix input for the renderer and keep category-grain totals.
+       if (options.dataViews && options.dataViews[0] && (<any>options.dataViews[0]).matrix) {
+           try {
+               options.dataViews[0] = this.matrixToCategorical(options.dataViews[0]);
+           } catch (e) {
+               // Ignore adapter failures and let the existing rendering path handle the fallback.
+           }
+       }
+       if (options.dataViews && options.dataViews.length > 0) {
                      this.formattingSettingsModel = this.formattingSettingsService.populateFormattingSettingsModel(VisualFormattingSettingsModel, options.dataViews[0]);
              }
         
-       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .mainGraphicsContext > .dataLabels > .dataLabel').remove(); 
-       //total, secondary, tertiary and quarternay fifth sixth 
-       this.root.selectAll('.cartesianChart > .measureLabelTitle').remove(); 
-       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .totalLabels').remove(); 
-       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .secLabels').remove(); 
-       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .terLabels').remove(); 
-       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .quatLabels').remove(); 
-       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .fiveLabels').remove(); 
-       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .sixLabels').remove(); 
+       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .mainGraphicsContext > .dataLabels > .dataLabel').remove();
+       this.root.selectAll('.cartesianChart > .measureLabelTitle').remove();
+       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .totalLabels').remove();
+       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .secLabels').remove();
+       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .terLabels').remove();
+       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .quatLabels').remove();
+       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .fiveLabels').remove();
+       this.root.selectAll('.svgScrollable > .axisGraphicsContext > .sixLabels').remove();
  
-this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon').remove(); this.root.selectAll('.legendText').remove(); this.root.selectAll('.legendItem').remove(); this.updateCount++; 
-
-      this.isPrimaryMeasure = false; 
-       this.isLegendValue = false; 
-       this.isAxistype = false; 
-       this.isSecondaryMeasure = false; 
-       this.isSameAxis = false; 
-       let dataViews = options.dataViews; 
-       this.viewport = (options.viewport); 
-       let axisIterator = 0, legendIterator = 0; 
-       if (!dataViews || 0 === dataViews.length) { 
-           this.updateCount = 0; 
-           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' }); 
-           this.root.select('.legend').style({ 'display': 'none' }); 
-           this.svg.style({ 'display': 'none' }); 
-           this.root.select('.Title_Div_Text').style({ 'display': 'none' }); 
-           return; 
-       } 
-       else if (dataViews.length !== 0 && dataViews[0].metadata.columns.length === 0) { 
-           this.updateCount = 0; 
-           this.root.select('.errorMessage').text('No data available'); 
-           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' }); 
-           this.root.select('.legend').style({ 'display': 'none' }); 
-           this.svg.style({ 'display': 'none' }); 
-           this.root.select('.Title_Div_Text').style({ 'display': 'none' }); 
-           return; 
-       } 
-       else if (!dataViews[0].categorical || !dataViews[0].categorical.categories 
-           || dataViews[0].categorical.categories.length === 0 
-           || !dataViews[0].categorical.categories[0]) { 
+this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon').remove(); this.root.selectAll('.legendText').remove(); this.root.selectAll('.legendItem').remove(); this.updateCount++;
+ 
+      this.isPrimaryMeasure = false;
+       this.isLegendValue = false;
+       this.isAxistype = false;
+       this.isSecondaryMeasure = false;
+       this.isSameAxis = false;
+       let dataViews = options.dataViews;
+       this.viewport = (options.viewport);
+       let axisIterator = 0, legendIterator = 0;
+       if (!dataViews || 0 === dataViews.length) {
+           this.updateCount = 0;
+           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
+           this.root.select('.legend').style({ 'display': 'none' });
+           this.svg.style({ 'display': 'none' });
+           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
+           return;
+       }
+       else if (dataViews.length !== 0 && dataViews[0].metadata.columns.length === 0) {
+           this.updateCount = 0;
+           this.root.select('.errorMessage').text('No data available');
+           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
+           this.root.select('.legend').style({ 'display': 'none' });
+           this.svg.style({ 'display': 'none' });
+           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
+           return;
+       }
+       else if (!dataViews[0].categorical || !dataViews[0].categorical.categories
+           || dataViews[0].categorical.categories.length === 0
+           || !dataViews[0].categorical.categories[0]) {
            // A 100% stacked chart needs a Category. With only a measure bound (e.g.
            // Primary added before Category) downstream code would throw, so show a
            // recoverable prompt; the next update that includes a Category clears it.
-           this.updateCount = 0; 
-           this.root.select('.errorMessage').text('Please select Category data'); 
-           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' }); 
-           this.root.select('.legend').style({ 'display': 'none' }); 
-           this.svg.style({ 'display': 'none' }); 
-           this.root.select('.Title_Div_Text').style({ 'display': 'none' }); 
-           return; 
-       } 
-       else if (dataViews[0].categorical.categories && dataViews[0].categorical.categories[0].values.length == 0 && dataViews[0].categorical.values && dataViews[0].categorical.values[0].values.length == 0) { 
-           this.updateCount = 0; 
-           this.root.select('.errorMessage').text('No data available'); 
-           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' }); 
-           this.root.select('.legend').style({ 'display': 'none' }); 
-           this.svg.style({ 'display': 'none' }); 
-           this.root.select('.Title_Div_Text').style({ 'display': 'none' }); 
-           return; 
-       } 
+           this.updateCount = 0;
+           this.root.select('.errorMessage').text('Please select Category data');
+           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
+           this.root.select('.legend').style({ 'display': 'none' });
+           this.svg.style({ 'display': 'none' });
+           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
+           return;
+       }
+       else if (dataViews[0].categorical.categories && dataViews[0].categorical.categories[0].values.length == 0 && dataViews[0].categorical.values && dataViews[0].categorical.values[0].values.length == 0) {
+           this.updateCount = 0;
+           this.root.select('.errorMessage').text('No data available');
+           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
+           this.root.select('.legend').style({ 'display': 'none' });
+           this.svg.style({ 'display': 'none' });
+           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
+           return;
+       }
  
-       let axisName; 
-       let legendName; 
-       let metadataarray=dataViews[0].metadata.columns; 
-       if (metadataarray) { 
-           for (let i = 0; i < dataViews[0].metadata.columns.length; i++) { 
-               if (metadataarray[i].roles && metadataarray[i].roles.hasOwnProperty('Y')) { 
-                   this.isPrimaryMeasure = true; 
-               } 
-               if (metadataarray[i].roles && metadataarray[i].roles.hasOwnProperty('Category') && !axisIterator) { 
-                   this.isAxistype = true; 
-                   axisName = dataViews[0].metadata.columns[i].displayName; 
-                   axisIterator++; 
+       let axisName;
+       let legendName;
+       let metadataarray=dataViews[0].metadata.columns;
+       if (metadataarray) {
+           for (let i = 0; i < dataViews[0].metadata.columns.length; i++) {
+               if (metadataarray[i].roles && metadataarray[i].roles.hasOwnProperty('Y')) {
+                   this.isPrimaryMeasure = true;
+               }
+               if (metadataarray[i].roles && metadataarray[i].roles.hasOwnProperty('Category') && !axisIterator) {
+                   this.isAxistype = true;
+                   axisName = dataViews[0].metadata.columns[i].displayName;
+                   axisIterator++;
  
-               } 
-               if (metadataarray[i].roles && metadataarray[i].roles.hasOwnProperty('Series') && !legendIterator) { 
-                   legendName = dataViews[0].metadata.columns[i].displayName; 
-                   legendIterator++; 
-               } 
-           } 
-       } 
-       let resize: boolean = false; 
-       if (this.dataView === options.dataViews[0]) { 
-           resize = true; 
-       } 
-       this.dataView = options.dataViews[0]; 
-       // ---- Multi-measure delivery (API 5.x) ----
-       // The single grouped categorical mapping packs every bound measure into
-       // dataViews[0].categorical.values (API 5.x drops value-only mappings). We
-       // rebuild dataViews[0] as a Y-only view (so a series with an all-null Primary
-       // measure never reaches the legend) and synthesize an aggregated-per-category
-       // view for each extra measure at a fixed index ([1]=secondary [2]=sampleSize
-       // [3]=tertiary [4]=quaternary [5]=fifth [6]=sixth), matching the API 1.x
-       // shape the rest of the code expects.
+               }
+               if (metadataarray[i].roles && metadataarray[i].roles.hasOwnProperty('Series') && !legendIterator) {
+                   legendName = dataViews[0].metadata.columns[i].displayName;
+                   legendIterator++;
+               }
+           }
+       }
+       let resize: boolean = false;
+       if (this.dataView === options.dataViews[0]) {
+           resize = true;
+       }
+       this.dataView = options.dataViews[0];
+       // Normalize grouped API 5.x measures into the legacy per-measure views.
        {
            const host0: any = options.dataViews[0];
            const cat: any = host0 && host0.categorical;
            const allValues: any = cat && cat.values ? cat.values : null;
-           // Title-case every column displayName ONCE here. Each categorical source
-           // references metadata.columns, so this flows by reference to tooltips,
-           // on-chart titles, legend and axes. (Custom titles typed in the format
-           // pane are read separately and stay as typed.)
+           // Title-case display names once so labels stay consistent.
            if (host0 && host0.metadata && Array.isArray(host0.metadata.columns)) {
                for (const col of host0.metadata.columns) {
                    if (col && typeof col.displayName === 'string') {
@@ -2812,9 +3039,7 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                    }
                }
            }
-           // One column can carry several measure roles at once (the same field
-           // dropped into Primary + Secondary returns ONE column with both role
-           // flags), so test each role independently rather than picking the first.
+           // A field can carry multiple roles, so test each role independently.
            const hasRole = (col: any, role: string): boolean => {
                const r = col && col.source && col.source.roles;
                if (!r) { return false; }
@@ -2837,7 +3062,7 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                const keptGroups: any[] = origGroups.filter(
                    (g: any) => (g.values || []).some((c: any) => yColHasData(c)));
  
-               // (a) Y-only clone: the stacking chart sees only the Primary measure.
+               // Build a Y-only view for the chart.
                const yOnlyValues: any = allValues.filter((c: any) => yColHasData(c));
                yOnlyValues.source = allValues.source;
                yOnlyValues.grouped = () => keptGroups.map((g: any) => {
@@ -2845,16 +3070,13 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                    ng.values = (g.values || []).filter((c: any) => hasRole(c, 'Y'));
                    return ng;
                });
-
+ 
                const chartDataView: any = Object.assign({}, host0);
                chartDataView.categorical = Object.assign({}, cat, { values: yOnlyValues });
                normalized[0] = chartDataView;
                this.dataView = chartDataView;
-
-               // (b) Deliver each extra measure at its fixed index. Normally every
-               //     measure is packed into this grouped dataView, so we synthesize an
-               //     aggregated-per-category column per role. (If a host instead
-               //     delivered them as separate dataViews, copy those as-is.)
+ 
+               // Synthesize extra-measure views for labels and tooltips.
                const ROLE_TO_INDEX: { [role: string]: number } = {
                    secondaryMeasure: 1,
                    sampleSize: 2,
@@ -2872,7 +3094,11 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                    for (let i = 1; i < options.dataViews.length; i++) {
                        normalized[i] = options.dataViews[i];
                    }
-               } else {
+                              } else {
+                   // Prefer the model's per-category subtotal (correct for non-additive
+                   // measures such as DISTINCTCOUNT); fall back to summing the per-series
+                   // segments only when the matrix delivered no Category-node subtotal.
+                   const grainTotals: any = (host0 && host0._categoryGrainTotals) || null;
                    for (const role in ROLE_TO_INDEX) {
                        let srcCol: any = null;
                        for (const g of origGroups) {
@@ -2880,19 +3106,26 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
                            if (found) { srcCol = found; break; }
                        }
                        if (!srcCol) { continue; }
-                       const sums: any[] = new Array(catLen).fill(null);
-                       for (const g of origGroups) {
-                           const col = (g.values || []).find((c: any) => hasRole(c, role));
-                           if (!col || !col.values) { continue; }
-                           for (let c = 0; c < catLen; c++) {
-                               const v = col.values[c];
-                               if (v != null) {
-                                   const n = typeof v === 'number' ? v : (parseFloat(v) || 0);
-                                   sums[c] = (sums[c] == null ? 0 : sums[c]) + n;
+                       const grain: any[] = grainTotals && grainTotals[role] ? grainTotals[role] : null;
+                       let outVals: any[];
+                       if (grain && grain.some((v: any) => v != null)) {
+                           outVals = grain.slice(0, catLen);
+                       } else {
+                           const sums: any[] = new Array(catLen).fill(null);
+                           for (const g of origGroups) {
+                               const col = (g.values || []).find((c: any) => hasRole(c, role));
+                               if (!col || !col.values) { continue; }
+                               for (let c = 0; c < catLen; c++) {
+                                   const v = col.values[c];
+                                   if (v != null) {
+                                       const n = typeof v === 'number' ? v : (parseFloat(v) || 0);
+                                       sums[c] = (sums[c] == null ? 0 : sums[c]) + n;
+                                   }
                                }
                            }
+                           outVals = sums;
                        }
-                       const synthValues: any = [{ source: srcCol.source, values: sums }];
+                       const synthValues: any = [{ source: srcCol.source, values: outVals }];
                        synthValues.source = undefined;
                        normalized[ROLE_TO_INDEX[role]] = <any>{
                            metadata: { columns: [srcCol.source], objects: host0.metadata ? host0.metadata.objects : null },
@@ -2903,36 +3136,36 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
            } else {
                normalized[0] = host0;
            }
-           this.dataViews = normalized; 
+           this.dataViews = normalized;
        }
-       this.svg.selectAll('.columnChartMainGraphicsContext').remove(); 
-       this.mainGraphicsContext = this.svg.append('g').classed('columnChartMainGraphicsContext', true); 
-       this.axisGraphicsContextScrollable.selectAll('.' + Visual.MainGraphicsContextClassName).remove(); 
-       this.mainGraphicsG = this.axisGraphicsContextScrollable.append('g') 
-           .classed(Visual.MainGraphicsContextClassName, true); 
-       this.mainGraphicsContext = this.mainGraphicsG.append('svg'); 
+       this.svg.selectAll('.columnChartMainGraphicsContext').remove();
+       this.mainGraphicsContext = this.svg.append('g').classed('columnChartMainGraphicsContext', true);
+       this.axisGraphicsContextScrollable.selectAll('.' + Visual.MainGraphicsContextClassName).remove();
+       this.mainGraphicsG = this.axisGraphicsContextScrollable.append('g')
+           .classed(Visual.MainGraphicsContextClassName, true);
+       this.mainGraphicsContext = this.mainGraphicsG.append('svg');
  
-       if (axisName === legendName) 
-           this.isSameAxis = true; 
+       if (axisName === legendName)
+           this.isSameAxis = true;
        
-       if (!this.isPrimaryMeasure) { 
-           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' }); 
-           this.root.select('.legend').style({ 'display': 'none' }); 
-           this.svg.style({ 'display': 'none' }); 
-           this.root.select('.Title_Div_Text').style({ 'display': 'none' }); 
-           return; 
-       } 
-       else { 
-           this.root.select('.errorMessage').style({ 'display': 'none' }); 
-           this.root.select('.legend').style({ 'display': 'inherit' }); 
-           this.svg.style({ 'display': 'block' }); 
-           this.root.select('.Title_Div_Text').style({ 'display': 'inline-block' }); 
-       } 
+       if (!this.isPrimaryMeasure) {
+           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
+           this.root.select('.legend').style({ 'display': 'none' });
+           this.svg.style({ 'display': 'none' });
+           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
+           return;
+       }
+       else {
+           this.root.select('.errorMessage').style({ 'display': 'none' });
+           this.root.select('.legend').style({ 'display': 'inherit' });
+           this.svg.style({ 'display': 'block' });
+           this.root.select('.Title_Div_Text').style({ 'display': 'inline-block' });
+       }
  
-       if (dataViews[0] && dataViews[0].categorical && dataViews[0].categorical.values && dataViews[0].categorical.values.source && dataViews[0].categorical.values.source.roles) { 
-           if (dataViews[0].categorical.values.source.roles.hasOwnProperty('Series')) 
-               this.isLegendValue = true; 
-       } 
+       if (dataViews[0] && dataViews[0].categorical && dataViews[0].categorical.values && dataViews[0].categorical.values.source && dataViews[0].categorical.values.source.roles) {
+           if (dataViews[0].categorical.values.source.roles.hasOwnProperty('Series'))
+               this.isLegendValue = true;
+       }
  
        if (dataViews.length > 0) { 
            this.populateObjectProperties(dataViews); 

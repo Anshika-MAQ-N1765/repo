@@ -995,6 +995,7 @@ declare namespace powerbi.extensibility.visual {
         private static substractMargin;
         applyViewportSettings(): void;
         constructor(options: VisualConstructorOptions);
+        private matrixToCategorical;
         update(options: VisualUpdateOptions): void;
         private shouldRenderAxis;
         private populateObjectProperties;

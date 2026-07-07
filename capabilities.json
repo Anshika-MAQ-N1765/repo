@@ -364,6 +364,17 @@
         "showTooltip": { "type": { "bool": true } },
         "tooltiptext": { "type": { "text": true } }
       }
+    },
+ 
+    "subTotals": {
+      "displayName": "Subtotals",
+      "properties": {
+        "rowSubtotals": { "type": { "bool": true } },
+        "perRowLevel": { "type": { "bool": true } },
+        "columnSubtotals": { "type": { "bool": true } },
+        "perColumnLevel": { "type": { "bool": true } },
+        "levelSubtotalEnabled": { "type": { "bool": true } }
+      }
     }
   },
  
@@ -382,33 +393,54 @@
           "sampleSize": { "max": 1 }
         }
       ],
-      "categorical": {
-        "categories": {
+      "matrix": {
+        "rows": {
           "for": { "in": "Category" },
-          "dataReductionAlgorithm": {
-            "top": {}
-          }
+          "dataReductionAlgorithm": { "top": { "count": 30000 } }
+        },
+        "columns": {
+          "for": { "in": "Series" },
+          "dataReductionAlgorithm": { "top": { "count": 30000 } }
         },
         "values": {
-          "group": {
-            "by": "Series",
-            "select": [
-              { "bind": { "to": "Y" } },
-              { "bind": { "to": "secondaryMeasure" } },
-              { "bind": { "to": "tertiaryMeasure" } },
-              { "bind": { "to": "quaternaryMeasure" } },
-              { "bind": { "to": "fifthMeasure" } },
-              { "bind": { "to": "sixthMeasure" } },
-              { "bind": { "to": "sampleSize" } }
-            ],
-            "dataReductionAlgorithm": {
-              "top": {}
-            }
-          }
+          "select": [
+            { "bind": { "to": "Y" } },
+            { "bind": { "to": "secondaryMeasure" } },
+            { "bind": { "to": "tertiaryMeasure" } },
+            { "bind": { "to": "quaternaryMeasure" } },
+            { "bind": { "to": "fifthMeasure" } },
+            { "bind": { "to": "sixthMeasure" } },
+            { "bind": { "to": "sampleSize" } }
+          ]
         }
       }
     }
   ],
+ 
+  "subtotals": {
+    "matrix": {
+      "rowSubtotals": {
+        "propertyIdentifier": { "objectName": "subTotals", "propertyName": "rowSubtotals" },
+        "defaultValue": false
+      },
+      "rowSubtotalsPerLevel": {
+        "propertyIdentifier": { "objectName": "subTotals", "propertyName": "perRowLevel" },
+        "defaultValue": false
+      },
+      "columnSubtotals": {
+        "propertyIdentifier": { "objectName": "subTotals", "propertyName": "columnSubtotals" },
+        "defaultValue": true
+      },
+      "columnSubtotalsPerLevel": {
+        "propertyIdentifier": { "objectName": "subTotals", "propertyName": "perColumnLevel" },
+        "defaultValue": false
+      },
+      "levelSubtotalEnabled": {
+        "propertyIdentifier": { "objectName": "subTotals", "propertyName": "levelSubtotalEnabled" },
+        "defaultValue": true
+      }
+    }
+  },
  
   "suppressDefaultTitle": true,
   "supportsHighlight": true,
@@ -420,4 +452,5 @@
   },
   "privileges": []
 }
+ 
  

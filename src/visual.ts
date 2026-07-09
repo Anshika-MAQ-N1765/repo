@@ -6189,7 +6189,7 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                .append('title') 
                .text((d, i) => xAxis.values[i]); 
        } 
-       xAxisGraphicsElement.selectAll('g.tick').selectAll('line').style({ 'display': 'block', 'fill': 'black' }) 
+       xAxisGraphicsElement.selectAll('g.tick').selectAll('line').style({ 'display': 'none' }) 
        
        // The X (category) axis must never render a domain/baseline SVG line. Modern
        // d3 (v7) draws path.domain with a visible stroke by default (d3 v3 did not),

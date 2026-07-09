@@ -7,7 +7,7 @@ chart title.
 
 - **Visual name:** `100per-Stackchart`
 - **GUID:** `PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2`
-- **Version:** `1.1.16.0` (see `pbiviz.json`)
+- **Version:** `1.3.0.0` (see `pbiviz.json`)
 - **Power BI API:** `~5.3.0` · **D3:** `7.9.0` · **TypeScript:** `5.5.4`
 
 ---
@@ -58,15 +58,20 @@ shim layers bridge the old code into the new world:
 
 `index.ts` imports the shim **first** (for side effects), then exports `Visual`.
 
-**Multi-measure delivery.** `capabilities.json` declares one grouped categorical
-mapping. API 5.x delivers a single dataView with every measure packed into
-`categorical.values`, so `update()` rebuilds `dataViews[0]` as a Primary-only
-view and synthesizes one aggregated-per-category view per extra measure at a
-fixed index (`[1]` secondary, `[2]` sample size, `[3]` tertiary, `[4]`
-quaternary, `[5]` fifth, `[6]` sixth) — the shape the rest of the code expects.
+**Data delivery (matrix + Subtotal API).** `capabilities.json` declares **one
+`matrix` mapping** (`rows = Category`, `columns = Series`, `values = measures`)
+and requests **column subtotals**. API 5.x delivers a single dataView, so
+`update()` runs `matrixToCategorical()` to rebuild the categorical shape the
+renderer expects: a Primary‑only chart view plus one aggregated‑per‑category
+view per extra measure at a fixed index (`[1]` secondary, `[2]` sample size,
+`[3]` tertiary, `[4]` quaternary, `[5]` fifth, `[6]` sixth). For **non‑additive**
+measures (e.g. Distinct Users = `DISTINCTCOUNT`) it reads the model's
+category‑grain **subtotal** rather than summing per‑series segments, so the label
+shows the correct total (e.g. `700`, not `1531`).
 
-See `ARCHITECTURE_CURRENT.md` (modern state) and `ARCHITECTURE_INITIAL.md`
-(legacy baseline) for the full picture.
+See `MIGRATION_GUIDE.md` (general playbook) and `POWERBI_API_CHANGELOG.md` (API
+history) for the reusable patterns, and `ARCHITECTURE_CURRENT.md` (modern state)
+/ `ARCHITECTURE_INITIAL.md` (legacy baseline) for the full picture.
 
 ---
 

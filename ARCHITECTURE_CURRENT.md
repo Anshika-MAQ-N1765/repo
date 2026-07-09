@@ -1,19 +1,25 @@
 # 100% Stacked Chart — Current (Modernized) Architecture
 
 > Snapshot of the visual **after** the API 5.x / d3 v7 modernization.
-> Source of truth: this repo (`repo/`). Companion to `ARCHITECTURE_INITIAL.md` (the frozen legacy baseline).
+> Source of truth: this repo (`repo/`).
+>
+> **Related docs:** `ARCHITECTURE_INITIAL.md` (frozen legacy baseline) ·
+> `MIGRATION_GUIDE.md` (general playbook) · `POWERBI_API_CHANGELOG.md` (API history) ·
+> `COMPATIBILITY_MIGRATION_REPORT.md` (worked bug‑by‑bug case study).
 
 ## At a Glance
 
 | Aspect | Legacy (initial) | **Current (upgraded)** |
 |---|---|---|
-| pbiviz version | `1.0.1` | **`1.1.11.0`** |
+| pbiviz version | `1.0.1` | **`1.3.0.0`** |
 | Power BI API | `1.13.0` | **`5.3.0`** |
 | TypeScript | internal `module` namespaces | **`5.5.4`, ES modules** (`target es2022`) |
 | Rendering | D3 **v3.5.5** | **D3 v7.9.0** |
 | Dependency model | global scripts via `externalJS` | **ES `import` + webpack bundle** (`externalJS: null`) |
 | Property pane | `enumerateObjectInstances()` | **`getFormattingModel()`** (formatting-model API) |
 | Util packages | `…utils-*` v0.x | **`…utils-*` v6–v8** |
+| Data delivery | 7 categorical mappings → `dataViews[0..6]` | **1 matrix mapping + Subtotal API**, adapted in‑code |
+| Non‑additive measures | segment sum (incorrect) | **model category‑grain subtotal** (correct) |
 | Class / GUID | unchanged | `Visual` / `PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2` |
 
 ---
@@ -56,7 +62,7 @@ repo/
 │   └── formattingSettings.ts # 267  Formatting-model cards (new property pane)
 ├── style/visual.less
 ├── assets/
-├── capabilities.json       # 9 roles · 7 dataViewMappings · 19 format objects
+├── capabilities.json       # 9 roles · 1 matrix mapping + Subtotal API · 20 format objects
 ├── pbiviz.json             # externalJS: null · apiVersion 5.3.0
 ├── eslint.config.mjs       # (replaces tslint.json)
 ├── tsconfig.json           # ES2022, strict:false; files: index.ts + legacyShim.d.ts
@@ -97,16 +103,41 @@ The old `enumerateObjectInstances()` is **replaced** by the API 5.x formatting m
 
 ---
 
-## Data Model (`capabilities.json`) — preserved from legacy
+## Data Model (`capabilities.json`) — role names preserved from legacy
 - **Roles (9):** `Category`, `Series`, `Y`, `SecondaryMeasure`, `TertiaryMeasure`, `QuaternaryMeasure`, `FifthMeasure`, `SixthMeasure`, `SampleSize`.
-- **DataView mappings: 7** — main `Category × Series → Y` categorical stack + one value-only mapping per extra measure (the host delivers each as `options.dataViews[0..6]`).
-- **Format objects: 19** (drive the cards above).
+- **DataView mapping: 1 `matrix`** — `rows = Category`, `columns = Series`, `values = [Y, secondary…sixth, sampleSize]`. A **single** mapping is mandatory under API 5.x (the host delivers exactly one dataView and drops value‑only categorical mappings).
+- **Subtotal API declared:** `subtotals.matrix` with **`columnSubtotals: true`** (+ a `subTotals` format object). This makes the host deliver, per Category row, the **across‑Series model total** as an `isSubtotal` column — the only supported way to get correct **non‑additive** (DISTINCTCOUNT/average/ratio) totals.
+- **Format objects: 20** (drive the formatting‑model cards, incl. the new `subTotals` object).
+
+### Why matrix + Subtotal API (non‑additive measures)
+A categorical mapping only carries **per‑series leaf** values, so the visual could
+only **sum** them — correct for additive measures (Survey Responses) but **wrong**
+for non‑additive ones (Distinct Users), because members overlap across series
+(segments `{8,46,51,96,316,1014}=1531`, but the true distinct count is `700`). The
+model computes the correct grain total and, when the **Subtotal API** is declared,
+delivers it on an `isSubtotal` column. See `MIGRATION_GUIDE.md` §4.6 and
+`total-subtotal-api`.
+
+### Matrix → categorical adapter (`matrixToCategorical` in `visual.ts`)
+So the ~9k‑line legacy renderer stays **untouched**, `update()` adapts the matrix
+dataView back into the categorical shape it expects:
+1. Walk `matrix.rows` (categories) × `matrix.columns` (series) → rebuild grouped
+   per‑series value columns and a `.grouped()` override.
+2. Read each measure's **`isSubtotal` column** into a per‑category
+   `_categoryGrainTotals` map (model total, correct for non‑additive).
+3. The per‑measure synthesis prefers the grain total; it falls back to summing
+   segments only if no subtotal column arrived.
+4. **Duplicate‑role guard:** a field bound to two wells (e.g. Primary **and** Sixth)
+   can yield a data‑less second source; the grain then borrows from another value
+   source with the same `queryName` so the label shows the real total, not `0`.
 
 ---
 
 ## Rendering Pipeline (per `update()`) — unchanged in spirit
 1. Read `DataView` + viewport.
-2. Normalize the 7 per-mapping dataViews; build the internal `ColumnChartData` model.
+2. **Adapt the `matrix` dataView → categorical** (`matrixToCategorical`), capturing
+   model category‑grain subtotals; then normalize into the per‑measure views the
+   legacy code indexes and build the internal `ColumnChartData` model.
 3. Compute category/value scales and axis properties.
 4. Normalize each category stack to 100%.
 5. Render SVG (stacked columns, axes, gridlines, data/total labels, legend) — via the shimmed d3.

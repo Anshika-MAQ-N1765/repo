@@ -5,8 +5,8 @@ import VisualConstructorOptions = powerbiVisualsApi.extensibility.visual.VisualC
 import DialogConstructorOptions = powerbiVisualsApi.extensibility.visual.DialogConstructorOptions;
 var powerbiKey: any = "powerbi";
 var powerbi: any = window[powerbiKey];
-var PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2_DEBUG: IVisualPlugin = {
-    name: 'PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2_DEBUG',
+var PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2: IVisualPlugin = {
+    name: 'PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2',
     displayName: '100per-Stackchart',
     class: 'Visual',
     apiVersion: '5.3.0',
@@ -27,6 +27,6 @@ var PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2_DEBUG: IVisualPlugin = {
 if (typeof powerbi !== "undefined") {
     powerbi.visuals = powerbi.visuals || {};
     powerbi.visuals.plugins = powerbi.visuals.plugins || {};
-    powerbi.visuals.plugins["PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2_DEBUG"] = PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2_DEBUG;
+    powerbi.visuals.plugins["PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2"] = PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2;
 }
-export default PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2_DEBUG;
+export default PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2;

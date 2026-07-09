@@ -4,6 +4,10 @@
 > (`PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2`) from Power BI API **1.13.0** (2018-era,
 > global-namespace model) to API **5.3.0** (ES-module model, `pbiviz` 7.x, D3 v7).
 > Use it as a checklist when modernizing other legacy MAQ/GMO-style visuals.
+>
+> **Companion docs:** `MIGRATION_GUIDE.md` (the general, reusable playbook this report
+> feeds) · `POWERBI_API_CHANGELOG.md` (annotated API version history) ·
+> `ARCHITECTURE_CURRENT.md` (post‑migration architecture).
 
 **Target toolchain after migration**
 
@@ -30,6 +34,8 @@
 | 6 | Format pane empty / `enumerateObjectInstances` ignored | API 5.x replaces it with the **formatting-model API** (`getFormattingModel`) | **Port to `FormattingSettingsService` cards** |
 | 7 | A toggle that's "off by default" still renders until toggled twice | Render gate treats an **unset** property as on, but the pane default is off | **Align pane defaults with render gates** |
 | 8 | Whole report crashes (`additionalProjections`) when adding a 2nd mapping kind | The host query generator **can't mix** a `categorical` and a `table` mapping over the same roles | **One mapping kind only** (see §4.4) |
+| 9 | A **non‑additive** measure (DISTINCTCOUNT/avg/ratio) shows the **segment sum** (e.g. 1531), not the model total (e.g. 700) | Categorical delivery only carries per‑series leaves; the visual can only sum them | **Matrix mapping + Subtotal API** to get the model's category‑grain total (see §4.5) |
+| 10 | A measure dropped into **two** wells shows `0` in the second label | The host emits a **duplicate, data‑less** value source for the second role | **Same‑`queryName` grain fallback** (see §4.6) |
 
 > **Two reversed decisions** (don't repeat the early mistakes — see §8): a DOM-wiping
 > on-canvas error renderer makes failures **permanent**, and shipped `console.*`
@@ -326,6 +332,88 @@ the same roles. Two hard constraints make this unavoidable:
 If a flat tabular export is required, build it **in-visual** (e.g. a custom export), do not
 add a second host mapping. Cosmetic "Show as table" duplication is the accepted trade-off.
 
+### 4.5 Non‑additive measures — matrix + Subtotal API (evolution of §4.2)
+
+The single grouped **categorical** mapping (§4.2) is correct for **additive**
+measures: summing the per‑series segments equals the category total. It is **wrong**
+for **non‑additive** measures (`DISTINCTCOUNT`, `AVERAGE`, `MEDIAN`, ratios,
+`MIN`/`MAX`), because members overlap across series. Observed on Distinct Users:
+
+```
+segments {8, 46, 51, 96, 316, 1014} = 1531        // what summing produces (WRONG)
+model DISTINCTCOUNT at the level grain = 700       // the correct answer
+```
+
+No arithmetic on the delivered segments can produce `700` — only the model can, by
+grouping on the category **alone**. The host *does* compute that total (its query
+carries a `SUMMARIZECOLUMNS('…'[level], …, "Distinct_Users", …)` scoped to the level,
+and a `FILTER([IsDM0Total] = FALSE)` that **strips** the total row) — but it withholds
+it unless the visual **requests subtotals**.
+
+**Fix — request subtotals with a matrix mapping** (Subtotal API; API 2.6+/5.1+;
+docs: `total-subtotal-api`). Switch mapping 0 to `matrix` and declare `subtotals`:
+
+```jsonc
+"dataViewMappings": [{
+  "matrix": {
+    "rows":    { "for": { "in": "Category" } },
+    "columns": { "for": { "in": "Series" } },
+    "values":  { "select": [ { "bind": { "to": "Y" } }, { "bind": { "to": "secondaryMeasure" } } /* … */ ] }
+  }
+}],
+"subtotals": {
+  "matrix": {
+    "rowSubtotals":    { "propertyIdentifier": { "objectName": "subTotals", "propertyName": "rowSubtotals" },    "defaultValue": false },
+    "columnSubtotals": { "propertyIdentifier": { "objectName": "subTotals", "propertyName": "columnSubtotals" }, "defaultValue": true  },
+    "levelSubtotalEnabled": { "propertyIdentifier": { "objectName": "subTotals", "propertyName": "levelSubtotalEnabled" }, "defaultValue": true }
+  }
+}
+```
+
+Then **adapt the matrix back to categorical in code** (`matrixToCategorical()`), so
+the renderer stays untouched: rebuild grouped per‑series value columns, and read each
+measure's across‑series **`isSubtotal` column** into a `_categoryGrainTotals` map. The
+per‑measure synthesis (§4.2 step B) prefers that grain total and falls back to summing
+segments only when no subtotal column arrived.
+
+> **Why the matrix path looked dead earlier.** Before the `subtotals` structure was
+> declared, the host stripped the total (`IsDM0Total = FALSE`), so probes read
+> `subCol = false` / `SELF = NO_VALUES`. That was *"subtotals not requested"*, **not**
+> a host limitation. Declaring the Subtotal API is the switch that releases the total.
+> A matrix ships everything in **one** dataView, so this stays compatible with the
+> single‑dataView rule (§4.1).
+
+### 4.6 Duplicate‑role columns — same‑`queryName` grain fallback
+
+When one field is dropped into **two** wells (e.g. the Primary measure **also** added
+as the Sixth label), matrix delivery can emit a **duplicate, data‑less** value source
+for the second role — its `isSubtotal` column reads `null`, so the label rendered `0`.
+(If the host had merged both roles onto one source, the label would have shown the real
+total, never `0`; a `0` is the tell of a duplicate source.)
+
+**Fix:** when a role's own grain is all‑null, borrow from another value source with the
+**same `queryName`** that does carry data:
+
+```ts
+if (!anyNonNull(arr)) {
+  const qn = qnameOf(m);                       // queryName/displayName of this source
+  for (let m2 = 0; m2 < M; m2++)
+    if (m2 !== m && qnameOf(m2) === qn) {       // same underlying measure
+      const alt = readGrainForMeasure(m2);
+      if (anyNonNull(alt)) { arr = alt; break; } // use the source that actually has data
+    }
+}
+```
+
+Safe by construction: it only merges data between sources that are the **same measure
+field**, and never triggers for a measure bound to a single well.
+
+> **Not a contradiction with §5.** The two multi‑role bugs live in different mappings:
+> under **categorical** (§5) the host **merges** the wells into *one* multi‑role column
+> (`source.roles = { Y:true, … }`); under **matrix** (here) it can instead emit a *second,
+> data‑less* value source. Detect the mapping you're in before applying the fix — `hasRole`
+> for categorical, the same‑`queryName` grain fallback for matrix.
+
 ---
 
 ## 5. Bug class #4 — Multi-role columns (`hasRole`, not `roleOf`)
@@ -437,6 +525,8 @@ public getFormattingModel() {
 - [ ] `getTickLabelMargins()` consumers mapped to `{top,left,right,bottom}` with `|| 0`.
 - [ ] Multi-measure mappings collapsed to ONE grouped mapping; reconstruction in `update()`.
 - [ ] Exactly one dataViewMapping *kind* (no categorical + table mix — see §4.4).
+- [ ] Non-additive measures delivered via **matrix + Subtotal API** (`columnSubtotals`), adapted back to categorical; grain total preferred over segment sum (§4.5).
+- [ ] Duplicate-role columns (same field, two wells) handled with a same-`queryName` grain fallback (§4.6).
 - [ ] Role tests use case-insensitive `hasRole(col, role)` (per-role), never first-role-wins.
 - [ ] Version-tagged in-host diagnostic used transiently, then **removed**; no shipped `console.*`.
 - [ ] `version` bumped for every rebuild; cache-clearing import steps documented.
@@ -462,7 +552,11 @@ public getFormattingModel() {
 | 1.1.x | **Reverted** additive `table` mapping (host `additionalProjections` crash — §4.4) |
 | 1.1.x | **Removed** `renderFatalError` + all `console.*`; rely on host recovery (§8) |
 | 1.1.x | Comment/dead-code cleanup across `visual.ts`, `selectionId.ts`, `Columnutil.ts`; README added |
+| 1.2.x | **Matrix mapping + Subtotal API** (`columnSubtotals`) for non-additive totals; `matrixToCategorical` adapter so the renderer is unchanged — Distinct Users at a bar now shows the model grain total (700), not the segment sum (1531) (§4.5) |
+| 1.2.x | `subtotals.matrix` + `subTotals` format object added to `capabilities.json`; in-host diagnostic proved the host strips the level total (`IsDM0Total=FALSE`) until subtotals are requested (§4.5) |
+| 1.3.x | **Duplicate-role fallback** — a field bound to two wells (e.g. Survey Responses in Primary + Sixth) emitted a data-less second value source reading `0`; same-`queryName` grain fallback restores the real values (§4.6) |
+| 1.3.x | Diagnostics stripped; docs synchronized to the matrix + Subtotal API architecture (this report, `ARCHITECTURE_CURRENT.md`, `README.md`, new `MIGRATION_GUIDE.md` + `POWERBI_API_CHANGELOG.md`) |
 
-> Note: the 1.1.x rows collapse several incremental package bumps; consult the commit history
+> Note: the 1.1.x–1.3.x rows collapse several incremental package bumps; consult the commit history
 > for exact per-build versions. The **decisions** (not the numbers) are what transfer to other
 > visuals.

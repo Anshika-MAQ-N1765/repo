@@ -149,10 +149,7 @@ namespace powerbi.extensibility.visual {
     }
 }
  
-/* ===== Publish legacy namespaces onto the shared global `powerbi` =====
-* Copies this module's local `powerbi.extensibility.visual` members (SelectionId,
-* SelectionIdBuilder) onto the single shared `globalThis.powerbi` object that
-* visual.ts reads from at runtime. */
+/* ===== Publish this module's visual namespace onto shared global powerbi ===== */
 {
     const g: any = globalThis as any;
     g.powerbi = g.powerbi || {};

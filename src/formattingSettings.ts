@@ -102,8 +102,7 @@ class DataPointCardSettings extends FormattingSettingsCard {
     displayName = "Data colors";
     description = "Pick a color for each value shown in the legend";
  
-    // Fallback swatch used only when there are no dynamic series yet. The real
-    // per-series color pickers are injected at runtime via setDataColors().
+    // Default color until runtime series colors are injected.
     defaultColor = createColorPicker("defaultColor", "Default color", "#01B8AA");
  
     slices: Array<FormattingSettingsSlice> = [this.defaultColor];

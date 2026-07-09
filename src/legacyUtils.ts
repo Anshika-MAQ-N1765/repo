@@ -72,9 +72,7 @@ legacyD3.behavior = {
 legacyD3.scale = {
     Linear: scaleLinear,
 };
-// d3 v3 `d3.transform(str)` parsed an SVG transform string into
-// { translate:[x,y], rotate, scale:[sx,sy], skew }. Removed in d3 v4+. The
-// legacy code reads `.translate[1]`, so provide a compatible parser.
+// Restore d3 v3 transform parsing for legacy `.translate[1]` access.
 legacyD3.transform = (transformStr: string) => {
     const result = { translate: [0, 0] as [number, number], rotate: 0, scale: [1, 1] as [number, number], skew: 0 };
     if (!transformStr) {
@@ -99,11 +97,7 @@ legacyD3.transform = (transformStr: string) => {
  
 // ---------------------------------------------------------------------------
 // d3 v3 -> v7 compatibility shim.
-// The legacy visual code was written for d3 v3.5 and calls selection.style({...})
-// and selection.attr({...}) with an object of name/value pairs. d3 v4+ removed
-// that object form: passing an object is treated as a *getter*, which returns a
-// string and breaks method chaining (e.g. `.style({...}).html(...)` throws).
-// We restore the object form here so the thousands of existing call sites work.
+// Restore legacy object-form attr/style support for old code.
 // ---------------------------------------------------------------------------
 (function patchSelectionPrototype(): void {
     const selectionProto: any = (d3Selection as any).prototype;
@@ -115,14 +109,14 @@ legacyD3.transform = (transformStr: string) => {
     const patchObjectForm = (methodName: "attr" | "style"): void => {
         const original = selectionProto[methodName];
         selectionProto[methodName] = function (name: any, value?: any, priority?: any) {
-            // Object form: { 'width': '100%', 'height': 10, ... } -> apply each pair.
+            // Object form: apply each pair.
             if (name && typeof name === "object") {
                 for (const key of Object.keys(name)) {
                     original.call(this, key, name[key]);
                 }
                 return this;
             }
-            // String form (setter or getter) -> delegate to native d3 behaviour.
+            // Otherwise delegate to native d3.
             return original.apply(this, arguments as any);
         };
     };
@@ -130,10 +124,7 @@ legacyD3.transform = (transformStr: string) => {
     patchObjectForm("attr");
     patchObjectForm("style");
 
-    // d3 v3 exposed the first group's node array as `selection[0]`, so legacy code
-    // does `selection[0][0]` (first node) and `selection[0].length` (node count).
-    // d3 v4+ moved nodes into `selection._groups`. Restore index-0 access so the
-    // many `boxes[0][0]` / `xTicks[0].length` / `allBoxes[0].length` sites work.
+    // Restore d3 v3 `selection[0]` access for legacy indexing.
     if (!Object.prototype.hasOwnProperty.call(selectionProto, "0")) {
         Object.defineProperty(selectionProto, "0", {
             configurable: true,
@@ -144,11 +135,7 @@ legacyD3.transform = (transformStr: string) => {
     }
 })();
  
-// Expose the patched d3 as a global. The legacy visual code references a bare
-// global `d3` (e.g. `d3.select`, `d3.scale.Linear`, `d3.min`, `d3.format`) that
-// used to be provided by an external script include. With the module-based
-// build there is no global, so we publish the patched module copy here. This
-// file is imported before any visual code runs, so `d3` is ready in time.
+// Publish patched global d3 before visual code runs.
 (globalThis as typeof globalThis & { d3?: typeof legacyD3 }).d3 = legacyD3;
  
 const legacyPowerbi = (globalThis as typeof globalThis & { powerbi?: typeof powerbi }).powerbi ??= powerbi;
@@ -246,15 +233,7 @@ if (legacyUtilsRoot.chart && legacyUtilsRoot.chart.legend) {
 }
 
 // ---------------------------------------------------------------------------
-// jQuery (`$`) and lodash (`_`) global shims.
-// The legacy visual was written for an API-1.13 environment where jQuery and
-// lodash were provided as global script includes (via pbiviz `externalJS`).
-// The modern module build no longer bundles them, yet the source still calls
-// `$.extend(...)`, `$(el).find(...)`, `_.isEmpty(...)`, `_.filter(...)`, etc.
-// These run on EVERY constructor/update (the margin & viewport setters use
-// `$.extend`), so without a shim the visual throws `$ is not defined` before it
-// can render. We provide tiny, dependency-free replacements and publish them as
-// globals so the existing bare `$` / `_` references resolve at runtime.
+// Provide minimal global $/_ shims for legacy code.
 // ---------------------------------------------------------------------------
 type JQLike = {
     length: number;

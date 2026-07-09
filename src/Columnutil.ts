@@ -113,9 +113,7 @@ export class ColumnChartGMO {
             if (series && series.length > 0) {
                 for (let i = 0, len = series.length; i < len; i++) {
                     let iNewSeries = newSeries[i] = Prototype.inherit(series[i]);
-                    // TODO: [investigate] possible perf improvement.
-                    // if data[n].categoryIndex > endIndex implies data[n+1].categoryIndex > endIndex
-                    // then we could short circuit the filter loop.
+                    // TODO: possible perf gain by early exiting when categoryIndex exceeds endIndex.
                     iNewSeries.data = series[i].data.filter(d => d.categoryIndex >= startIndex && d.categoryIndex < endIndex);
                 }
             }

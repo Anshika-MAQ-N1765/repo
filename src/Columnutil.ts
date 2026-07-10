@@ -6,7 +6,7 @@ import { axis as AxisHelper, dataLabelUtils, legendInterfaces, legendPosition } 
 import type { IAxisProperties, IMargin } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
 import type { VisualDataLabelsSettings } from "powerbi-visuals-utils-chartutils/lib/dataLabel/dataLabelInterfaces";
 import * as formattingUtils from "powerbi-visuals-utils-formattingutils";
-import type { IInteractivityService, SelectableDataPoint } from "powerbi-visuals-utils-interactivityutils/lib/interactivityService";
+import type { SelectableDataPoint } from "powerbi-visuals-utils-interactivityutils/lib/interactivityService";
 import type { TooltipEnabledDataPoint } from "powerbi-visuals-utils-tooltiputils";
 import { CssConstants } from "powerbi-visuals-utils-svgutils";
 import { valueType, double as Double, prototype as Prototype } from "powerbi-visuals-utils-typeutils";
@@ -16,11 +16,7 @@ type DataViewCategorical = powerbiApi.DataViewCategorical;
 type DataViewObject = powerbiApi.DataViewObject;
 type DataViewMetadataColumn = powerbiApi.DataViewMetadataColumn;
 type DataViewPropertyValue = powerbiApi.DataViewPropertyValue;
-type DataViewObjects = powerbiApi.DataViewObjects;
-type IViewport = powerbiApi.IViewport;
 type NumberRange = powerbiApi.NumberRange;
-type IColorPalette = powerbiApi.extensibility.IColorPalette;
-type PrimitiveValue = powerbiApi.PrimitiveValue;
 type Selector = powerbiApi.data.Selector;
 type LegendData = legendInterfaces.LegendData;
 type LabelEnabledDataPoint = import("powerbi-visuals-utils-chartutils/lib/dataLabel/dataLabelInterfaces").LabelEnabledDataPoint;
@@ -29,7 +25,6 @@ interface ClassAndSelector extends CssConstants.ClassAndSelector {
     selector: string;
     class: string;
 }
-type Selection<G = any> = d3.Selection<G>;
 
 function createClassAndSelector(className: string): ClassAndSelector {
     const cs = CssConstants.createClassAndSelector(className);
@@ -38,8 +33,6 @@ function createClassAndSelector(className: string): ClassAndSelector {
 
 const NewDataLabelUtils = dataLabelUtils;
 const valueFormatter = formattingUtils.valueFormatter;
-const LegendPosition = legendInterfaces.LegendPosition;
-type LegendPositionType = legendInterfaces.LegendPosition;
 const ValueType = valueType.ValueType;
 
 namespace powerbi.extensibility.utils {

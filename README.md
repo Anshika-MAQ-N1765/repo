@@ -7,7 +7,7 @@ chart title.
 
 - **Visual name:** `100per-Stackchart`
 - **GUID:** `PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2`
-- **Version:** `1.3.0.0` (see `pbiviz.json`)
+- **Version:** `1.4.0.0` (see `pbiviz.json`)
 - **Power BI API:** `~5.3.0` · **D3:** `7.9.0` · **TypeScript:** `5.5.4`
 
 ---

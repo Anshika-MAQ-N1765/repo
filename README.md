@@ -69,9 +69,6 @@ measures (e.g. Distinct Users = `DISTINCTCOUNT`) it reads the model's
 category‑grain **subtotal** rather than summing per‑series segments, so the label
 shows the correct total (e.g. `700`, not `1531`).
 
-See `MIGRATION_GUIDE.md` (general playbook) and `POWERBI_API_CHANGELOG.md` (API
-history) for the reusable patterns, and `ARCHITECTURE_CURRENT.md` (modern state)
-/ `ARCHITECTURE_INITIAL.md` (legacy baseline) for the full picture.
 
 ---
 
@@ -105,5 +102,3 @@ repo/
 - Axis titles are **off by default** and render only when explicitly enabled.
 - The `Can't run lint validation` message during `pbiviz package` is a known,
   non-blocking warning.
-- `/Users/anstripa/CV/Stack Chart/` is the **frozen legacy reference** (API 1.x);
-  do not modify it — this repo is the modernized port.

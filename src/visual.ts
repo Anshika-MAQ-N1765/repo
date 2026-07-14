@@ -2337,6 +2337,9 @@ export let StackedChartGMOProps = {
    totalLabels: { 
        show: { objectName: 'totalLabels', propertyName: 'show' }, 
        titleText: { objectName: 'totalLabels', propertyName: 'titleText' }, 
+       titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'titleColor' },
+       titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'titleFontFamily' },
+       titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'titleFontSize' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'labelPrecision' }, 
@@ -2344,6 +2347,9 @@ export let StackedChartGMOProps = {
    }, 
    secondaryLabels: { 
        titleText: { objectName: 'secondaryLabels', propertyName: 'titleText' }, 
+       titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'titleColor' },
+       titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'titleFontFamily' },
+       titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'titleFontSize' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'labelPrecision' }, 
@@ -2351,6 +2357,9 @@ export let StackedChartGMOProps = {
    }, 
    tertiaryLabels: { 
        titleText: { objectName: 'tertiaryLabels', propertyName: 'titleText' }, 
+       titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'titleColor' },
+       titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'titleFontFamily' },
+       titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'titleFontSize' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'labelPrecision' }, 
@@ -2358,6 +2367,9 @@ export let StackedChartGMOProps = {
    }, 
    quaternaryLabels: { 
        titleText: { objectName: 'quaternaryLabels', propertyName: 'titleText' }, 
+       titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'titleColor' },
+       titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'titleFontFamily' },
+       titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'titleFontSize' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'labelPrecision' }, 
@@ -2365,6 +2377,9 @@ export let StackedChartGMOProps = {
    }, 
    FifthLabels: { 
        titleText: { objectName: 'FifthLabels', propertyName: 'titleText' }, 
+       titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'titleColor' },
+       titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'titleFontFamily' },
+       titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'titleFontSize' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'labelPrecision' }, 
@@ -2372,6 +2387,9 @@ export let StackedChartGMOProps = {
    }, 
    SixthLabels: { 
        titleText: { objectName: 'SixthLabels', propertyName: 'titleText' }, 
+       titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'titleColor' },
+       titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'titleFontFamily' },
+       titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'titleFontSize' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'labelPrecision' }, 
@@ -2390,6 +2408,9 @@ export interface measureTitlesSettings {
 export interface totalLabelSettings { 
    show: boolean; 
    titleText: string; 
+   titleColor: string;
+   titleFontFamily: string;
+   titleFontSize: number;
    color: string; 
    displayUnits: number; 
    textPrecision: number; 
@@ -2397,6 +2418,9 @@ export interface totalLabelSettings {
 }; 
 export interface secondaryLabelSettings { 
    titleText: string; 
+   titleColor: string;
+   titleFontFamily: string;
+   titleFontSize: number;
    color: string; 
    displayUnits: number; 
    textPrecision: number; 
@@ -2404,6 +2428,9 @@ export interface secondaryLabelSettings {
 }; 
 export interface tertiaryLabelSettings { 
    titleText: string; 
+   titleColor: string;
+   titleFontFamily: string;
+   titleFontSize: number;
    color: string; 
    displayUnits: number; 
    textPrecision: number; 
@@ -2411,6 +2438,9 @@ export interface tertiaryLabelSettings {
 }; 
 export interface quaternaryLabelSettings { 
    titleText: string; 
+   titleColor: string;
+   titleFontFamily: string;
+   titleFontSize: number;
    color: string; 
    displayUnits: number; 
    textPrecision: number; 
@@ -2418,6 +2448,9 @@ export interface quaternaryLabelSettings {
 }; 
 export interface FifthLabelSettings { 
    titleText: string; 
+   titleColor: string;
+   titleFontFamily: string;
+   titleFontSize: number;
    color: string; 
    displayUnits: number; 
    textPrecision: number; 
@@ -2425,6 +2458,9 @@ export interface FifthLabelSettings {
 }; 
 export interface SixthLabelSettings { 
    titleText: string; 
+   titleColor: string;
+   titleFontFamily: string;
+   titleFontSize: number;
    color: string; 
    displayUnits: number; 
    textPrecision: number; 
@@ -4484,6 +4520,9 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        let totalLabelsProperties = StackedChartGMOProps; 
        labelSettings.show = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.show, labelSettings.show); 
        labelSettings.titleText = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleText, labelSettings.titleText); 
+       labelSettings.titleColor = dataViewObjects.getFillColor(objects, totalLabelsProperties.totalLabels.titleColor, labelSettings.titleColor); 
+       labelSettings.titleFontFamily = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleFontFamily, labelSettings.titleFontFamily); 
+       labelSettings.titleFontSize = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleFontSize, labelSettings.titleFontSize); 
        labelSettings.textPrecision = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.textPrecision, labelSettings.textPrecision); 
        labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision); 
        labelSettings.fontSize = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.fontSize, labelSettings.fontSize); 
@@ -4503,6 +4542,9 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        if (!dataView.metadata || !dataView.metadata.objects) { return labelSettings; }
        let objects = dataView.metadata.objects;
        labelSettings.titleText = dataViewObjects.getValue(objects, props.titleText, labelSettings.titleText);
+       labelSettings.titleColor = dataViewObjects.getFillColor(objects, props.secondaryTitleColor, labelSettings.titleColor);
+       labelSettings.titleFontFamily = dataViewObjects.getValue(objects, props.titleFontFamily, labelSettings.titleFontFamily);
+       labelSettings.titleFontSize = dataViewObjects.getValue(objects, props.titleFontSize, labelSettings.titleFontSize);
        labelSettings.textPrecision = dataViewObjects.getValue(objects, props.textPrecision, labelSettings.textPrecision);
        labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision);
        labelSettings.fontSize = dataViewObjects.getValue(objects, props.fontSize, labelSettings.fontSize);
@@ -4549,8 +4591,11 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
  
    public getDefaultTotalLabelSettings(): totalLabelSettings { 
        return { 
-           show: true, 
-           titleText: 'Total', 
+           show: true,
+           titleText: 'Total',
+           titleColor: '#0a0707',
+           titleFontFamily: 'Segoe UI',
+           titleFontSize: 12,  
            color: '#777', 
            displayUnits: 0, 
            textPrecision: 0, 
@@ -4562,6 +4607,9 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
    public getDefaultMeasureLabelSettings(): secondaryLabelSettings { 
        return { 
            titleText: '', 
+           titleColor: '#0a0707',
+           titleFontFamily: 'Segoe UI',
+           titleFontSize: 12, 
            color: '#777', 
            displayUnits: 0, 
            textPrecision: 0, 
@@ -5385,232 +5433,232 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
                    aggregatedValues.push(sum); 
                } 
            } 
-           let totalTitleTextProperties: TextProperties = { 
-               text: totalLabelSettings.titleText, 
-               fontFamily: "Segoe UI", 
-               fontSize: '12px' 
-           }; 
-           let totalTitleText = TextMeasurementService.getTailoredTextOrDefault(totalTitleTextProperties, maxLabelTextWidth); 
+           let totalTitleTextProperties: TextProperties = {
+               text: totalLabelSettings.titleText,
+               fontFamily: totalLabelSettings.titleFontFamily,
+               fontSize: totalLabelSettings.titleFontSize + 'px'
+           };
+           let totalTitleText = TextMeasurementService.getTailoredTextOrDefault(totalTitleTextProperties, maxLabelTextWidth);
  
-           this.root.select('.cartesianChart') 
-               .append('text') 
-               .classed('measureLabelTitle', true) 
-               .attr('x', 1) 
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter)) 
-               .attr('font-size', '12px') 
-               .attr('font-family', 'Segoe UI') 
-               .attr('fill', '#777') 
-               .text(totalTitleText) 
-               .append('title') 
-               .text(totalLabelSettings.titleText) 
-       } 
+           this.root.select('.cartesianChart')
+               .append('text')
+               .classed('measureLabelTitle', true)
+               .attr('x', 1)
+               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
+               .attr('font-size', totalLabelSettings.titleFontSize + 'px')
+               .attr('font-family', totalLabelSettings.titleFontFamily)
+               .attr('fill', totalLabelSettings.titleColor)
+               .text(totalTitleText)
+               .append('title')
+               .text(totalLabelSettings.titleText)
+       }        
        
-       //secondary 
-let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[1].categorical.values 
-       if (value) { 
-           let dvcvalue=this.dataViews[1].categorical 
-           if (noAxis) { 
-               let totalValuesLength = value.length; 
-               let sumSec; 
-               sumSec = 0; 
+       //secondary
+let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[1].categorical.values
+       if (value) {
+           let dvcvalue=this.dataViews[1].categorical
+           if (noAxis) {
+               let totalValuesLength = value.length;
+               let sumSec;
+               sumSec = 0;
                
-               for (let i = 0; i < totalValuesLength; i++) { 
-                   sumSec = sumSec + dvcvalue.values[i].values[0]; 
-               } 
-               aggregatedSecValues.push(sumSec); 
-           } 
-           else { 
-               aggregatedSecValues = dvcvalue.values[0].values; 
-           } 
+               for (let i = 0; i < totalValuesLength; i++) {
+                   sumSec = sumSec + dvcvalue.values[i].values[0];
+               }
+               aggregatedSecValues.push(sumSec);
+           }
+           else {
+               aggregatedSecValues = dvcvalue.values[0].values;
+           }
  
-           tempAggregatedSecValues = aggregatedSecValues.slice(0); 
-           if (this.removeFlags.length > 0) { 
-               this.spliceMeasures(tempAggregatedSecValues); 
-           } 
+           tempAggregatedSecValues = aggregatedSecValues.slice(0);
+           if (this.removeFlags.length > 0) {
+               this.spliceMeasures(tempAggregatedSecValues);
+           }
  
-           let secMeasuretextProperties: TextProperties = { 
-               text: secondaryLabelSettings.titleText, 
-               fontFamily: "Segoe UI", 
-               fontSize: '12px' 
-           }; 
-           let secMeasuretext = TextMeasurementService.getTailoredTextOrDefault(secMeasuretextProperties, maxLabelTextWidth); 
-           this.root.select('.cartesianChart') 
-               .append('text') 
-               .attr('x', 1) 
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter)) 
-               .classed('measureLabelTitle', true) 
-               .attr('font-size', '12px') 
-               .attr('font-family', 'Segoe UI') 
-               .attr('fill', '#777') 
-               .text(secMeasuretext) 
-               .append('title') 
-               .text(secondaryLabelSettings.titleText) 
-       } 
-       //tertiary 
-       let dvcvalues=this.dataViews[3] && this.dataViews[3].categorical && this.dataViews[3].categorical.values 
-       if (dvcvalues) { 
-           if (noAxis) { 
-               let totalValuesLength = dvcvalues.length; 
-               let sumTer; 
-               sumTer = 0; 
-               for (let i = 0; i < totalValuesLength; i++) { 
-                   sumTer = sumTer + dvcvalues[i].values[0]; 
-               } 
-               aggregatedTerValues.push(sumTer); 
-           } 
-           else { 
-               aggregatedTerValues = dvcvalues[0].values; 
-           } 
+           let secMeasuretextProperties: TextProperties = {
+               text: secondaryLabelSettings.titleText,
+               fontFamily: secondaryLabelSettings.titleFontFamily,
+               fontSize: secondaryLabelSettings.titleFontSize + 'px'
+           };
+           let secMeasuretext = TextMeasurementService.getTailoredTextOrDefault(secMeasuretextProperties, maxLabelTextWidth);
+           this.root.select('.cartesianChart')
+               .append('text')
+               .attr('x', 1)
+               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
+               .classed('measureLabelTitle', true)
+               .attr('font-size', secondaryLabelSettings.titleFontSize + 'px')
+               .attr('font-family', secondaryLabelSettings.titleFontFamily)
+               .attr('fill', secondaryLabelSettings.titleColor)
+               .text(secMeasuretext)
+               .append('title')
+               .text(secondaryLabelSettings.titleText)
+       }
+       //tertiary
+       let dvcvalues=this.dataViews[3] && this.dataViews[3].categorical && this.dataViews[3].categorical.values
+       if (dvcvalues) {
+           if (noAxis) {
+               let totalValuesLength = dvcvalues.length;
+               let sumTer;
+               sumTer = 0;
+               for (let i = 0; i < totalValuesLength; i++) {
+                   sumTer = sumTer + dvcvalues[i].values[0];
+               }
+               aggregatedTerValues.push(sumTer);
+           }
+           else {
+               aggregatedTerValues = dvcvalues[0].values;
+           }
  
-           tempAggregatedTerValues = aggregatedTerValues.slice(0); 
-           if (this.removeFlags.length > 0) { 
-               this.spliceMeasures(tempAggregatedTerValues); 
-           } 
+           tempAggregatedTerValues = aggregatedTerValues.slice(0);
+           if (this.removeFlags.length > 0) {
+               this.spliceMeasures(tempAggregatedTerValues);
+           }
  
-           let terMeasuretextProperties: TextProperties = { 
-               text: tertiaryLabelSettings.titleText, 
-               fontFamily: "Segoe UI", 
-               fontSize: '12px' 
-           }; 
-           let terMeasuretext = TextMeasurementService.getTailoredTextOrDefault(terMeasuretextProperties, maxLabelTextWidth); 
-           this.root.select('.cartesianChart') 
-               .append('text') 
-               .attr('x', 1) 
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter)) 
-               .classed('measureLabelTitle', true) 
-               .attr('font-size', '12px') 
-               .attr('font-family', 'Segoe UI') 
-               .attr('fill', '#777') 
-               .text(terMeasuretext) 
-               .append('title') 
-               .text(tertiaryLabelSettings.titleText) 
-       } 
+           let terMeasuretextProperties: TextProperties = {
+               text: tertiaryLabelSettings.titleText,
+               fontFamily: tertiaryLabelSettings.titleFontFamily,
+               fontSize: tertiaryLabelSettings.titleFontSize + 'px'
+           };
+           let terMeasuretext = TextMeasurementService.getTailoredTextOrDefault(terMeasuretextProperties, maxLabelTextWidth);
+           this.root.select('.cartesianChart')
+               .append('text')
+               .attr('x', 1)
+               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
+               .classed('measureLabelTitle', true)
+               .attr('font-size', tertiaryLabelSettings.titleFontSize + 'px')
+               .attr('font-family', tertiaryLabelSettings.titleFontFamily)
+               .attr('fill', tertiaryLabelSettings.titleColor)
+               .text(terMeasuretext)
+               .append('title')
+               .text(tertiaryLabelSettings.titleText)
+       }
  
-       //quarternary 
-       value=this.dataViews[4] && this.dataViews[4].categorical && this.dataViews[4].categorical.values 
-       if (value) { 
-           if (noAxis) { 
-               let totalValuesLength = value.length; 
-               let sumQuat; 
-               sumQuat = 0; 
-               for (let i = 0; i < totalValuesLength; i++) { 
-                   sumQuat = sumQuat + value[i].values[0]; 
-               } 
-               aggregatedQuatValues.push(sumQuat); 
-               noAxis = true; 
-           } 
-           else { 
-               aggregatedQuatValues = value[0].values; 
-           } 
+       //quarternary
+       value=this.dataViews[4] && this.dataViews[4].categorical && this.dataViews[4].categorical.values
+       if (value) {
+           if (noAxis) {
+               let totalValuesLength = value.length;
+               let sumQuat;
+               sumQuat = 0;
+               for (let i = 0; i < totalValuesLength; i++) {
+                   sumQuat = sumQuat + value[i].values[0];
+               }
+               aggregatedQuatValues.push(sumQuat);
+               noAxis = true;
+           }
+           else {
+               aggregatedQuatValues = value[0].values;
+           }
  
-           tempAggregatedQuatValues = aggregatedQuatValues.slice(0); 
-           if (this.removeFlags.length > 0) { 
-               this.spliceMeasures(tempAggregatedQuatValues); 
-           } 
-           let textMeasurementService = TextMeasurementService; 
-           let quatMeasuretextProperties: TextProperties = { 
-               text: quaternaryLabelSettings.titleText, 
-               fontFamily: "Segoe UI", 
-               fontSize: '12px', 
+           tempAggregatedQuatValues = aggregatedQuatValues.slice(0);
+           if (this.removeFlags.length > 0) {
+               this.spliceMeasures(tempAggregatedQuatValues);
+           }
+           let textMeasurementService = TextMeasurementService;
+           let quatMeasuretextProperties: TextProperties = {
+               text: quaternaryLabelSettings.titleText,
+               fontFamily: quaternaryLabelSettings.titleFontFamily,
+               fontSize: quaternaryLabelSettings.titleFontSize + 'px',
                 
-           }; 
-           let widthtext = textMeasurementService.measureSvgTextWidth(quatMeasuretextProperties); 
-           let quatMeasuretext = TextMeasurementService.getTailoredTextOrDefault(quatMeasuretextProperties, maxLabelTextWidth); 
-           this.root.select('.cartesianChart') 
-               .append('text') 
-               .attr('x', 1) 
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter)) 
-               .classed('measureLabelTitle', true) 
-               .attr('font-size', '12px') 
-               .attr('font-family', 'Segoe UI') 
-               .attr('fill', '#777') 
-               .attr('width', widthtext) 
-               .text(quatMeasuretext) 
-               .append('title') 
-               .text(quaternaryLabelSettings.titleText) 
-       } 
-       //fifth 
-       value=this.dataViews[5] && this.dataViews[5].categorical && this.dataViews[5].categorical.values 
-       if (value) { 
-           if (noAxis) { 
-               let totalValuesLength = value.length; 
-               let sumQuat; 
-               sumQuat = 0; 
-               for (let i = 0; i < totalValuesLength; i++) { 
-                   sumQuat = sumQuat + value[i].values[0]; 
-               } 
-               aggregatedfifthValues.push(sumQuat); 
-               noAxis = true; 
-           } 
-           else { 
-               aggregatedfifthValues = value[0].values; 
-           } 
+           };
+           let widthtext = textMeasurementService.measureSvgTextWidth(quatMeasuretextProperties);
+           let quatMeasuretext = TextMeasurementService.getTailoredTextOrDefault(quatMeasuretextProperties, maxLabelTextWidth);
+           this.root.select('.cartesianChart')
+               .append('text')
+               .attr('x', 1)
+               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
+               .classed('measureLabelTitle', true)
+               .attr('font-size', quaternaryLabelSettings.titleFontSize + 'px')
+               .attr('font-family', quaternaryLabelSettings.titleFontFamily)
+               .attr('fill', quaternaryLabelSettings.titleColor)
+               .attr('width', widthtext)
+               .text(quatMeasuretext)
+               .append('title')
+               .text(quaternaryLabelSettings.titleText)
+       }
+       //fifth
+       value=this.dataViews[5] && this.dataViews[5].categorical && this.dataViews[5].categorical.values
+       if (value) {
+           if (noAxis) {
+               let totalValuesLength = value.length;
+               let sumQuat;
+               sumQuat = 0;
+               for (let i = 0; i < totalValuesLength; i++) {
+                   sumQuat = sumQuat + value[i].values[0];
+               }
+               aggregatedfifthValues.push(sumQuat);
+               noAxis = true;
+           }
+           else {
+               aggregatedfifthValues = value[0].values;
+           }
  
-           tempAggregatedfifthValues = aggregatedfifthValues.slice(0); 
-           if (this.removeFlags.length > 0) { 
-               this.spliceMeasures(tempAggregatedfifthValues); 
-           } 
+           tempAggregatedfifthValues = aggregatedfifthValues.slice(0);
+           if (this.removeFlags.length > 0) {
+               this.spliceMeasures(tempAggregatedfifthValues);
+           }
  
-           let fiveMeasuretextProperties: TextProperties = { 
-               text: FifthLabelSettings.titleText, 
-               fontFamily: "Segoe UI", 
-               fontSize: '12px' 
-           }; 
-           let fiveMeasuretext = TextMeasurementService.getTailoredTextOrDefault(fiveMeasuretextProperties, maxLabelTextWidth); 
-           this.root.select('.cartesianChart') 
-               .append('text') 
-               .attr('x', 1) 
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter)) 
-               .classed('measureLabelTitle', true) 
-               .attr('font-size', '12px') 
-               .attr('font-family', 'Segoe UI') 
-               .attr('fill', '#777') 
-               .text(fiveMeasuretext) 
-               .append('title') 
-               .text(FifthLabelSettings.titleText) 
-       } 
+           let fiveMeasuretextProperties: TextProperties = {
+               text: FifthLabelSettings.titleText,
+               fontFamily: FifthLabelSettings.titleFontFamily,
+               fontSize: FifthLabelSettings.titleFontSize + 'px'
+           };
+           let fiveMeasuretext = TextMeasurementService.getTailoredTextOrDefault(fiveMeasuretextProperties, maxLabelTextWidth);
+           this.root.select('.cartesianChart')
+               .append('text')
+               .attr('x', 1)
+               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
+               .classed('measureLabelTitle', true)
+               .attr('font-size', FifthLabelSettings.titleFontSize + 'px')
+               .attr('font-family', FifthLabelSettings.titleFontFamily)
+               .attr('fill', FifthLabelSettings.titleColor)
+               .text(fiveMeasuretext)
+               .append('title')
+               .text(FifthLabelSettings.titleText)
+       }
         
-       //sixth 
-       value=this.dataViews[6] && this.dataViews[6].categorical && this.dataViews[6].categorical.values 
-       if (value) { 
-           if (noAxis) { 
-               let totalValuesLength = value.length; 
-               let sumQuat; 
-               sumQuat = 0; 
-               for (let i = 0; i < totalValuesLength; i++) { 
-                   sumQuat = sumQuat + value[i].values[0]; 
-               } 
-               aggregatedsixthValues.push(sumQuat); 
-               noAxis = true; 
-           } 
-           else { 
-               aggregatedsixthValues = value[0].values; 
-           } 
+       //sixth
+       value=this.dataViews[6] && this.dataViews[6].categorical && this.dataViews[6].categorical.values
+       if (value) {
+           if (noAxis) {
+               let totalValuesLength = value.length;
+               let sumQuat;
+               sumQuat = 0;
+               for (let i = 0; i < totalValuesLength; i++) {
+                   sumQuat = sumQuat + value[i].values[0];
+               }
+               aggregatedsixthValues.push(sumQuat);
+               noAxis = true;
+           }
+           else {
+               aggregatedsixthValues = value[0].values;
+           }
  
-           tempAggregatedsixthValues = aggregatedsixthValues.slice(0); 
-           if (this.removeFlags.length > 0) { 
-               this.spliceMeasures(tempAggregatedsixthValues); 
-           } 
+           tempAggregatedsixthValues = aggregatedsixthValues.slice(0);
+           if (this.removeFlags.length > 0) {
+               this.spliceMeasures(tempAggregatedsixthValues);
+           }
  
-           let sixMeasuretextProperties: TextProperties = { 
-               text: SixthLabelSettings.titleText, 
-               fontFamily: "Segoe UI", 
-               fontSize: '12px' 
-           }; 
-           let sixMeasuretext = TextMeasurementService.getTailoredTextOrDefault(sixMeasuretextProperties, maxLabelTextWidth); 
-           this.root.select('.cartesianChart') 
-               .append('text') 
-               .attr('x', 1) 
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter)) 
-               .classed('measureLabelTitle', true) 
-               .attr('font-size', '12px') 
-               .attr('font-family', 'Segoe UI') 
-               .attr('fill', '#777') 
-               .text(sixMeasuretext) 
-               .append('title') 
-               .text(SixthLabelSettings.titleText) 
-       } 
- 
+           let sixMeasuretextProperties: TextProperties = {
+               text: SixthLabelSettings.titleText,
+               fontFamily: SixthLabelSettings.titleFontFamily,
+               fontSize: SixthLabelSettings.titleFontSize + 'px'
+           };
+           let sixMeasuretext = TextMeasurementService.getTailoredTextOrDefault(sixMeasuretextProperties, maxLabelTextWidth);
+           this.root.select('.cartesianChart')
+               .append('text')
+               .attr('x', 1)
+               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
+               .classed('measureLabelTitle', true)
+               .attr('font-size', SixthLabelSettings.titleFontSize + 'px')
+               .attr('font-family', SixthLabelSettings.titleFontFamily)
+               .attr('fill', SixthLabelSettings.titleColor)
+               .text(sixMeasuretext)
+               .append('title')
+               .text(SixthLabelSettings.titleText)
+       }
+
        let boxes = this.root.selectAll('.mainGraphicsContext > svg'); 
        let box = <SVGRectElement>boxes[0][0]; 
  

@@ -80,6 +80,9 @@ declare class TotalLabelsCardSettings extends FormattingSettingsCard {
     show: formattingSettings.ToggleSwitch;
     topLevelSlice: formattingSettings.ToggleSwitch;
     titleText: formattingSettings.TextInput;
+    titleColor: formattingSettings.ColorPicker;
+    titleFontFamily: formattingSettings.FontPicker;
+    titleFontSize: formattingSettings.NumUpDown;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
@@ -91,6 +94,9 @@ declare class SecondaryLabelsCardSettings extends FormattingSettingsCard {
     displayName: string;
     description: string;
     titleText: formattingSettings.TextInput;
+    titleColor: formattingSettings.ColorPicker;
+    titleFontFamily: formattingSettings.FontPicker;
+    titleFontSize: formattingSettings.NumUpDown;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
@@ -102,6 +108,9 @@ declare class TertiaryLabelsCardSettings extends FormattingSettingsCard {
     displayName: string;
     description: string;
     titleText: formattingSettings.TextInput;
+    titleColor: formattingSettings.ColorPicker;
+    titleFontFamily: formattingSettings.FontPicker;
+    titleFontSize: formattingSettings.NumUpDown;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
@@ -113,6 +122,9 @@ declare class QuaternaryLabelsCardSettings extends FormattingSettingsCard {
     displayName: string;
     description: string;
     titleText: formattingSettings.TextInput;
+    titleColor: formattingSettings.ColorPicker;
+    titleFontFamily: formattingSettings.FontPicker;
+    titleFontSize: formattingSettings.NumUpDown;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
@@ -124,6 +136,9 @@ declare class FifthLabelsCardSettings extends FormattingSettingsCard {
     displayName: string;
     description: string;
     titleText: formattingSettings.TextInput;
+    titleColor: formattingSettings.ColorPicker;
+    titleFontFamily: formattingSettings.FontPicker;
+    titleFontSize: formattingSettings.NumUpDown;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
@@ -135,6 +150,9 @@ declare class SixthLabelsCardSettings extends FormattingSettingsCard {
     displayName: string;
     description: string;
     titleText: formattingSettings.TextInput;
+    titleColor: formattingSettings.ColorPicker;
+    titleFontFamily: formattingSettings.FontPicker;
+    titleFontSize: formattingSettings.NumUpDown;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;

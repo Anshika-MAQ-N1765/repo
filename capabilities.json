@@ -221,6 +221,15 @@
       "properties": {
         "show": { "type": { "bool": true } },
         "titleText": { "type": { "text": true } },
+        "titleColor": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "titleFontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
+        },
+        "titleFontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        },
         "color": {
           "type": { "fill": { "solid": { "color": true } } }
         },
@@ -239,6 +248,15 @@
       "description": "Display secondary label options",
       "properties": {
         "titleText": { "type": { "text": true } },
+        "titleColor": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "titleFontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
+        },
+        "titleFontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        },
         "color": {
           "type": { "fill": { "solid": { "color": true } } }
         },
@@ -257,6 +275,15 @@
       "description": "Display tertiary label options",
       "properties": {
         "titleText": { "type": { "text": true } },
+        "titleColor": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "titleFontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
+        },
+        "titleFontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        },
         "color": {
           "type": { "fill": { "solid": { "color": true } } }
         },
@@ -275,6 +302,15 @@
       "description": "Display quaternary label options",
       "properties": {
         "titleText": { "type": { "text": true } },
+        "titleColor": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "titleFontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
+        },
+        "titleFontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        },
         "color": {
           "type": { "fill": { "solid": { "color": true } } }
         },
@@ -293,6 +329,15 @@
       "description": "Display fifth label options",
       "properties": {
         "titleText": { "type": { "text": true } },
+        "titleColor": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "titleFontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
+        },
+        "titleFontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        },
         "color": {
           "type": { "fill": { "solid": { "color": true } } }
         },
@@ -311,6 +356,15 @@
       "description": "Display sixth label options",
       "properties": {
         "titleText": { "type": { "text": true } },
+        "titleColor": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "titleFontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
+        },
+        "titleFontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        },
         "color": {
           "type": { "fill": { "solid": { "color": true } } }
         },
@@ -452,5 +506,3 @@
   },
   "privileges": []
 }
- 
- 

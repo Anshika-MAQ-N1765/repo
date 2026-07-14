@@ -27,6 +27,10 @@ function createColorPicker(name: string, displayName: string, value: string): fo
     return new formattingSettings.ColorPicker({ name, displayName, value: { value } });
 }
  
+function createFontPicker(name: string, displayName: string, value: string): formattingSettings.FontPicker {
+    return new formattingSettings.FontPicker({ name, displayName, value });
+}
+ 
 function createDropdown(name: string, displayName: string, value: { value: string; displayName: string }, items: Array<{ value: string; displayName: string }>): formattingSettings.ItemDropdown {
     return new formattingSettings.ItemDropdown({ name, displayName, value, items });
 }
@@ -66,7 +70,7 @@ class LegendCardSettings extends FormattingSettingsCard {
  
     slices: Array<FormattingSettingsSlice> = [this.showAxisTitle, this.labelColor, this.labelDisplayUnits, this.fontSize, this.labelPrecision];
 }
-
+ 
 class TextWrapCardSettings extends FormattingSettingsCard {
     name = "textWrap";
     displayName = "X-Axis Text Wrap";
@@ -102,7 +106,8 @@ class DataPointCardSettings extends FormattingSettingsCard {
     displayName = "Data colors";
     description = "Pick a color for each value shown in the legend";
  
-    // Default color until runtime series colors are injected.
+    // Fallback swatch used only when there are no dynamic series yet. The real
+    // per-series color pickers are injected at runtime via setDataColors().
     defaultColor = createColorPicker("defaultColor", "Default color", "#01B8AA");
  
     slices: Array<FormattingSettingsSlice> = [this.defaultColor];
@@ -133,21 +138,27 @@ class TotalLabelsCardSettings extends FormattingSettingsCard {
     topLevelSlice = this.show;
  
     titleText = createTextInput("titleText", "Title text", "Total");
+    titleColor = createColorPicker("titleColor", "Title color", "#777777");
+    titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
+    titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
     color = createColorPicker("color", "Color", "#777777");
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
 }class SecondaryLabelsCardSettings extends FormattingSettingsCard {
     name = "secondaryLabels";
     displayName = "Secondary Labels";
     description = "Display secondary label options";
     titleText = createTextInput("titleText", "Title text", "");
+    titleColor = createColorPicker("titleColor", "Title color", "#777777");
+    titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
+    titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
     color = createColorPicker("color", "Color", "#777777");
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
 }
  
 class TertiaryLabelsCardSettings extends FormattingSettingsCard {
@@ -155,11 +166,14 @@ class TertiaryLabelsCardSettings extends FormattingSettingsCard {
     displayName = "Tertiary Labels";
     description = "Display tertiary label options";
     titleText = createTextInput("titleText", "Title text", "");
+    titleColor = createColorPicker("titleColor", "Title color", "#777777");
+    titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
+    titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
     color = createColorPicker("color", "Color", "#777777");
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
 }
  
 class QuaternaryLabelsCardSettings extends FormattingSettingsCard {
@@ -167,11 +181,14 @@ class QuaternaryLabelsCardSettings extends FormattingSettingsCard {
     displayName = "Quaternary Labels";
     description = "Display quaternary label options";
     titleText = createTextInput("titleText", "Title text", "");
+    titleColor = createColorPicker("titleColor", "Title color", "#777777");
+    titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
+    titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
     color = createColorPicker("color", "Color", "#777777");
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
 }
  
 class FifthLabelsCardSettings extends FormattingSettingsCard {
@@ -179,11 +196,14 @@ class FifthLabelsCardSettings extends FormattingSettingsCard {
     displayName = "Fifth Labels";
     description = "Display fifth label options";
     titleText = createTextInput("titleText", "Title text", "");
+    titleColor = createColorPicker("titleColor", "Title color", "#777777");
+    titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
+    titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
     color = createColorPicker("color", "Color", "#777777");
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
 }
  
 class SixthLabelsCardSettings extends FormattingSettingsCard {
@@ -191,11 +211,14 @@ class SixthLabelsCardSettings extends FormattingSettingsCard {
     displayName = "Sixth Labels";
     description = "Display sixth label options";
     titleText = createTextInput("titleText", "Title text", "");
+    titleColor = createColorPicker("titleColor", "Title color", "#777777");
+    titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
+    titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
     color = createColorPicker("color", "Color", "#777777");
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
 }
  
 class GMOColumnChartTitleCardSettings extends FormattingSettingsCard {

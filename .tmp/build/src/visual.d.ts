@@ -780,6 +780,9 @@ declare namespace powerbi.extensibility.visual {
                 objectName: string;
                 propertyName: string;
             };
+            titleColor: DataViewObjectPropertyIdentifier;
+            titleFontFamily: DataViewObjectPropertyIdentifier;
+            titleFontSize: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
@@ -790,6 +793,9 @@ declare namespace powerbi.extensibility.visual {
                 objectName: string;
                 propertyName: string;
             };
+            titleColor: DataViewObjectPropertyIdentifier;
+            titleFontFamily: DataViewObjectPropertyIdentifier;
+            titleFontSize: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
@@ -800,6 +806,9 @@ declare namespace powerbi.extensibility.visual {
                 objectName: string;
                 propertyName: string;
             };
+            titleColor: DataViewObjectPropertyIdentifier;
+            titleFontFamily: DataViewObjectPropertyIdentifier;
+            titleFontSize: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
@@ -810,6 +819,9 @@ declare namespace powerbi.extensibility.visual {
                 objectName: string;
                 propertyName: string;
             };
+            titleColor: DataViewObjectPropertyIdentifier;
+            titleFontFamily: DataViewObjectPropertyIdentifier;
+            titleFontSize: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
@@ -820,6 +832,9 @@ declare namespace powerbi.extensibility.visual {
                 objectName: string;
                 propertyName: string;
             };
+            titleColor: DataViewObjectPropertyIdentifier;
+            titleFontFamily: DataViewObjectPropertyIdentifier;
+            titleFontSize: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
@@ -830,6 +845,9 @@ declare namespace powerbi.extensibility.visual {
                 objectName: string;
                 propertyName: string;
             };
+            titleColor: DataViewObjectPropertyIdentifier;
+            titleFontFamily: DataViewObjectPropertyIdentifier;
+            titleFontSize: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
@@ -848,6 +866,9 @@ declare namespace powerbi.extensibility.visual {
     export interface totalLabelSettings {
         show: boolean;
         titleText: string;
+        titleColor: string;
+        titleFontFamily: string;
+        titleFontSize: number;
         color: string;
         displayUnits: number;
         textPrecision: number;
@@ -855,6 +876,9 @@ declare namespace powerbi.extensibility.visual {
     }
     export interface secondaryLabelSettings {
         titleText: string;
+        titleColor: string;
+        titleFontFamily: string;
+        titleFontSize: number;
         color: string;
         displayUnits: number;
         textPrecision: number;
@@ -862,6 +886,9 @@ declare namespace powerbi.extensibility.visual {
     }
     export interface tertiaryLabelSettings {
         titleText: string;
+        titleColor: string;
+        titleFontFamily: string;
+        titleFontSize: number;
         color: string;
         displayUnits: number;
         textPrecision: number;
@@ -869,6 +896,9 @@ declare namespace powerbi.extensibility.visual {
     }
     export interface quaternaryLabelSettings {
         titleText: string;
+        titleColor: string;
+        titleFontFamily: string;
+        titleFontSize: number;
         color: string;
         displayUnits: number;
         textPrecision: number;
@@ -876,6 +906,9 @@ declare namespace powerbi.extensibility.visual {
     }
     export interface FifthLabelSettings {
         titleText: string;
+        titleColor: string;
+        titleFontFamily: string;
+        titleFontSize: number;
         color: string;
         displayUnits: number;
         textPrecision: number;
@@ -883,6 +916,9 @@ declare namespace powerbi.extensibility.visual {
     }
     export interface SixthLabelSettings {
         titleText: string;
+        titleColor: string;
+        titleFontFamily: string;
+        titleFontSize: number;
         color: string;
         displayUnits: number;
         textPrecision: number;

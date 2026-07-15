@@ -49,6 +49,7 @@ declare class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
     valuesGroup: formattingSettings.Group;
     titleGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
+    constructor();
 }
 declare class TextWrapCardSettings extends FormattingSettingsCard {
     name: string;
@@ -88,6 +89,7 @@ declare class ValueAxisCardSettings extends FormattingSettingsCompositeCard {
     valuesGroup: formattingSettings.Group;
     titleGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
+    constructor();
 }
 declare class DataPointCardSettings extends FormattingSettingsCard {
     name: string;
@@ -124,11 +126,19 @@ declare class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     titleColor: formattingSettings.ColorPicker;
     titleFontFamily: formattingSettings.FontPicker;
     titleFontSize: formattingSettings.NumUpDown;
+    titleBold: formattingSettings.ToggleSwitch;
+    titleItalic: formattingSettings.ToggleSwitch;
+    titleUnderline: formattingSettings.ToggleSwitch;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
+    fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
+    bold: formattingSettings.ToggleSwitch;
+    italic: formattingSettings.ToggleSwitch;
+    underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    valueFont: formattingSettings.FontControl;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -141,11 +151,19 @@ declare class SecondaryLabelsCardSettings extends FormattingSettingsCompositeCar
     titleColor: formattingSettings.ColorPicker;
     titleFontFamily: formattingSettings.FontPicker;
     titleFontSize: formattingSettings.NumUpDown;
+    titleBold: formattingSettings.ToggleSwitch;
+    titleItalic: formattingSettings.ToggleSwitch;
+    titleUnderline: formattingSettings.ToggleSwitch;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
+    fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
+    bold: formattingSettings.ToggleSwitch;
+    italic: formattingSettings.ToggleSwitch;
+    underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    valueFont: formattingSettings.FontControl;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -158,11 +176,19 @@ declare class TertiaryLabelsCardSettings extends FormattingSettingsCompositeCard
     titleColor: formattingSettings.ColorPicker;
     titleFontFamily: formattingSettings.FontPicker;
     titleFontSize: formattingSettings.NumUpDown;
+    titleBold: formattingSettings.ToggleSwitch;
+    titleItalic: formattingSettings.ToggleSwitch;
+    titleUnderline: formattingSettings.ToggleSwitch;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
+    fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
+    bold: formattingSettings.ToggleSwitch;
+    italic: formattingSettings.ToggleSwitch;
+    underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    valueFont: formattingSettings.FontControl;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -175,11 +201,19 @@ declare class QuaternaryLabelsCardSettings extends FormattingSettingsCompositeCa
     titleColor: formattingSettings.ColorPicker;
     titleFontFamily: formattingSettings.FontPicker;
     titleFontSize: formattingSettings.NumUpDown;
+    titleBold: formattingSettings.ToggleSwitch;
+    titleItalic: formattingSettings.ToggleSwitch;
+    titleUnderline: formattingSettings.ToggleSwitch;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
+    fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
+    bold: formattingSettings.ToggleSwitch;
+    italic: formattingSettings.ToggleSwitch;
+    underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    valueFont: formattingSettings.FontControl;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -192,11 +226,19 @@ declare class FifthLabelsCardSettings extends FormattingSettingsCompositeCard {
     titleColor: formattingSettings.ColorPicker;
     titleFontFamily: formattingSettings.FontPicker;
     titleFontSize: formattingSettings.NumUpDown;
+    titleBold: formattingSettings.ToggleSwitch;
+    titleItalic: formattingSettings.ToggleSwitch;
+    titleUnderline: formattingSettings.ToggleSwitch;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
+    fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
+    bold: formattingSettings.ToggleSwitch;
+    italic: formattingSettings.ToggleSwitch;
+    underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    valueFont: formattingSettings.FontControl;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -209,11 +251,19 @@ declare class SixthLabelsCardSettings extends FormattingSettingsCompositeCard {
     titleColor: formattingSettings.ColorPicker;
     titleFontFamily: formattingSettings.FontPicker;
     titleFontSize: formattingSettings.NumUpDown;
+    titleBold: formattingSettings.ToggleSwitch;
+    titleItalic: formattingSettings.ToggleSwitch;
+    titleUnderline: formattingSettings.ToggleSwitch;
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
+    fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
+    bold: formattingSettings.ToggleSwitch;
+    italic: formattingSettings.ToggleSwitch;
+    underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    valueFont: formattingSettings.FontControl;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -227,12 +277,13 @@ declare class GMOColumnChartTitleCardSettings extends FormattingSettingsComposit
     fill1: formattingSettings.ColorPicker;
     fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
+    bold: formattingSettings.ToggleSwitch;
+    italic: formattingSettings.ToggleSwitch;
+    underline: formattingSettings.ToggleSwitch;
     backgroundColor: formattingSettings.ColorPicker;
-    tooltipText: formattingSettings.TextInput;
     font: formattingSettings.FontControl;
     titleGroup: formattingSettings.Group;
     appearanceGroup: formattingSettings.Group;
-    tooltipGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
 }
 export declare class VisualFormattingSettingsModel extends FormattingSettingsModel {

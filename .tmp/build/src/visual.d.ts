@@ -783,10 +783,17 @@ declare namespace powerbi.extensibility.visual {
             titleColor: DataViewObjectPropertyIdentifier;
             titleFontFamily: DataViewObjectPropertyIdentifier;
             titleFontSize: DataViewObjectPropertyIdentifier;
+            titleBold: DataViewObjectPropertyIdentifier;
+            titleItalic: DataViewObjectPropertyIdentifier;
+            titleUnderline: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
             fontSize: DataViewObjectPropertyIdentifier;
+            fontFamily: DataViewObjectPropertyIdentifier;
+            fontBold: DataViewObjectPropertyIdentifier;
+            fontItalic: DataViewObjectPropertyIdentifier;
+            fontUnderline: DataViewObjectPropertyIdentifier;
         };
         secondaryLabels: {
             titleText: {
@@ -796,10 +803,17 @@ declare namespace powerbi.extensibility.visual {
             titleColor: DataViewObjectPropertyIdentifier;
             titleFontFamily: DataViewObjectPropertyIdentifier;
             titleFontSize: DataViewObjectPropertyIdentifier;
+            titleBold: DataViewObjectPropertyIdentifier;
+            titleItalic: DataViewObjectPropertyIdentifier;
+            titleUnderline: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
             fontSize: DataViewObjectPropertyIdentifier;
+            fontFamily: DataViewObjectPropertyIdentifier;
+            fontBold: DataViewObjectPropertyIdentifier;
+            fontItalic: DataViewObjectPropertyIdentifier;
+            fontUnderline: DataViewObjectPropertyIdentifier;
         };
         tertiaryLabels: {
             titleText: {
@@ -809,10 +823,17 @@ declare namespace powerbi.extensibility.visual {
             titleColor: DataViewObjectPropertyIdentifier;
             titleFontFamily: DataViewObjectPropertyIdentifier;
             titleFontSize: DataViewObjectPropertyIdentifier;
+            titleBold: DataViewObjectPropertyIdentifier;
+            titleItalic: DataViewObjectPropertyIdentifier;
+            titleUnderline: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
             fontSize: DataViewObjectPropertyIdentifier;
+            fontFamily: DataViewObjectPropertyIdentifier;
+            fontBold: DataViewObjectPropertyIdentifier;
+            fontItalic: DataViewObjectPropertyIdentifier;
+            fontUnderline: DataViewObjectPropertyIdentifier;
         };
         quaternaryLabels: {
             titleText: {
@@ -822,10 +843,17 @@ declare namespace powerbi.extensibility.visual {
             titleColor: DataViewObjectPropertyIdentifier;
             titleFontFamily: DataViewObjectPropertyIdentifier;
             titleFontSize: DataViewObjectPropertyIdentifier;
+            titleBold: DataViewObjectPropertyIdentifier;
+            titleItalic: DataViewObjectPropertyIdentifier;
+            titleUnderline: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
             fontSize: DataViewObjectPropertyIdentifier;
+            fontFamily: DataViewObjectPropertyIdentifier;
+            fontBold: DataViewObjectPropertyIdentifier;
+            fontItalic: DataViewObjectPropertyIdentifier;
+            fontUnderline: DataViewObjectPropertyIdentifier;
         };
         FifthLabels: {
             titleText: {
@@ -835,10 +863,17 @@ declare namespace powerbi.extensibility.visual {
             titleColor: DataViewObjectPropertyIdentifier;
             titleFontFamily: DataViewObjectPropertyIdentifier;
             titleFontSize: DataViewObjectPropertyIdentifier;
+            titleBold: DataViewObjectPropertyIdentifier;
+            titleItalic: DataViewObjectPropertyIdentifier;
+            titleUnderline: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
             fontSize: DataViewObjectPropertyIdentifier;
+            fontFamily: DataViewObjectPropertyIdentifier;
+            fontBold: DataViewObjectPropertyIdentifier;
+            fontItalic: DataViewObjectPropertyIdentifier;
+            fontUnderline: DataViewObjectPropertyIdentifier;
         };
         SixthLabels: {
             titleText: {
@@ -848,10 +883,17 @@ declare namespace powerbi.extensibility.visual {
             titleColor: DataViewObjectPropertyIdentifier;
             titleFontFamily: DataViewObjectPropertyIdentifier;
             titleFontSize: DataViewObjectPropertyIdentifier;
+            titleBold: DataViewObjectPropertyIdentifier;
+            titleItalic: DataViewObjectPropertyIdentifier;
+            titleUnderline: DataViewObjectPropertyIdentifier;
             color: DataViewObjectPropertyIdentifier;
             displayUnits: DataViewObjectPropertyIdentifier;
             textPrecision: DataViewObjectPropertyIdentifier;
             fontSize: DataViewObjectPropertyIdentifier;
+            fontFamily: DataViewObjectPropertyIdentifier;
+            fontBold: DataViewObjectPropertyIdentifier;
+            fontItalic: DataViewObjectPropertyIdentifier;
+            fontUnderline: DataViewObjectPropertyIdentifier;
         };
     };
     export interface sampleFilterSettings {
@@ -869,60 +911,102 @@ declare namespace powerbi.extensibility.visual {
         titleColor: string;
         titleFontFamily: string;
         titleFontSize: number;
+        titleBold: boolean;
+        titleItalic: boolean;
+        titleUnderline: boolean;
         color: string;
         displayUnits: number;
         textPrecision: number;
         fontSize: number;
+        fontFamily: string;
+        fontBold: boolean;
+        fontItalic: boolean;
+        fontUnderline: boolean;
     }
     export interface secondaryLabelSettings {
         titleText: string;
         titleColor: string;
         titleFontFamily: string;
         titleFontSize: number;
+        titleBold: boolean;
+        titleItalic: boolean;
+        titleUnderline: boolean;
         color: string;
         displayUnits: number;
         textPrecision: number;
         fontSize: number;
+        fontFamily: string;
+        fontBold: boolean;
+        fontItalic: boolean;
+        fontUnderline: boolean;
     }
     export interface tertiaryLabelSettings {
         titleText: string;
         titleColor: string;
         titleFontFamily: string;
         titleFontSize: number;
+        titleBold: boolean;
+        titleItalic: boolean;
+        titleUnderline: boolean;
         color: string;
         displayUnits: number;
         textPrecision: number;
         fontSize: number;
+        fontFamily: string;
+        fontBold: boolean;
+        fontItalic: boolean;
+        fontUnderline: boolean;
     }
     export interface quaternaryLabelSettings {
         titleText: string;
         titleColor: string;
         titleFontFamily: string;
         titleFontSize: number;
+        titleBold: boolean;
+        titleItalic: boolean;
+        titleUnderline: boolean;
         color: string;
         displayUnits: number;
         textPrecision: number;
         fontSize: number;
+        fontFamily: string;
+        fontBold: boolean;
+        fontItalic: boolean;
+        fontUnderline: boolean;
     }
     export interface FifthLabelSettings {
         titleText: string;
         titleColor: string;
         titleFontFamily: string;
         titleFontSize: number;
+        titleBold: boolean;
+        titleItalic: boolean;
+        titleUnderline: boolean;
         color: string;
         displayUnits: number;
         textPrecision: number;
         fontSize: number;
+        fontFamily: string;
+        fontBold: boolean;
+        fontItalic: boolean;
+        fontUnderline: boolean;
     }
     export interface SixthLabelSettings {
         titleText: string;
         titleColor: string;
         titleFontFamily: string;
         titleFontSize: number;
+        titleBold: boolean;
+        titleItalic: boolean;
+        titleUnderline: boolean;
         color: string;
         displayUnits: number;
         textPrecision: number;
         fontSize: number;
+        fontFamily: string;
+        fontBold: boolean;
+        fontItalic: boolean;
+        fontUnderline: boolean;
     }
     export interface ITextStyle extends IStyleInfo {
         fontFace?: string;
@@ -1071,6 +1155,7 @@ declare namespace powerbi.extensibility.visual {
         private getTotalLabelSettings;
         private getMeasureLabelSettings;
         private getTitleFontFamily;
+        private getTitleFontFlag;
         private getSecondaryLabelSettings;
         private getTertiaryLabelSettings;
         private getQuaternaryLabelSettings;

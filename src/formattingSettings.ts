@@ -127,12 +127,17 @@ class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
     titleFont = createFontControl("categoryAxisTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
  
     valuesGroup = createGroup("categoryAxisValues", "Values", [this.labelColor, this.font, this.labelDisplayUnits, this.labelPrecision]);
-    titleGroup = createGroup("categoryAxisTitle", "Title", [this.showAxisTitle, this.titleColor, this.titleFont]);
+    titleGroup = createGroup("categoryAxisTitle", "Title", [this.titleColor, this.titleFont]);
  
     groups = [this.valuesGroup, this.titleGroup];
-}
  
-class TextWrapCardSettings extends FormattingSettingsCard {
+    constructor() {
+        super();
+        // The Title group's on/off switch. When off, Power BI greys-out (disables)
+        // the title styling controls beneath it.
+        this.titleGroup.topLevelSlice = this.showAxisTitle;
+    }
+}class TextWrapCardSettings extends FormattingSettingsCard {
     name = "textWrap";
     displayName = "X-Axis Text Wrap";
     show = createToggle("show", "Show", false);
@@ -174,12 +179,15 @@ class ValueAxisCardSettings extends FormattingSettingsCompositeCard {
     titleFont = createFontControl("valueAxisTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
  
     valuesGroup = createGroup("valueAxisValues", "Values", [this.labelColor, this.font, this.labelDisplayUnits, this.labelPrecision]);
-    titleGroup = createGroup("valueAxisTitle", "Title", [this.showAxisTitle, this.titleColor, this.titleFont]);
+    titleGroup = createGroup("valueAxisTitle", "Title", [this.titleColor, this.titleFont]);
  
     groups = [this.valuesGroup, this.titleGroup];
-}
  
-class DataPointCardSettings extends FormattingSettingsCard {
+    constructor() {
+        super();
+        this.titleGroup.topLevelSlice = this.showAxisTitle;
+    }
+}class DataPointCardSettings extends FormattingSettingsCard {
     name = "dataPoint";
     displayName = "Data colors";
     description = "Pick a color for each value shown in the legend";
@@ -226,19 +234,25 @@ class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     titleColor = createColorPicker("titleColor", "Title color", "#777777", true);
     titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
     titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
+    titleBold = createToggle("titleBold", "Bold", false);
+    titleItalic = createToggle("titleItalic", "Italic", false);
+    titleUnderline = createToggle("titleUnderline", "Underline", false);
     color = createColorPicker("color", "Color", "#777777", true);
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
+    fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    titleFont = createFontControl("totalTitleFont", this.titleFontFamily, this.titleFontSize);
+    bold = createToggle("fontBold", "Bold", false);
+    italic = createToggle("fontItalic", "Italic", false);
+    underline = createToggle("fontUnderline", "Underline", false);
+    titleFont = createFontControl("totalTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    valueFont = createFontControl("totalValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
  
     titleGroup = createGroup("totalLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("totalLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+    valuesGroup = createGroup("totalLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
  
     groups = [this.titleGroup, this.valuesGroup];
-}
- 
-class SecondaryLabelsCardSettings extends FormattingSettingsCompositeCard {
+}class SecondaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "secondaryLabels";
     displayName = "Secondary Labels";
     description = "Display secondary label options";
@@ -246,19 +260,25 @@ class SecondaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     titleColor = createColorPicker("titleColor", "Title color", "#777777", true);
     titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
     titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
+    titleBold = createToggle("titleBold", "Bold", false);
+    titleItalic = createToggle("titleItalic", "Italic", false);
+    titleUnderline = createToggle("titleUnderline", "Underline", false);
     color = createColorPicker("color", "Color", "#777777", true);
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
+    fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    titleFont = createFontControl("secondaryTitleFont", this.titleFontFamily, this.titleFontSize);
+    bold = createToggle("fontBold", "Bold", false);
+    italic = createToggle("fontItalic", "Italic", false);
+    underline = createToggle("fontUnderline", "Underline", false);
+    titleFont = createFontControl("secondaryTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    valueFont = createFontControl("secondaryValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
  
     titleGroup = createGroup("secondaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("secondaryLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+    valuesGroup = createGroup("secondaryLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
  
     groups = [this.titleGroup, this.valuesGroup];
-}
- 
-class TertiaryLabelsCardSettings extends FormattingSettingsCompositeCard {
+}class TertiaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "tertiaryLabels";
     displayName = "Tertiary Labels";
     description = "Display tertiary label options";
@@ -266,19 +286,25 @@ class TertiaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     titleColor = createColorPicker("titleColor", "Title color", "#777777", true);
     titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
     titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
+    titleBold = createToggle("titleBold", "Bold", false);
+    titleItalic = createToggle("titleItalic", "Italic", false);
+    titleUnderline = createToggle("titleUnderline", "Underline", false);
     color = createColorPicker("color", "Color", "#777777", true);
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
+    fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    titleFont = createFontControl("tertiaryTitleFont", this.titleFontFamily, this.titleFontSize);
+    bold = createToggle("fontBold", "Bold", false);
+    italic = createToggle("fontItalic", "Italic", false);
+    underline = createToggle("fontUnderline", "Underline", false);
+    titleFont = createFontControl("tertiaryTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    valueFont = createFontControl("tertiaryValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
  
     titleGroup = createGroup("tertiaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("tertiaryLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+    valuesGroup = createGroup("tertiaryLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
  
     groups = [this.titleGroup, this.valuesGroup];
-}
- 
-class QuaternaryLabelsCardSettings extends FormattingSettingsCompositeCard {
+}class QuaternaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "quaternaryLabels";
     displayName = "Quaternary Labels";
     description = "Display quaternary label options";
@@ -286,19 +312,25 @@ class QuaternaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     titleColor = createColorPicker("titleColor", "Title color", "#777777", true);
     titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
     titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
+    titleBold = createToggle("titleBold", "Bold", false);
+    titleItalic = createToggle("titleItalic", "Italic", false);
+    titleUnderline = createToggle("titleUnderline", "Underline", false);
     color = createColorPicker("color", "Color", "#777777", true);
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
+    fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    titleFont = createFontControl("quaternaryTitleFont", this.titleFontFamily, this.titleFontSize);
+    bold = createToggle("fontBold", "Bold", false);
+    italic = createToggle("fontItalic", "Italic", false);
+    underline = createToggle("fontUnderline", "Underline", false);
+    titleFont = createFontControl("quaternaryTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    valueFont = createFontControl("quaternaryValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
  
     titleGroup = createGroup("quaternaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("quaternaryLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+    valuesGroup = createGroup("quaternaryLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
  
     groups = [this.titleGroup, this.valuesGroup];
-}
- 
-class FifthLabelsCardSettings extends FormattingSettingsCompositeCard {
+}class FifthLabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "FifthLabels";
     displayName = "Fifth Labels";
     description = "Display fifth label options";
@@ -306,19 +338,25 @@ class FifthLabelsCardSettings extends FormattingSettingsCompositeCard {
     titleColor = createColorPicker("titleColor", "Title color", "#777777", true);
     titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
     titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
+    titleBold = createToggle("titleBold", "Bold", false);
+    titleItalic = createToggle("titleItalic", "Italic", false);
+    titleUnderline = createToggle("titleUnderline", "Underline", false);
     color = createColorPicker("color", "Color", "#777777", true);
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
+    fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    titleFont = createFontControl("fifthTitleFont", this.titleFontFamily, this.titleFontSize);
+    bold = createToggle("fontBold", "Bold", false);
+    italic = createToggle("fontItalic", "Italic", false);
+    underline = createToggle("fontUnderline", "Underline", false);
+    titleFont = createFontControl("fifthTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    valueFont = createFontControl("fifthValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
  
     titleGroup = createGroup("FifthLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("FifthLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+    valuesGroup = createGroup("FifthLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
  
     groups = [this.titleGroup, this.valuesGroup];
-}
- 
-class SixthLabelsCardSettings extends FormattingSettingsCompositeCard {
+}class SixthLabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "SixthLabels";
     displayName = "Sixth Labels";
     description = "Display sixth label options";
@@ -326,19 +364,25 @@ class SixthLabelsCardSettings extends FormattingSettingsCompositeCard {
     titleColor = createColorPicker("titleColor", "Title color", "#777777", true);
     titleFontFamily = createFontPicker("titleFontFamily", "Title font", "Segoe UI");
     titleFontSize = createNumberInput("titleFontSize", "Title text size", 12);
+    titleBold = createToggle("titleBold", "Bold", false);
+    titleItalic = createToggle("titleItalic", "Italic", false);
+    titleUnderline = createToggle("titleUnderline", "Underline", false);
     color = createColorPicker("color", "Color", "#777777", true);
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
+    fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    titleFont = createFontControl("sixthTitleFont", this.titleFontFamily, this.titleFontSize);
+    bold = createToggle("fontBold", "Bold", false);
+    italic = createToggle("fontItalic", "Italic", false);
+    underline = createToggle("fontUnderline", "Underline", false);
+    titleFont = createFontControl("sixthTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    valueFont = createFontControl("sixthValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
  
     titleGroup = createGroup("SixthLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("SixthLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+    valuesGroup = createGroup("SixthLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
  
     groups = [this.titleGroup, this.valuesGroup];
-}
- 
-class GMOColumnChartTitleCardSettings extends FormattingSettingsCompositeCard {
+}class GMOColumnChartTitleCardSettings extends FormattingSettingsCompositeCard {
     name = "GMOColumnChartTitle";
     displayName = "Stacked Chart Title";
  
@@ -349,18 +393,17 @@ class GMOColumnChartTitleCardSettings extends FormattingSettingsCompositeCard {
     fill1 = createColorPicker("fill1", "Font color", "#000000", true);
     fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 12);
+    bold = createToggle("fontBold", "Bold", false);
+    italic = createToggle("fontItalic", "Italic", false);
+    underline = createToggle("fontUnderline", "Underline", false);
     backgroundColor = createColorPicker("backgroundColor", "Background color", "#ffffff");
-    tooltipText = createTextInput("tooltipText", "Tooltip text", "");
-    font = createFontControl("titleFont", this.fontFamily, this.fontSize);
+    font = createFontControl("titleFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
  
     titleGroup = createGroup("GMOColumnChartTitleTitle", "Title", [this.titleText, this.fill1, this.font]);
     appearanceGroup = createGroup("GMOColumnChartTitleAppearance", "Appearance", [this.backgroundColor]);
-    tooltipGroup = createGroup("GMOColumnChartTitleTooltip", "Tooltip", [this.tooltipText]);
  
-    groups = [this.titleGroup, this.appearanceGroup, this.tooltipGroup];
-}
- 
-export class VisualFormattingSettingsModel extends FormattingSettingsModel {
+    groups = [this.titleGroup, this.appearanceGroup];
+}export class VisualFormattingSettingsModel extends FormattingSettingsModel {
     legendCard = new LegendCardSettings();
     categoryAxisCard = new CategoryAxisCardSettings();
     valueAxisCard = new ValueAxisCardSettings();

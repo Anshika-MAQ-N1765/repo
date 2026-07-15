@@ -2343,60 +2343,102 @@ export let StackedChartGMOProps = {
        titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'titleColor' },
        titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'titleFontFamily' },
        titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'titleFontSize' },
+       titleBold: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'titleBold' },
+       titleItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'titleItalic' },
+       titleUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'titleUnderline' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'labelPrecision' }, 
-       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'fontSize' }, 
+       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'fontSize' },
+       fontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'fontFamily' },
+       fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'fontBold' },
+       fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'fontItalic' },
+       fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'fontUnderline' },
    }, 
    secondaryLabels: { 
        titleText: { objectName: 'secondaryLabels', propertyName: 'titleText' }, 
        titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'titleColor' },
        titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'titleFontFamily' },
        titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'titleFontSize' },
+       titleBold: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'titleBold' },
+       titleItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'titleItalic' },
+       titleUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'titleUnderline' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'labelPrecision' }, 
-       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'fontSize' }, 
+       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'fontSize' },
+       fontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'fontFamily' },
+       fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'fontBold' },
+       fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'fontItalic' },
+       fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'fontUnderline' },
    }, 
    tertiaryLabels: { 
        titleText: { objectName: 'tertiaryLabels', propertyName: 'titleText' }, 
        titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'titleColor' },
        titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'titleFontFamily' },
        titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'titleFontSize' },
+       titleBold: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'titleBold' },
+       titleItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'titleItalic' },
+       titleUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'titleUnderline' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'labelPrecision' }, 
-       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'fontSize' }, 
+       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'fontSize' },
+       fontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'fontFamily' },
+       fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'fontBold' },
+       fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'fontItalic' },
+       fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'fontUnderline' },
    }, 
    quaternaryLabels: { 
        titleText: { objectName: 'quaternaryLabels', propertyName: 'titleText' }, 
        titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'titleColor' },
        titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'titleFontFamily' },
        titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'titleFontSize' },
+       titleBold: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'titleBold' },
+       titleItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'titleItalic' },
+       titleUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'titleUnderline' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'labelPrecision' }, 
-       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'fontSize' }, 
+       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'fontSize' },
+       fontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'fontFamily' },
+       fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'fontBold' },
+       fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'fontItalic' },
+       fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'fontUnderline' },
    }, 
    FifthLabels: { 
        titleText: { objectName: 'FifthLabels', propertyName: 'titleText' }, 
        titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'titleColor' },
        titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'titleFontFamily' },
        titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'titleFontSize' },
+       titleBold: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'titleBold' },
+       titleItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'titleItalic' },
+       titleUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'titleUnderline' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'labelPrecision' }, 
-       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'fontSize' }, 
+       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'fontSize' },
+       fontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'fontFamily' },
+       fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'fontBold' },
+       fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'fontItalic' },
+       fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'fontUnderline' },
    }, 
    SixthLabels: { 
        titleText: { objectName: 'SixthLabels', propertyName: 'titleText' }, 
        titleColor: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'titleColor' },
        titleFontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'titleFontFamily' },
        titleFontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'titleFontSize' },
+       titleBold: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'titleBold' },
+       titleItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'titleItalic' },
+       titleUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'titleUnderline' },
        color: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'color' }, 
        displayUnits: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'labelDisplayUnits' }, 
        textPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'labelPrecision' }, 
-       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'fontSize' }, 
+       fontSize: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'fontSize' },
+       fontFamily: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'fontFamily' },
+       fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'fontBold' },
+       fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'fontItalic' },
+       fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'fontUnderline' },
    }, 
 }; 
 export interface sampleFilterSettings { 
@@ -2414,60 +2456,102 @@ export interface totalLabelSettings {
    titleColor: string;
    titleFontFamily: string;
    titleFontSize: number;
-   color: string; 
-   displayUnits: number; 
-   textPrecision: number; 
-   fontSize: number; 
+   titleBold: boolean;
+   titleItalic: boolean;
+   titleUnderline: boolean;
+   color: string;
+   displayUnits: number;
+   textPrecision: number;
+   fontSize: number;
+   fontFamily: string;
+   fontBold: boolean;
+   fontItalic: boolean;
+   fontUnderline: boolean;
 }; 
 export interface secondaryLabelSettings { 
    titleText: string; 
    titleColor: string;
    titleFontFamily: string;
    titleFontSize: number;
-   color: string; 
-   displayUnits: number; 
-   textPrecision: number; 
-   fontSize: number; 
+   titleBold: boolean;
+   titleItalic: boolean;
+   titleUnderline: boolean;
+   color: string;
+   displayUnits: number;
+   textPrecision: number;
+   fontSize: number;
+   fontFamily: string;
+   fontBold: boolean;
+   fontItalic: boolean;
+   fontUnderline: boolean;
 }; 
 export interface tertiaryLabelSettings { 
    titleText: string; 
    titleColor: string;
    titleFontFamily: string;
    titleFontSize: number;
-   color: string; 
-   displayUnits: number; 
-   textPrecision: number; 
-   fontSize: number; 
+   titleBold: boolean;
+   titleItalic: boolean;
+   titleUnderline: boolean;
+   color: string;
+   displayUnits: number;
+   textPrecision: number;
+   fontSize: number;
+   fontFamily: string;
+   fontBold: boolean;
+   fontItalic: boolean;
+   fontUnderline: boolean;
 }; 
 export interface quaternaryLabelSettings { 
    titleText: string; 
    titleColor: string;
    titleFontFamily: string;
    titleFontSize: number;
-   color: string; 
-   displayUnits: number; 
-   textPrecision: number; 
-   fontSize: number; 
+   titleBold: boolean;
+   titleItalic: boolean;
+   titleUnderline: boolean;
+   color: string;
+   displayUnits: number;
+   textPrecision: number;
+   fontSize: number;
+   fontFamily: string;
+   fontBold: boolean;
+   fontItalic: boolean;
+   fontUnderline: boolean;
 }; 
 export interface FifthLabelSettings { 
    titleText: string; 
    titleColor: string;
    titleFontFamily: string;
    titleFontSize: number;
-   color: string; 
-   displayUnits: number; 
-   textPrecision: number; 
-   fontSize: number; 
+   titleBold: boolean;
+   titleItalic: boolean;
+   titleUnderline: boolean;
+   color: string;
+   displayUnits: number;
+   textPrecision: number;
+   fontSize: number;
+   fontFamily: string;
+   fontBold: boolean;
+   fontItalic: boolean;
+   fontUnderline: boolean;
 }; 
 export interface SixthLabelSettings { 
    titleText: string; 
    titleColor: string;
    titleFontFamily: string;
    titleFontSize: number;
-   color: string; 
-   displayUnits: number; 
-   textPrecision: number; 
-   fontSize: number; 
+   titleBold: boolean;
+   titleItalic: boolean;
+   titleUnderline: boolean;
+   color: string;
+   displayUnits: number;
+   textPrecision: number;
+   fontSize: number;
+   fontFamily: string;
+   fontBold: boolean;
+   fontItalic: boolean;
+   fontUnderline: boolean;
 }; 
 export interface ITextStyle extends IStyleInfo { 
    fontFace?: string; 
@@ -3257,14 +3341,17 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
            playAxisControlLayout: undefined, 
        }; 
  
-       if (GMOColumnChartTitleOnOffStatus && (titleText || tooltiptext)) { 
-           this.root.select('.Title_Div_Text') 
-               .style({ 
-                   "display": "inline-block", 
-                   "background-color": titlebgcolor, 
-                   "font-size": PixelConverter.fromPointToPixel(titlefontsize) + 'px', 
+       if (GMOColumnChartTitleOnOffStatus && (titleText || tooltiptext)) {
+           this.root.select('.Title_Div_Text')
+               .style({
+                   "display": "inline-block",
+                   "background-color": titlebgcolor,
+                   "font-size": PixelConverter.fromPointToPixel(titlefontsize) + 'px',
                    "font-family": titlefontfamily,
                    "color": titlecolor,
+                   "font-weight": this.getTitleFontFlag(this.dataView, 'fontBold') ? 'bold' : 'normal',
+                   "font-style": this.getTitleFontFlag(this.dataView, 'fontItalic') ? 'italic' : 'normal',
+                   "text-decoration": this.getTitleFontFlag(this.dataView, 'fontUnderline') ? 'underline' : 'none',
                }); 
  
            let legendPosition = parseFloat(this.root.select('.legend').attr('orientation')); 
@@ -3352,25 +3439,28 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
        if (objects) { 
            let valueAxisObject = objects['valueAxis']; 
            if (valueAxisObject) { 
-               toReturn = { 
-                   show: valueAxisObject['show'], 
-                   position: valueAxisObject['position'], 
-                   axisScale: valueAxisObject['axisScale'], 
-                   start: valueAxisObject['start'], 
-                   end: valueAxisObject['end'], 
-                   showAxisTitle: valueAxisObject['showAxisTitle'] == null ? axisTitleOnByDefault : valueAxisObject['showAxisTitle'], 
-                   axisStyle: valueAxisObject['axisStyle'], 
-                   axisColor: valueAxisObject['axisColor'], 
-                   secShow: valueAxisObject['secShow'], 
-                   secPosition: valueAxisObject['secPosition'], 
-                   secAxisScale: valueAxisObject['secAxisScale'], 
-                   secStart: valueAxisObject['secStart'], 
-                   secEnd: valueAxisObject['secEnd'], 
-                   secShowAxisTitle: valueAxisObject['secShowAxisTitle'], 
-                   secAxisStyle: valueAxisObject['secAxisStyle'], 
-                   labelDisplayUnits: valueAxisObject['labelDisplayUnits'], 
+               toReturn = {
+                   show: valueAxisObject['show'],
+                   position: valueAxisObject['position'],
+                   axisScale: valueAxisObject['axisScale'],
+                   start: valueAxisObject['start'],
+                   end: valueAxisObject['end'],
+                   showAxisTitle: valueAxisObject['showAxisTitle'] == null ? axisTitleOnByDefault : valueAxisObject['showAxisTitle'],
+                   axisStyle: valueAxisObject['axisStyle'],
+                   axisColor: valueAxisObject['axisColor'],
+                   secShow: valueAxisObject['secShow'],
+                   secPosition: valueAxisObject['secPosition'],
+                   secAxisScale: valueAxisObject['secAxisScale'],
+                   secStart: valueAxisObject['secStart'],
+                   secEnd: valueAxisObject['secEnd'],
+                   secShowAxisTitle: valueAxisObject['secShowAxisTitle'],
+                   secAxisStyle: valueAxisObject['secAxisStyle'],
+                   labelDisplayUnits: valueAxisObject['labelDisplayUnits'],
                    fontFamily: valueAxisObject['fontFamily'],
                    fontSize: valueAxisObject['fontSize'],
+                   fontBold: valueAxisObject['fontBold'],
+                   fontItalic: valueAxisObject['fontItalic'],
+                   fontUnderline: valueAxisObject['fontUnderline'],
                    labelColor: valueAxisObject['labelColor'],
                    titleColor: valueAxisObject['titleColor'],
                    titleFontFamily: valueAxisObject['titleFontFamily'],
@@ -3405,6 +3495,9 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
                    labelDisplayUnits: categoryAxisObject['labelDisplayUnits'],  
                    fontSize : categoryAxisObject['fontSize'],
                    fontFamily : categoryAxisObject['fontFamily'],
+                   fontBold : categoryAxisObject['fontBold'],
+                   fontItalic : categoryAxisObject['fontItalic'],
+                   fontUnderline : categoryAxisObject['fontUnderline'],
                    labelColor: categoryAxisObject['labelColor'],
                    titleColor: categoryAxisObject['titleColor'],
                    titleFontFamily: categoryAxisObject['titleFontFamily'],
@@ -4560,25 +4653,32 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        if (!dataView.metadata || !dataView.metadata.objects) 
            return this.getDefaultTotalLabelSettings(); 
  
-       objects = dataView.metadata.objects; 
-       let totalLabelsProperties = StackedChartGMOProps; 
-       labelSettings.show = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.show, labelSettings.show); 
-       labelSettings.titleText = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleText, labelSettings.titleText); 
-       labelSettings.titleColor = dataViewObjects.getFillColor(objects, totalLabelsProperties.totalLabels.titleColor, labelSettings.titleColor); 
-       labelSettings.titleFontFamily = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleFontFamily, labelSettings.titleFontFamily); 
-       labelSettings.titleFontSize = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleFontSize, labelSettings.titleFontSize); 
-       labelSettings.textPrecision = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.textPrecision, labelSettings.textPrecision); 
-       labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision); 
-       labelSettings.fontSize = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.fontSize, labelSettings.fontSize); 
-       labelSettings.displayUnits = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.displayUnits, labelSettings.displayUnits); 
-       labelSettings.color = dataViewObjects.getFillColor(objects, totalLabelsProperties.totalLabels.color, labelSettings.color); 
- 
-       return labelSettings; 
+       objects = dataView.metadata.objects;
+       let totalLabelsProperties = StackedChartGMOProps;
+       labelSettings.show = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.show, labelSettings.show);
+       labelSettings.titleText = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleText, labelSettings.titleText);
+       labelSettings.titleColor = dataViewObjects.getFillColor(objects, totalLabelsProperties.totalLabels.titleColor, labelSettings.titleColor);
+       labelSettings.titleFontFamily = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleFontFamily, labelSettings.titleFontFamily);
+       labelSettings.titleFontSize = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleFontSize, labelSettings.titleFontSize);
+       labelSettings.titleBold = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleBold, labelSettings.titleBold);
+       labelSettings.titleItalic = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleItalic, labelSettings.titleItalic);
+       labelSettings.titleUnderline = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleUnderline, labelSettings.titleUnderline);
+       labelSettings.textPrecision = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.textPrecision, labelSettings.textPrecision);
+       labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision);
+       labelSettings.fontSize = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.fontSize, labelSettings.fontSize);
+       labelSettings.fontFamily = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.fontFamily, labelSettings.fontFamily);
+       labelSettings.fontBold = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.fontBold, labelSettings.fontBold);
+       labelSettings.fontItalic = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.fontItalic, labelSettings.fontItalic);
+       labelSettings.fontUnderline = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.fontUnderline, labelSettings.fontUnderline);
+       labelSettings.displayUnits = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.displayUnits, labelSettings.displayUnits);
+       labelSettings.color = dataViewObjects.getFillColor(objects, totalLabelsProperties.totalLabels.color, labelSettings.color);
+
+        return labelSettings; 
    } 
- 
+  
    // Shared body for the secondary..sixth measure label settings, which differ
    // only in the property-bag (StackedChartGMOProps.<name>Labels) they read from.
-   private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: any): any {
+private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: any): any {
        if (!dataView || !dataView.categorical) { return labelSettings; }
        if (dataView.categorical.values) {
            labelSettings.titleText = dataView.categorical.values[0].source.displayName;
@@ -4589,9 +4689,16 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        if (props.titleColor) { labelSettings.titleColor = dataViewObjects.getFillColor(objects, props.titleColor, labelSettings.titleColor); }
        if (props.titleFontFamily) { labelSettings.titleFontFamily = dataViewObjects.getValue(objects, props.titleFontFamily, labelSettings.titleFontFamily); }
        if (props.titleFontSize) { labelSettings.titleFontSize = dataViewObjects.getValue(objects, props.titleFontSize, labelSettings.titleFontSize); }
+       if (props.titleBold) { labelSettings.titleBold = dataViewObjects.getValue(objects, props.titleBold, labelSettings.titleBold); }
+       if (props.titleItalic) { labelSettings.titleItalic = dataViewObjects.getValue(objects, props.titleItalic, labelSettings.titleItalic); }
+       if (props.titleUnderline) { labelSettings.titleUnderline = dataViewObjects.getValue(objects, props.titleUnderline, labelSettings.titleUnderline); }
        if (props.textPrecision) { labelSettings.textPrecision = dataViewObjects.getValue(objects, props.textPrecision, labelSettings.textPrecision); }
        labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision);
        if (props.fontSize) { labelSettings.fontSize = dataViewObjects.getValue(objects, props.fontSize, labelSettings.fontSize); }
+       if (props.fontFamily) { labelSettings.fontFamily = dataViewObjects.getValue(objects, props.fontFamily, labelSettings.fontFamily); }
+       if (props.fontBold) { labelSettings.fontBold = dataViewObjects.getValue(objects, props.fontBold, labelSettings.fontBold); }
+       if (props.fontItalic) { labelSettings.fontItalic = dataViewObjects.getValue(objects, props.fontItalic, labelSettings.fontItalic); }
+       if (props.fontUnderline) { labelSettings.fontUnderline = dataViewObjects.getValue(objects, props.fontUnderline, labelSettings.fontUnderline); }
        if (props.displayUnits) { labelSettings.displayUnits = dataViewObjects.getValue(objects, props.displayUnits, labelSettings.displayUnits); }
        if (props.color) { labelSettings.color = dataViewObjects.getFillColor(objects, props.color, labelSettings.color); }
        return labelSettings;
@@ -4606,6 +4713,18 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
            }
        }
        return 'Segoe UI';
+   }
+
+      private getTitleFontFlag(dataView: DataView, prop: string): boolean {
+       let dvmetadata = dataView.metadata;
+       let dvmobjects = dvmetadata && dvmetadata.objects;
+       if (dataView && dvmetadata && dvmobjects && dvmobjects.hasOwnProperty('GMOColumnChartTitle')) {
+           let FTitle = dvmobjects['GMOColumnChartTitle'];
+           if (FTitle && FTitle.hasOwnProperty(prop)) {
+               return <boolean>FTitle[prop];
+           }
+       }
+       return false;
    }
 
    private getSecondaryLabelSettings(dataView: DataView): secondaryLabelSettings {
@@ -4644,31 +4763,45 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        } 
    } 
  
-   public getDefaultTotalLabelSettings(): totalLabelSettings { 
-       return { 
+   public getDefaultTotalLabelSettings(): totalLabelSettings {
+       return {
            show: true,
            titleText: 'Total',
            titleColor: '#0a0707',
            titleFontFamily: 'Segoe UI',
            titleFontSize: 12,  
-           color: '#777', 
-           displayUnits: 0, 
-           textPrecision: 0, 
-           fontSize: 9, 
-       } 
-   } 
+           titleBold: false,
+           titleItalic: false,
+           titleUnderline: false,
+           color: '#777',
+           displayUnits: 0,
+           textPrecision: 0,
+           fontSize: 9,
+           fontFamily: 'Segoe UI',
+           fontBold: false,
+           fontItalic: false,
+           fontUnderline: false,
+       }
+   }
  
    // Shared defaults for the secondary..sixth measure labels (all identical).
    public getDefaultMeasureLabelSettings(): secondaryLabelSettings { 
        return { 
-           titleText: '', 
+           titleText: '',
            titleColor: '#0a0707',
            titleFontFamily: 'Segoe UI',
-           titleFontSize: 12, 
-           color: '#777', 
-           displayUnits: 0, 
-           textPrecision: 0, 
-           fontSize: 9, 
+           titleFontSize: 12,
+           titleBold: false,
+           titleItalic: false,
+           titleUnderline: false,
+           color: '#777',
+           displayUnits: 0,
+           textPrecision: 0,
+           fontSize: 9,
+           fontFamily: 'Segoe UI',
+           fontBold: false,
+           fontItalic: false,
+           fontUnderline: false, 
        } 
    } 
    public getDefaultSecondaryLabelSettings(): secondaryLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
@@ -5509,6 +5642,9 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
                .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
                .attr('font-size', totalLabelSettings.titleFontSize + 'px')
                .attr('font-family', totalLabelSettings.titleFontFamily)
+               .attr('font-weight', totalLabelSettings.titleBold ? 'bold' : 'normal')
+               .attr('font-style', totalLabelSettings.titleItalic ? 'italic' : 'normal')
+               .style('text-decoration', totalLabelSettings.titleUnderline ? 'underline' : 'none')
                .attr('fill', totalLabelSettings.titleColor)
                .text(totalTitleText)
                .append('title')
@@ -5551,6 +5687,9 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                .classed('measureLabelTitle', true)
                .attr('font-size', secondaryLabelSettings.titleFontSize + 'px')
                .attr('font-family', secondaryLabelSettings.titleFontFamily)
+               .attr('font-weight', secondaryLabelSettings.titleBold ? 'bold' : 'normal')
+               .attr('font-style', secondaryLabelSettings.titleItalic ? 'italic' : 'normal')
+               .style('text-decoration', secondaryLabelSettings.titleUnderline ? 'underline' : 'none')
                .attr('fill', secondaryLabelSettings.titleColor)
                .text(secMeasuretext)
                .append('title')
@@ -5590,6 +5729,9 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                .classed('measureLabelTitle', true)
                .attr('font-size', tertiaryLabelSettings.titleFontSize + 'px')
                .attr('font-family', tertiaryLabelSettings.titleFontFamily)
+               .attr('font-weight', tertiaryLabelSettings.titleBold ? 'bold' : 'normal')
+               .attr('font-style', tertiaryLabelSettings.titleItalic ? 'italic' : 'normal')
+               .style('text-decoration', tertiaryLabelSettings.titleUnderline ? 'underline' : 'none')
                .attr('fill', tertiaryLabelSettings.titleColor)
                .text(terMeasuretext)
                .append('title')
@@ -5633,6 +5775,9 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                .classed('measureLabelTitle', true)
                .attr('font-size', quaternaryLabelSettings.titleFontSize + 'px')
                .attr('font-family', quaternaryLabelSettings.titleFontFamily)
+               .attr('font-weight', quaternaryLabelSettings.titleBold ? 'bold' : 'normal')
+               .attr('font-style', quaternaryLabelSettings.titleItalic ? 'italic' : 'normal')
+               .style('text-decoration', quaternaryLabelSettings.titleUnderline ? 'underline' : 'none')
                .attr('fill', quaternaryLabelSettings.titleColor)
                .attr('width', widthtext)
                .text(quatMeasuretext)
@@ -5674,6 +5819,9 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                .classed('measureLabelTitle', true)
                .attr('font-size', FifthLabelSettings.titleFontSize + 'px')
                .attr('font-family', FifthLabelSettings.titleFontFamily)
+               .attr('font-weight', FifthLabelSettings.titleBold ? 'bold' : 'normal')
+               .attr('font-style', FifthLabelSettings.titleItalic ? 'italic' : 'normal')
+               .style('text-decoration', FifthLabelSettings.titleUnderline ? 'underline' : 'none')
                .attr('fill', FifthLabelSettings.titleColor)
                .text(fiveMeasuretext)
                .append('title')
@@ -5715,6 +5863,9 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                .classed('measureLabelTitle', true)
                .attr('font-size', SixthLabelSettings.titleFontSize + 'px')
                .attr('font-family', SixthLabelSettings.titleFontFamily)
+               .attr('font-weight', SixthLabelSettings.titleBold ? 'bold' : 'normal')
+               .attr('font-style', SixthLabelSettings.titleItalic ? 'italic' : 'normal')
+               .style('text-decoration', SixthLabelSettings.titleUnderline ? 'underline' : 'none')
                .attr('fill', SixthLabelSettings.titleColor)
                .text(sixMeasuretext)
                .append('title')

@@ -15,6 +15,9 @@ declare class LegendCardSettings extends FormattingSettingsCompositeCard {
     labelColor: formattingSettings.ColorPicker;
     fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
+    bold: formattingSettings.ToggleSwitch;
+    italic: formattingSettings.ToggleSwitch;
+    underline: formattingSettings.ToggleSwitch;
     font: formattingSettings.FontControl;
     valuesGroup: formattingSettings.Group;
     titleGroup: formattingSettings.Group;
@@ -32,7 +35,17 @@ declare class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
     fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
     labelPrecision: formattingSettings.NumUpDown;
+    bold: formattingSettings.ToggleSwitch;
+    italic: formattingSettings.ToggleSwitch;
+    underline: formattingSettings.ToggleSwitch;
     font: formattingSettings.FontControl;
+    titleColor: formattingSettings.ColorPicker;
+    titleFontFamily: formattingSettings.FontPicker;
+    titleFontSize: formattingSettings.NumUpDown;
+    titleBold: formattingSettings.ToggleSwitch;
+    titleItalic: formattingSettings.ToggleSwitch;
+    titleUnderline: formattingSettings.ToggleSwitch;
+    titleFont: formattingSettings.FontControl;
     valuesGroup: formattingSettings.Group;
     titleGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -55,17 +68,25 @@ declare class ValueAxisCardSettings extends FormattingSettingsCompositeCard {
     displayName: string;
     show: formattingSettings.ToggleSwitch;
     topLevelSlice: formattingSettings.ToggleSwitch;
-    start: formattingSettings.NumUpDown;
-    end: formattingSettings.NumUpDown;
     showAxisTitle: formattingSettings.ToggleSwitch;
-    intersection: formattingSettings.NumUpDown;
     labelColor: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     fontFamily: formattingSettings.FontPicker;
+    fontSize: formattingSettings.NumUpDown;
     labelPrecision: formattingSettings.NumUpDown;
+    bold: formattingSettings.ToggleSwitch;
+    italic: formattingSettings.ToggleSwitch;
+    underline: formattingSettings.ToggleSwitch;
+    font: formattingSettings.FontControl;
+    titleColor: formattingSettings.ColorPicker;
+    titleFontFamily: formattingSettings.FontPicker;
+    titleFontSize: formattingSettings.NumUpDown;
+    titleBold: formattingSettings.ToggleSwitch;
+    titleItalic: formattingSettings.ToggleSwitch;
+    titleUnderline: formattingSettings.ToggleSwitch;
+    titleFont: formattingSettings.FontControl;
     valuesGroup: formattingSettings.Group;
     titleGroup: formattingSettings.Group;
-    layoutGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
 }
 declare class DataPointCardSettings extends FormattingSettingsCard {
@@ -84,7 +105,12 @@ declare class LabelsCardSettings extends FormattingSettingsCompositeCard {
     color: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
+    fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
+    bold: formattingSettings.ToggleSwitch;
+    italic: formattingSettings.ToggleSwitch;
+    underline: formattingSettings.ToggleSwitch;
+    font: formattingSettings.FontControl;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
 }

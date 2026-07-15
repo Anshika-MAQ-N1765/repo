@@ -118,6 +118,9 @@
             }
           }
         },
+        "fontBold": { "type": { "bool": true } },
+        "fontItalic": { "type": { "bool": true } },
+        "fontUnderline": { "type": { "bool": true } },
         "labelDisplayUnits": {
           "type": { "formatting": { "labelDisplayUnits": true } }
         },
@@ -146,7 +149,13 @@
         "showAll": { "type": { "bool": true } },
         "fontSize": {
           "type": { "formatting": { "fontSize": true } }
-        }
+        },
+        "fontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
+        },
+        "fontBold": { "type": { "bool": true } },
+        "fontItalic": { "type": { "bool": true } },
+        "fontUnderline": { "type": { "bool": true } }
       }
     },
  
@@ -182,6 +191,21 @@
         "fontFamily": {
           "type": { "formatting": { "fontFamily": true } }
         },
+        "fontBold": { "type": { "bool": true } },
+        "fontItalic": { "type": { "bool": true } },
+        "fontUnderline": { "type": { "bool": true } },
+        "titleColor": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "titleFontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
+        },
+        "titleFontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        },
+        "titleBold": { "type": { "bool": true } },
+        "titleItalic": { "type": { "bool": true } },
+        "titleUnderline": { "type": { "bool": true } },
         "labelPrecision": { "type": { "numeric": true } }
       }
     },
@@ -220,6 +244,21 @@
         "fontSize": {
           "type": { "formatting": { "fontSize": true } }
         },
+        "fontBold": { "type": { "bool": true } },
+        "fontItalic": { "type": { "bool": true } },
+        "fontUnderline": { "type": { "bool": true } },
+        "titleColor": {
+          "type": { "fill": { "solid": { "color": true } } }
+        },
+        "titleFontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
+        },
+        "titleFontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        },
+        "titleBold": { "type": { "bool": true } },
+        "titleItalic": { "type": { "bool": true } },
+        "titleUnderline": { "type": { "bool": true } },
         "labelColor": {
           "type": { "fill": { "solid": { "color": true } } }
         },
@@ -524,3 +563,4 @@
   },
   "privileges": []
 }
+ 

@@ -699,7 +699,10 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
                .append('title');
            itemsEnter
                .style({
-                   'font-family': (data as any).fontFamily || GMOSVGLegend.DefaultFontFamily
+                   'font-family': (data as any).fontFamily || GMOSVGLegend.DefaultFontFamily,
+                   'font-weight': (data as any).fontBold ? 'bold' : 'normal',
+                   'font-style': (data as any).fontItalic ? 'italic' : 'normal',
+                   'text-decoration': (data as any).fontUnderline ? 'underline' : 'none'
                });
  
            // Merge enter and update selections so the first render gets the correct swatches and positions.
@@ -2102,16 +2105,16 @@ export class StackedChartGMOStrategy implements IColumnChartStrategyGMO {
              //  let formatter = formattersCache.getOrCreate(formatString, labelSettings, axisFormatter); 
                let text = dataPoint.value.toString(); 
  
-               // Calculate text size 
-               let properties: TextProperties = { 
-                   text: text, 
-                   fontFamily: NewDataLabelUtils.LabelTextProperties.fontFamily, 
-                   fontSize: PixelConverter.fromPoint(labelSettings.fontSize || 12), 
-                   fontWeight: NewDataLabelUtils.LabelTextProperties.fontWeight, 
-               }; 
-               let textWidth = TextMeasurementService.measureSvgTextWidth(properties); 
-               let textHeight = TextMeasurementService.estimateSvgTextHeight(properties, true /* tightFitForNumeric */); 
- 
+               // Calculate text size
+               let properties: TextProperties = {
+                   text: text,
+                   fontFamily: (labelSettings as any).fontFamily || NewDataLabelUtils.LabelTextProperties.fontFamily,
+                   fontSize: PixelConverter.fromPoint(labelSettings.fontSize || 12),
+                   fontWeight: (labelSettings as any).fontBold ? 'bold' : NewDataLabelUtils.LabelTextProperties.fontWeight,
+               };
+               let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
+               let textHeight = TextMeasurementService.estimateSvgTextHeight(properties, true /* tightFitForNumeric */);
+
                labelDataPoints.push({ 
                    isPreferred: true, 
                    text: text, 
@@ -3367,6 +3370,14 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
                    secAxisStyle: valueAxisObject['secAxisStyle'], 
                    labelDisplayUnits: valueAxisObject['labelDisplayUnits'], 
                    fontFamily: valueAxisObject['fontFamily'],
+                   fontSize: valueAxisObject['fontSize'],
+                   labelColor: valueAxisObject['labelColor'],
+                   titleColor: valueAxisObject['titleColor'],
+                   titleFontFamily: valueAxisObject['titleFontFamily'],
+                   titleFontSize: valueAxisObject['titleFontSize'],
+                   titleBold: valueAxisObject['titleBold'],
+                   titleItalic: valueAxisObject['titleItalic'],
+                   titleUnderline: valueAxisObject['titleUnderline'],
                }; 
            } 
        } 
@@ -3393,7 +3404,14 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
                    axisStyle: categoryAxisObject['axisStyle'], 
                    labelDisplayUnits: categoryAxisObject['labelDisplayUnits'],  
                    fontSize : categoryAxisObject['fontSize'],
-                   fontFamily : categoryAxisObject['fontFamily']
+                   fontFamily : categoryAxisObject['fontFamily'],
+                   labelColor: categoryAxisObject['labelColor'],
+                   titleColor: categoryAxisObject['titleColor'],
+                   titleFontFamily: categoryAxisObject['titleFontFamily'],
+                   titleFontSize: categoryAxisObject['titleFontSize'],
+                   titleBold: categoryAxisObject['titleBold'],
+                   titleItalic: categoryAxisObject['titleItalic'],
+                   titleUnderline: categoryAxisObject['titleUnderline'],
                }; 
            } 
        } 
@@ -3405,6 +3423,9 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
        let legendData = this.data.legendData;
        legendData.fontSize = this.legendLabelFontSize = dataViewObject.getValue<number>(this.legendObjectProperties, legendProps.fontSize, Visual.LegendLabelFontSizeDefault);
        (legendData as any).fontFamily = dataViewObject.getValue<string>(this.legendObjectProperties, 'fontFamily', 'Segoe UI');
+       (legendData as any).fontBold = dataViewObject.getValue<boolean>(this.legendObjectProperties, 'fontBold', false);
+       (legendData as any).fontItalic = dataViewObject.getValue<boolean>(this.legendObjectProperties, 'fontItalic', false);
+       (legendData as any).fontUnderline = dataViewObject.getValue<boolean>(this.legendObjectProperties, 'fontUnderline', false);
        let legend: IGMOLegend = this.legend;
  
        this.layerLegendData = this.data.legendData;
@@ -3867,7 +3888,13 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
  
            let labelsObj = <DataLabelObject>objects['labels']; 
  
-           dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, labelSettings); 
+           dataLabelUtils.updateLabelSettingsFromLabelsObject(labelsObj, labelSettings);
+           if (labelsObj) {
+               (labelSettings as any).fontFamily = labelsObj['fontFamily'] != null ? labelsObj['fontFamily'] : 'Segoe UI';
+               (labelSettings as any).fontBold = !!labelsObj['fontBold'];
+               (labelSettings as any).fontItalic = !!labelsObj['fontItalic'];
+               (labelSettings as any).fontUnderline = !!labelsObj['fontUnderline'];
+           }
            labelSettings.precision = 4; 
        } 
  
@@ -5308,6 +5335,10 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
  
            let precision = labelsObj.labelPrecision ? labelsObj.labelPrecision : 0; 
            let labelColor = (labelsObj.color ? labelsObj.color.solid.color : 'black'); 
+           let labelFontFamily = labelsObj['fontFamily'] != null ? <string>labelsObj['fontFamily'] : 'Segoe UI';
+           let labelFontWeight = labelsObj['fontBold'] ? 'bold' : 'normal';
+           let labelFontStyle = labelsObj['fontItalic'] ? 'italic' : 'normal';
+           let labelTextDecoration = labelsObj['fontUnderline'] ? 'underline' : 'none';
            let dataLabelText; 
            let formattedDataLabelText = ""; 
  
@@ -5372,9 +5403,12 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
  
            } 
  
-           dataLabelSvg.style({ 'fill': labelColor }); 
-           this.root.selectAll('.dataLabel').style('fill', labelColor); 
-           this.root.selectAll('.dataLabel').style('font-family', 'Segoe UI'); 
+           dataLabelSvg.style({ 'fill': labelColor });
+           this.root.selectAll('.dataLabel').style('fill', labelColor);
+           this.root.selectAll('.dataLabel').style('font-family', labelFontFamily);
+           this.root.selectAll('.dataLabel').style('font-weight', labelFontWeight);
+           this.root.selectAll('.dataLabel').style('font-style', labelFontStyle);
+           this.root.selectAll('.dataLabel').style('text-decoration', labelTextDecoration);
  
        } 
  
@@ -6188,6 +6222,9 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
        xAllTicks.selectAll('text')
            .style('fill', this.getCategoryAxisFill().solid.color)
            .style('font-family', xFontFamily)
+           .style('font-weight', this.categoryAxisProperties['fontBold'] ? 'bold' : 'normal')
+           .style('font-style', this.categoryAxisProperties['fontItalic'] ? 'italic' : 'normal')
+           .style('text-decoration', this.categoryAxisProperties['fontUnderline'] ? 'underline' : 'none')
            .style('font-size', font_size + 'px');
  
      // let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar); 
@@ -6264,10 +6301,14 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
           // Clear d3 v7's injected sans-serif and use Segoe UI for percent labels.
            y1AxisGraphicsElement.attr('font-family', null).attr('font-size', null);
            let yFontFamily = this.valueAxisProperties && this.valueAxisProperties['fontFamily'] ? <string>this.valueAxisProperties['fontFamily'] : 'Segoe UI';
+           let yFontSize = this.valueAxisProperties && Number(this.valueAxisProperties['fontSize']) ? Number(this.valueAxisProperties['fontSize']) : 10;
            yAllTicks.selectAll('text')
                .style('fill', this.getValueAxisFill().solid.color)
                .style('font-family', yFontFamily)
-               .style('font-size', '10px');
+               .style('font-weight', this.valueAxisProperties && this.valueAxisProperties['fontBold'] ? 'bold' : 'normal')
+               .style('font-style', this.valueAxisProperties && this.valueAxisProperties['fontItalic'] ? 'italic' : 'normal')
+               .style('text-decoration', this.valueAxisProperties && this.valueAxisProperties['fontUnderline'] ? 'underline' : 'none')
+               .style('font-size', yFontSize + 'px');
 
            if (yZeroTick) {
                yZeroTick.selectAll('line').attr('y2', 1);
@@ -6355,8 +6396,14 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
            translateHeight = Visual.totalHeight - 26 - legendHeight; 
        } 
        if (!hideXAxisTitle) {
+           let xTitleFamily = this.categoryAxisProperties && this.categoryAxisProperties['titleFontFamily'] ? <string>this.categoryAxisProperties['titleFontFamily'] : (this.categoryAxisProperties && this.categoryAxisProperties['fontFamily'] ? <string>this.categoryAxisProperties['fontFamily'] : 'Segoe UI');
+           let xTitleSize = this.categoryAxisProperties && this.categoryAxisProperties['titleFontSize'] != null ? <number>this.categoryAxisProperties['titleFontSize'] : 12;
+           let xTitleColor = this.categoryAxisProperties && this.categoryAxisProperties['titleColor'] ? (<any>this.categoryAxisProperties['titleColor']).solid.color : this.getCategoryAxisFill().solid.color;
+           let xTitleBold = this.categoryAxisProperties && this.categoryAxisProperties['titleBold'] ? 'bold' : 'normal';
+           let xTitleItalic = this.categoryAxisProperties && this.categoryAxisProperties['titleItalic'] ? 'italic' : 'normal';
+           let xTitleUnderline = this.categoryAxisProperties && this.categoryAxisProperties['titleUnderline'] ? 'underline' : 'none';
            let xAxisLabel = this.axisGraphicsContext.append("text")
-               .style({ "text-anchor": "middle", "display": "block", "fill": this.getCategoryAxisFill().solid.color, "font-size": 12, "font-family": (this.categoryAxisProperties && this.categoryAxisProperties['fontFamily'] ? <string>this.categoryAxisProperties['fontFamily'] : 'Segoe UI') })
+               .style({ "text-anchor": "middle", "display": "block", "fill": xTitleColor, "font-size": PixelConverter.fromPoint(xTitleSize), "font-family": xTitleFamily, "font-weight": xTitleBold, "font-style": xTitleItalic, "text-decoration": xTitleUnderline })
                .text(axisLabels.y)
                .call((text: Selection<any>) => {
                    text.each(function () {
@@ -6375,8 +6422,14 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
        }
  
        if (!hideYAxisTitle) {
+           let yTitleFamily = this.valueAxisProperties && this.valueAxisProperties['titleFontFamily'] ? <string>this.valueAxisProperties['titleFontFamily'] : (this.valueAxisProperties && this.valueAxisProperties['fontFamily'] ? <string>this.valueAxisProperties['fontFamily'] : 'Segoe UI');
+           let yTitleSize = this.valueAxisProperties && this.valueAxisProperties['titleFontSize'] != null ? <number>this.valueAxisProperties['titleFontSize'] : 12;
+           let yTitleColor = this.valueAxisProperties && this.valueAxisProperties['titleColor'] ? (<any>this.valueAxisProperties['titleColor']).solid.color : this.getValueAxisFill().solid.color;
+           let yTitleBold = this.valueAxisProperties && this.valueAxisProperties['titleBold'] ? 'bold' : 'normal';
+           let yTitleItalic = this.valueAxisProperties && this.valueAxisProperties['titleItalic'] ? 'italic' : 'normal';
+           let yTitleUnderline = this.valueAxisProperties && this.valueAxisProperties['titleUnderline'] ? 'underline' : 'none';
            let yAxisLabel = this.axisGraphicsContext.append("text")
-               .style({ "text-anchor": "middle", "fill": this.getValueAxisFill().solid.color, "font-size": 12, "font-family": (this.valueAxisProperties && this.valueAxisProperties['fontFamily'] ? <string>this.valueAxisProperties['fontFamily'] : 'Segoe UI') })
+               .style({ "text-anchor": "middle", "fill": yTitleColor, "font-size": PixelConverter.fromPoint(yTitleSize), "font-family": yTitleFamily, "font-weight": yTitleBold, "font-style": yTitleItalic, "text-decoration": yTitleUnderline })
                .text(axisLabels.x)
                .call((text: Selection<any>) => {
                    text.each(function () {
@@ -6395,7 +6448,7 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
            yAxisLabel.call(AxisHelper.LabelLayoutStrategy.clip,
                height - (margin.bottom + margin.top),
                TextMeasurementService.svgEllipsis);
-       } 
+       }
  
        if (!hideY2AxisTitle && axisLabels.y2) { 
            let y2AxisLabel = this.axisGraphicsContext.append("text") 

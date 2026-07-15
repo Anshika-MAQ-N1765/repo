@@ -699,7 +699,7 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
                .append('title');
            itemsEnter
                .style({
-                   'font-family': GMOSVGLegend.DefaultFontFamily
+                   'font-family': (data as any).fontFamily || GMOSVGLegend.DefaultFontFamily
                });
  
            // Merge enter and update selections so the first render gets the correct swatches and positions.

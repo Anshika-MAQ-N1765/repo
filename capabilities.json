@@ -111,6 +111,13 @@
             }
           }
         },
+        "fontFamily": {
+          "type": {
+            "formatting": {
+              "fontFamily": true
+            }
+          }
+        },
         "labelDisplayUnits": {
           "type": { "formatting": { "labelDisplayUnits": true } }
         },
@@ -172,6 +179,9 @@
         "fontSize": {
           "type": { "formatting": { "fontSize": true } }
         },
+        "fontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
+        },
         "labelPrecision": { "type": { "numeric": true } }
       }
     },
@@ -204,7 +214,12 @@
         "start": { "type": { "numeric": true } },
         "end": { "type": { "numeric": true } },
         "showAxisTitle": { "type": { "bool": true } },
-        "intersection": { "type": { "numeric": true } },
+        "fontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
+        },
+        "fontSize": {
+          "type": { "formatting": { "fontSize": true } }
+        },
         "labelColor": {
           "type": { "fill": { "solid": { "color": true } } }
         },
@@ -397,6 +412,9 @@
         },
         "fontSize": {
           "type": { "formatting": { "fontSize": true } }
+        },
+        "fontFamily": {
+          "type": { "formatting": { "fontFamily": true } }
         },
         "backgroundColor": {
           "type": { "fill": { "solid": { "color": true } } }

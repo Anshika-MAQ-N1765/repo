@@ -1070,6 +1070,7 @@ declare namespace powerbi.extensibility.visual {
         private getMeasureTitlesSettings;
         private getTotalLabelSettings;
         private getMeasureLabelSettings;
+        private getTitleFontFamily;
         private getSecondaryLabelSettings;
         private getTertiaryLabelSettings;
         private getQuaternaryLabelSettings;

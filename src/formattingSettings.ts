@@ -52,9 +52,10 @@ class LegendCardSettings extends FormattingSettingsCard {
     showTitle = createToggle("showTitle", "Title", false);
     titleText = createTextInput("titleText", "Legend name", "");
     labelColor = createColorPicker("labelColor", "Color", "#777777");
+    fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 9);
  
-    slices: Array<FormattingSettingsSlice> = [this.position, this.showTitle, this.titleText, this.labelColor, this.fontSize];
+    slices: Array<FormattingSettingsSlice> = [this.position, this.showTitle, this.titleText, this.labelColor, this.fontFamily, this.fontSize];
 }class CategoryAxisCardSettings extends FormattingSettingsCard {
     name = "categoryAxis";
     displayName = "X Axis";
@@ -65,13 +66,12 @@ class LegendCardSettings extends FormattingSettingsCard {
  
     labelColor = createColorPicker("labelColor", "Color", "#777777");
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
+    fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 11);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
  
-    slices: Array<FormattingSettingsSlice> = [this.showAxisTitle, this.labelColor, this.labelDisplayUnits, this.fontSize, this.labelPrecision];
-}
- 
-class TextWrapCardSettings extends FormattingSettingsCard {
+    slices: Array<FormattingSettingsSlice> = [this.showAxisTitle, this.labelColor, this.labelDisplayUnits, this.fontFamily, this.fontSize, this.labelPrecision];
+}class TextWrapCardSettings extends FormattingSettingsCard {
     name = "textWrap";
     displayName = "X-Axis Text Wrap";
     show = createToggle("show", "Show", false);
@@ -97,8 +97,9 @@ class ValueAxisCardSettings extends FormattingSettingsCard {
     intersection = createNumberInput("intersection", "Intersection", 0);
     labelColor = createColorPicker("labelColor", "Color", "#777777");
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
+    fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
-    slices: Array<FormattingSettingsSlice> = [this.start, this.end, this.showAxisTitle, this.intersection, this.labelColor, this.labelDisplayUnits, this.labelPrecision];
+    slices: Array<FormattingSettingsSlice> = [this.start, this.end, this.showAxisTitle, this.intersection, this.labelColor, this.labelDisplayUnits, this.fontFamily, this.labelPrecision];
 }
  
 class DataPointCardSettings extends FormattingSettingsCard {
@@ -230,11 +231,12 @@ class GMOColumnChartTitleCardSettings extends FormattingSettingsCard {
  
     titleText = createTextInput("titleText", "Title text", "");
     fill1 = createColorPicker("fill1", "Font color", "#000000");
+    fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 12);
     backgroundColor = createColorPicker("backgroundColor", "Background color", "#ffffff");
     tooltipText = createTextInput("tooltipText", "Tooltip text", "");
  
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.fill1, this.fontSize, this.backgroundColor, this.tooltipText];
+    slices: Array<FormattingSettingsSlice> = [this.titleText, this.fill1, this.fontFamily, this.fontSize, this.backgroundColor, this.tooltipText];
 }
  
 export class VisualFormattingSettingsModel extends FormattingSettingsModel {

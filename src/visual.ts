@@ -668,7 +668,7 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
                }).text(titleLayout.text).style({ 
                    'fill': data.labelColor, 
                    'font-size': PixelConverter.fromPoint(data.fontSize), 
-                   'font-family': GMOSVGLegend.DefaultTitleFontFamily 
+                   'font-family': (data as any).fontFamily || GMOSVGLegend.DefaultTitleFontFamily
                }).classed(GMOSVGLegend.LegendTitle.class, true); 
            legendTitle 
                .append('title').text(this.data.title); 
@@ -3198,6 +3198,7 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        this.applyViewportSettings(); 
        titlefontsize = this.getTitleSize(this.dataView); 
        if (!titlefontsize) titlefontsize = 12; 
+       let titlefontfamily=this.getTitleFontFamily(this.dataView);
  
 let Tcolor=this.getTitleFill(this.dataView) 
 if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcolor(this.dataView) 
@@ -3259,7 +3260,8 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
                    "display": "inline-block", 
                    "background-color": titlebgcolor, 
                    "font-size": PixelConverter.fromPointToPixel(titlefontsize) + 'px', 
-                   "color": titlecolor 
+                   "font-family": titlefontfamily,
+                   "color": titlecolor,
                }); 
  
            let legendPosition = parseFloat(this.root.select('.legend').attr('orientation')); 
@@ -3364,6 +3366,7 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
                    secShowAxisTitle: valueAxisObject['secShowAxisTitle'], 
                    secAxisStyle: valueAxisObject['secAxisStyle'], 
                    labelDisplayUnits: valueAxisObject['labelDisplayUnits'], 
+                   fontFamily: valueAxisObject['fontFamily'],
                }; 
            } 
        } 
@@ -3388,87 +3391,101 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
                    axisColor: categoryAxisObject['axisColor'], 
                    showAxisTitle: categoryAxisObject['showAxisTitle'] == null ? axisTitleOnByDefault : categoryAxisObject['showAxisTitle'], 
                    axisStyle: categoryAxisObject['axisStyle'], 
-                   labelDisplayUnits: categoryAxisObject['labelDisplayUnits'], 
-                   fontSize : categoryAxisObject['fontSize'] 
+                   labelDisplayUnits: categoryAxisObject['labelDisplayUnits'],  
+                   fontSize : categoryAxisObject['fontSize'],
+                   fontFamily : categoryAxisObject['fontFamily']
                }; 
            } 
        } 
        return toReturn; 
    } 
  
-   private renderLegend(): void { 
-       let legendProperties = this.legendObjectProperties; 
-       let legendData = this.data.legendData; 
-       legendData.fontSize = this.legendLabelFontSize = dataViewObject.getValue<number>(this.legendObjectProperties, legendProps.fontSize, Visual.LegendLabelFontSizeDefault); 
-       let legend: IGMOLegend = this.legend; 
+   private renderLegend(): void {
+       let legendProperties = this.legendObjectProperties;
+       let legendData = this.data.legendData;
+       legendData.fontSize = this.legendLabelFontSize = dataViewObject.getValue<number>(this.legendObjectProperties, legendProps.fontSize, Visual.LegendLabelFontSizeDefault);
+       (legendData as any).fontFamily = dataViewObject.getValue<string>(this.legendObjectProperties, 'fontFamily', 'Segoe UI');
+       let legend: IGMOLegend = this.legend;
  
-       this.layerLegendData = this.data.legendData; 
-       //** added if else for title*/ 
-       if (this.layerLegendData) { 
-           if (!this.legendObjectProperties['showTitle']) { 
-               legendData.title = ""; 
-           } 
-           else { 
-               legendData.title = <string>this.legendObjectProperties['titleText'] || this.layerLegendData.title; 
-           } 
-           if (this.legendObjectProperties['labelColor']) { 
-               let labelcolor = this.legendObjectProperties['labelColor']; 
-               let solid = labelcolor['solid']; 
-               legendData.labelColor = solid['color']; 
-           } 
+       this.layerLegendData = this.data.legendData;
+       //** added if else for title*/
+       if (this.layerLegendData) {
+           if (!this.legendObjectProperties['showTitle']) {
+               legendData.title = "";
+           }
+           else {
+               legendData.title = <string>this.legendObjectProperties['titleText'] || this.layerLegendData.title;
+           }
+           if (this.legendObjectProperties['labelColor']) {
+               let labelcolor = this.legendObjectProperties['labelColor'];
+               let solid = labelcolor['solid'];
+               legendData.labelColor = solid['color'];
+           }
  
-          legendData.fontSize = this.legendLabelFontSize; 
-           if (this.layerLegendData.grouped) { 
-               legendData.grouped = true; 
-           } 
-       } 
-       let showPrimaryMeasure; 
-       if (this.isPrimaryMeasure) { 
-           showPrimaryMeasure = 'Value'; 
-       } 
-       else { 
-           showPrimaryMeasure = 'None'; 
-       } 
-       if (this.layerLegendData) { 
-           if (this.isPrimaryMeasure) { 
-               legendData['primaryTitle'] = this.getLegendTitle('primaryTitle', showPrimaryMeasure); 
-           } 
-       } 
+          legendData.fontSize = this.legendLabelFontSize;            if (this.layerLegendData.grouped) {
+               legendData.grouped = true;
+           }
+       }
+       let showPrimaryMeasure;
+       if (this.isPrimaryMeasure) {
+           showPrimaryMeasure = 'Value';
+       }
+       else {
+           showPrimaryMeasure = 'None';
+       }
+       if (this.layerLegendData) {
+           if (this.isPrimaryMeasure) {
+               legendData['primaryTitle'] = this.getLegendTitle('primaryTitle', showPrimaryMeasure);
+           }
+       }
  
-       if (legendProperties) { 
-           let position = <string>legendProperties[legendProps.position]; 
-           if (position) { 
-               legend.changeOrientation(LegendPosition[position]); 
-           } 
+       if (legendProperties) {
+           let position = <string>legendProperties[legendProps.position];
+           if (position) {
+               legend.changeOrientation(LegendPosition[position]);
+           }
  
-       } 
-       else { 
-           legend.changeOrientation(LegendPosition.Top); 
-       } 
+       }
+       else {
+           legend.changeOrientation(LegendPosition.Top);
+       }
         
-       legend.drawLegendInternal( 
+       legend.drawLegendInternal(
             
-           legendData, this.viewport, true, showPrimaryMeasure /* perform auto width */); 
+           legendData, this.viewport, true, showPrimaryMeasure /* perform auto width */);
  
-       let customTitleHeight = isNaN(parseFloat(this.root.select('.Title_Div_Text').style('height'))) ? 0 : parseFloat(this.root.select('.Title_Div_Text').style('height')); 
-       legend['viewport'].height += customTitleHeight; 
-       Legend.positionChartArea(this.svg, legend); 
-   } 
+       let customTitleHeight = isNaN(parseFloat(this.root.select('.Title_Div_Text').style('height'))) ? 0 : parseFloat(this.root.select('.Title_Div_Text').style('height'));
+       legend['viewport'].height += customTitleHeight;
+       Legend.positionChartArea(this.svg, legend);
+   }
  
-   public getLegendTitle(name, showPrimaryMeasure): string { 
-       switch (name) { 
-           case 'title': 
-               // If category exists, we render title using category source. If not, we render title 
-               // using measure. 
- 
-var categories=this.dataView.categorical.categories 
-var values=this.dataView.categorical.values 
-let dvCategorySourceName = categories && categories.length > 0 && categories[0].source ? categories[0].source.displayName : ""; if (categories[0].values) { return dvCategorySourceName; } break; case 'primaryTitle': let source = values && (values[0].source || values[1].source); let dvValuesSourceName: string = ''; if (source && showPrimaryMeasure && showPrimaryMeasure !== 'None') { let index: number = values[0].source.roles.hasOwnProperty('Y') ? 0 : 1; dvValuesSourceName = values[index].source.displayName; } 
+   public getLegendTitle(name, showPrimaryMeasure): string {
+       switch (name) {
+           case 'title':
+               // If category exists, we render title using category source. If not, we render title
+               // using measure.
+               {
+                   let categories = this.dataView && this.dataView.categorical && this.dataView.categorical.categories;
+                   let dvCategorySourceName = categories && categories.length > 0 && categories[0].source ? categories[0].source.displayName : "";
+                   if (categories && categories.length > 0 && categories[0].values) { return dvCategorySourceName; }
+                   return dvCategorySourceName;
+               }
+           case 'primaryTitle':
+               {
+                   let values = this.dataView && this.dataView.categorical && this.dataView.categorical.values;
+                   let dvValuesSourceName: string = '';
+                   if (!values || values.length === 0) { return dvValuesSourceName; }
+                   let source = values[0].source || (values[1] && values[1].source);
+                   if (source && showPrimaryMeasure && showPrimaryMeasure !== 'None') {
+                       let roles = values[0].source && values[0].source.roles;
+                       let index: number = roles && roles.hasOwnProperty('Y') ? 0 : (values[1] ? 1 : 0);
+                       dvValuesSourceName = values[index] && values[index].source ? values[index].source.displayName : '';
+                   }
+                   return dvValuesSourceName;
+               }
+       }
+   }
 
-              return dvValuesSourceName; 
-       } 
-   } 
- 
    private getCategoryLayout(numCategoryValues: number, options: CalculateScaleAndDomainOptions): CategoryLayout { let availableWidth: number; let legendPosition = parseFloat(this.root.select('.legend').attr('orientation')); 
 
       let customTitleHeight = parseFloat(this.root.select('.Title_Div_Text').style('height')); 
@@ -4541,16 +4558,27 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
        }
        if (!dataView.metadata || !dataView.metadata.objects) { return labelSettings; }
        let objects = dataView.metadata.objects;
-       labelSettings.titleText = dataViewObjects.getValue(objects, props.titleText, labelSettings.titleText);
-       labelSettings.titleColor = dataViewObjects.getFillColor(objects, props.secondaryTitleColor, labelSettings.titleColor);
-       labelSettings.titleFontFamily = dataViewObjects.getValue(objects, props.titleFontFamily, labelSettings.titleFontFamily);
-       labelSettings.titleFontSize = dataViewObjects.getValue(objects, props.titleFontSize, labelSettings.titleFontSize);
-       labelSettings.textPrecision = dataViewObjects.getValue(objects, props.textPrecision, labelSettings.textPrecision);
+       if (props.titleText) { labelSettings.titleText = dataViewObjects.getValue(objects, props.titleText, labelSettings.titleText); }
+       if (props.titleColor) { labelSettings.titleColor = dataViewObjects.getFillColor(objects, props.titleColor, labelSettings.titleColor); }
+       if (props.titleFontFamily) { labelSettings.titleFontFamily = dataViewObjects.getValue(objects, props.titleFontFamily, labelSettings.titleFontFamily); }
+       if (props.titleFontSize) { labelSettings.titleFontSize = dataViewObjects.getValue(objects, props.titleFontSize, labelSettings.titleFontSize); }
+       if (props.textPrecision) { labelSettings.textPrecision = dataViewObjects.getValue(objects, props.textPrecision, labelSettings.textPrecision); }
        labelSettings.textPrecision = labelSettings.textPrecision < 0 ? 0 : (labelSettings.textPrecision > 20 ? 20 : labelSettings.textPrecision);
-       labelSettings.fontSize = dataViewObjects.getValue(objects, props.fontSize, labelSettings.fontSize);
-       labelSettings.displayUnits = dataViewObjects.getValue(objects, props.displayUnits, labelSettings.displayUnits);
-       labelSettings.color = dataViewObjects.getFillColor(objects, props.color, labelSettings.color);
+       if (props.fontSize) { labelSettings.fontSize = dataViewObjects.getValue(objects, props.fontSize, labelSettings.fontSize); }
+       if (props.displayUnits) { labelSettings.displayUnits = dataViewObjects.getValue(objects, props.displayUnits, labelSettings.displayUnits); }
+       if (props.color) { labelSettings.color = dataViewObjects.getFillColor(objects, props.color, labelSettings.color); }
        return labelSettings;
+   }
+   private getTitleFontFamily(dataView: DataView): string {
+       let dvmetadata = dataView.metadata;
+       let dvmobjects = dvmetadata && dvmetadata.objects;
+       if (dataView && dvmetadata && dvmobjects && dvmobjects.hasOwnProperty('GMOColumnChartTitle')) {
+           let FTitle = dvmobjects['GMOColumnChartTitle'];
+           if (FTitle && FTitle.hasOwnProperty('fontFamily')) {
+               return <string>FTitle['fontFamily'];
+           }
+       }
+       return 'Segoe UI';
    }
 
    private getSecondaryLabelSettings(dataView: DataView): secondaryLabelSettings {
@@ -5452,7 +5480,7 @@ let seriesGroup = grouped && grouped.length > seriesIndex && grouped[seriesIndex
                .append('title')
                .text(totalLabelSettings.titleText)
        }        
-       
+
        //secondary
 let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[1].categorical.values
        if (value) {
@@ -6156,10 +6184,11 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
         
        // Clear d3 v7's injected sans-serif and use Segoe UI to match the old version.
        xAxisGraphicsElement.attr('font-family', null).attr('font-size', null);
+       let xFontFamily = this.categoryAxisProperties['fontFamily'] ? <string>this.categoryAxisProperties['fontFamily'] : 'Segoe UI';
        xAllTicks.selectAll('text')
            .style('fill', this.getCategoryAxisFill().solid.color)
-           .style('font-family', 'Segoe UI')
-           .style('font-size', font_size + 'px'); 
+           .style('font-family', xFontFamily)
+           .style('font-size', font_size + 'px');
  
      // let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar); 
        if (xZeroTick) { 
@@ -6232,12 +6261,13 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
            } 
            let yZeroTick = y1AxisGraphicsElement.selectAll('g.tick').filter((data) => data === 0); 
            let yAllTicks = y1AxisGraphicsElement.selectAll('g.tick'); 
-           // Clear d3 v7's injected sans-serif and use Segoe UI for percent labels.
+          // Clear d3 v7's injected sans-serif and use Segoe UI for percent labels.
            y1AxisGraphicsElement.attr('font-family', null).attr('font-size', null);
+           let yFontFamily = this.valueAxisProperties && this.valueAxisProperties['fontFamily'] ? <string>this.valueAxisProperties['fontFamily'] : 'Segoe UI';
            yAllTicks.selectAll('text')
                .style('fill', this.getValueAxisFill().solid.color)
-               .style('font-family', 'Segoe UI')
-               .style('font-size', '10px'); 
+               .style('font-family', yFontFamily)
+               .style('font-size', '10px');
 
            if (yZeroTick) {
                yZeroTick.selectAll('line').attr('y2', 1);
@@ -6324,47 +6354,47 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
        else { 
            translateHeight = Visual.totalHeight - 26 - legendHeight; 
        } 
-       if (!hideXAxisTitle) { 
-           let xAxisLabel = this.axisGraphicsContext.append("text") 
-               .style({ "text-anchor": "middle", "display": "block", "fill": this.getCategoryAxisFill().solid.color, "font-size": 12 }) 
-               .text(axisLabels.y) 
-               .call((text: Selection<any>) => { 
-                   text.each(function () { 
-                       let text = d3.select(this); 
-                       text.attr({ 
+       if (!hideXAxisTitle) {
+           let xAxisLabel = this.axisGraphicsContext.append("text")
+               .style({ "text-anchor": "middle", "display": "block", "fill": this.getCategoryAxisFill().solid.color, "font-size": 12, "font-family": (this.categoryAxisProperties && this.categoryAxisProperties['fontFamily'] ? <string>this.categoryAxisProperties['fontFamily'] : 'Segoe UI') })
+               .text(axisLabels.y)
+               .call((text: Selection<any>) => {
+                   text.each(function () {
+                       let text = d3.select(this);
+                       text.attr({
  
-                           "class": "xAxisLabel", 
-                           "transform": manipulation.translate(width / 2 - 10, translateHeight) 
+                           "class": "xAxisLabel",
+                           "transform": manipulation.translate(width / 2 - 10, translateHeight)
  
-                       }); 
-                   }); 
-               }); 
-           xAxisLabel.call(AxisHelper.LabelLayoutStrategy.clip, 
-               width, 
-               TextMeasurementService.svgEllipsis); 
-       } 
+                       });
+                   });
+               });
+           xAxisLabel.call(AxisHelper.LabelLayoutStrategy.clip,
+               width,
+               TextMeasurementService.svgEllipsis);
+       }
  
-       if (!hideYAxisTitle) { 
-           let yAxisLabel = this.axisGraphicsContext.append("text") 
-               .style({ "text-anchor": "middle", "fill": this.getValueAxisFill().solid.color, "font-size": 12 }) 
-               .text(axisLabels.x) 
-               .call((text: Selection<any>) => { 
-                   text.each(function () { 
-                       let text = d3.select(this); 
-                       text.attr({ 
+       if (!hideYAxisTitle) {
+           let yAxisLabel = this.axisGraphicsContext.append("text")
+               .style({ "text-anchor": "middle", "fill": this.getValueAxisFill().solid.color, "font-size": 12, "font-family": (this.valueAxisProperties && this.valueAxisProperties['fontFamily'] ? <string>this.valueAxisProperties['fontFamily'] : 'Segoe UI') })
+               .text(axisLabels.x)
+               .call((text: Selection<any>) => {
+                   text.each(function () {
+                       let text = d3.select(this);
+                       text.attr({
  
-                           "class": "yAxisLabel", 
-                           "transform": "rotate(-90)", 
-                           "y": showY1OnRight ? width + margin.right - fontSize : -margin.left, 
-                           "x": -((height - margin.top - legendMargin) / 2 + 50), 
-                           "dy": "1em" 
-                       }); 
+                           "class": "yAxisLabel",
+                           "transform": "rotate(-90)",
+                           "y": showY1OnRight ? width + margin.right - fontSize : -margin.left,
+                           "x": -((height - margin.top - legendMargin) / 2 + 50),
+                           "dy": "1em"
+                       });
  
-                   }); 
-               }); 
-           yAxisLabel.call(AxisHelper.LabelLayoutStrategy.clip, 
-               height - (margin.bottom + margin.top), 
-               TextMeasurementService.svgEllipsis); 
+                   });
+               });
+           yAxisLabel.call(AxisHelper.LabelLayoutStrategy.clip,
+               height - (margin.bottom + margin.top),
+               TextMeasurementService.svgEllipsis);
        } 
  
        if (!hideY2AxisTitle && axisLabels.y2) { 

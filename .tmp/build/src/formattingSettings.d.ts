@@ -12,6 +12,7 @@ declare class LegendCardSettings extends FormattingSettingsCard {
     showTitle: formattingSettings.ToggleSwitch;
     titleText: formattingSettings.TextInput;
     labelColor: formattingSettings.ColorPicker;
+    fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
     slices: Array<FormattingSettingsSlice>;
 }
@@ -23,6 +24,7 @@ declare class CategoryAxisCardSettings extends FormattingSettingsCard {
     topLevelSlice: formattingSettings.ToggleSwitch;
     labelColor: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
+    fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
     labelPrecision: formattingSettings.NumUpDown;
     slices: Array<FormattingSettingsSlice>;
@@ -51,6 +53,7 @@ declare class ValueAxisCardSettings extends FormattingSettingsCard {
     intersection: formattingSettings.NumUpDown;
     labelColor: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
+    fontFamily: formattingSettings.FontPicker;
     labelPrecision: formattingSettings.NumUpDown;
     slices: Array<FormattingSettingsSlice>;
 }
@@ -166,6 +169,7 @@ declare class GMOColumnChartTitleCardSettings extends FormattingSettingsCard {
     topLevelSlice: formattingSettings.ToggleSwitch;
     titleText: formattingSettings.TextInput;
     fill1: formattingSettings.ColorPicker;
+    fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
     backgroundColor: formattingSettings.ColorPicker;
     tooltipText: formattingSettings.TextInput;

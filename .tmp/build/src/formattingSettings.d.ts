@@ -1,8 +1,9 @@
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
 declare const FormattingSettingsCard: typeof formattingSettings.SimpleCard;
+declare const FormattingSettingsCompositeCard: typeof formattingSettings.CompositeCard;
 declare const FormattingSettingsModel: typeof formattingSettings.Model;
 type FormattingSettingsSlice = formattingSettings.Slice;
-declare class LegendCardSettings extends FormattingSettingsCard {
+declare class LegendCardSettings extends FormattingSettingsCompositeCard {
     name: string;
     displayName: string;
     description: string;
@@ -14,20 +15,27 @@ declare class LegendCardSettings extends FormattingSettingsCard {
     labelColor: formattingSettings.ColorPicker;
     fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
-    slices: Array<FormattingSettingsSlice>;
+    font: formattingSettings.FontControl;
+    valuesGroup: formattingSettings.Group;
+    titleGroup: formattingSettings.Group;
+    layoutGroup: formattingSettings.Group;
+    groups: formattingSettings.Group[];
 }
-declare class CategoryAxisCardSettings extends FormattingSettingsCard {
+declare class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
     name: string;
     displayName: string;
-    showAxisTitle: formattingSettings.ToggleSwitch;
     show: formattingSettings.ToggleSwitch;
     topLevelSlice: formattingSettings.ToggleSwitch;
+    showAxisTitle: formattingSettings.ToggleSwitch;
     labelColor: formattingSettings.ColorPicker;
     labelDisplayUnits: formattingSettings.AutoDropdown;
     fontFamily: formattingSettings.FontPicker;
     fontSize: formattingSettings.NumUpDown;
     labelPrecision: formattingSettings.NumUpDown;
-    slices: Array<FormattingSettingsSlice>;
+    font: formattingSettings.FontControl;
+    valuesGroup: formattingSettings.Group;
+    titleGroup: formattingSettings.Group;
+    groups: formattingSettings.Group[];
 }
 declare class TextWrapCardSettings extends FormattingSettingsCard {
     name: string;
@@ -42,7 +50,7 @@ declare class MeasureTitlesCardSettings extends FormattingSettingsCard {
     ellipses: formattingSettings.NumUpDown;
     slices: Array<FormattingSettingsSlice>;
 }
-declare class ValueAxisCardSettings extends FormattingSettingsCard {
+declare class ValueAxisCardSettings extends FormattingSettingsCompositeCard {
     name: string;
     displayName: string;
     show: formattingSettings.ToggleSwitch;
@@ -55,7 +63,10 @@ declare class ValueAxisCardSettings extends FormattingSettingsCard {
     labelDisplayUnits: formattingSettings.AutoDropdown;
     fontFamily: formattingSettings.FontPicker;
     labelPrecision: formattingSettings.NumUpDown;
-    slices: Array<FormattingSettingsSlice>;
+    valuesGroup: formattingSettings.Group;
+    titleGroup: formattingSettings.Group;
+    layoutGroup: formattingSettings.Group;
+    groups: formattingSettings.Group[];
 }
 declare class DataPointCardSettings extends FormattingSettingsCard {
     name: string;
@@ -64,7 +75,7 @@ declare class DataPointCardSettings extends FormattingSettingsCard {
     defaultColor: formattingSettings.ColorPicker;
     slices: Array<FormattingSettingsSlice>;
 }
-declare class LabelsCardSettings extends FormattingSettingsCard {
+declare class LabelsCardSettings extends FormattingSettingsCompositeCard {
     name: string;
     displayName: string;
     description: string;
@@ -74,9 +85,10 @@ declare class LabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
     fontSize: formattingSettings.NumUpDown;
-    slices: Array<FormattingSettingsSlice>;
+    valuesGroup: formattingSettings.Group;
+    groups: formattingSettings.Group[];
 }
-declare class TotalLabelsCardSettings extends FormattingSettingsCard {
+declare class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     name: string;
     displayName: string;
     description: string;
@@ -90,9 +102,12 @@ declare class TotalLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
     fontSize: formattingSettings.NumUpDown;
-    slices: Array<FormattingSettingsSlice>;
+    titleFont: formattingSettings.FontControl;
+    titleGroup: formattingSettings.Group;
+    valuesGroup: formattingSettings.Group;
+    groups: formattingSettings.Group[];
 }
-declare class SecondaryLabelsCardSettings extends FormattingSettingsCard {
+declare class SecondaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     name: string;
     displayName: string;
     description: string;
@@ -104,9 +119,12 @@ declare class SecondaryLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
     fontSize: formattingSettings.NumUpDown;
-    slices: Array<FormattingSettingsSlice>;
+    titleFont: formattingSettings.FontControl;
+    titleGroup: formattingSettings.Group;
+    valuesGroup: formattingSettings.Group;
+    groups: formattingSettings.Group[];
 }
-declare class TertiaryLabelsCardSettings extends FormattingSettingsCard {
+declare class TertiaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     name: string;
     displayName: string;
     description: string;
@@ -118,9 +136,12 @@ declare class TertiaryLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
     fontSize: formattingSettings.NumUpDown;
-    slices: Array<FormattingSettingsSlice>;
+    titleFont: formattingSettings.FontControl;
+    titleGroup: formattingSettings.Group;
+    valuesGroup: formattingSettings.Group;
+    groups: formattingSettings.Group[];
 }
-declare class QuaternaryLabelsCardSettings extends FormattingSettingsCard {
+declare class QuaternaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     name: string;
     displayName: string;
     description: string;
@@ -132,9 +153,12 @@ declare class QuaternaryLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
     fontSize: formattingSettings.NumUpDown;
-    slices: Array<FormattingSettingsSlice>;
+    titleFont: formattingSettings.FontControl;
+    titleGroup: formattingSettings.Group;
+    valuesGroup: formattingSettings.Group;
+    groups: formattingSettings.Group[];
 }
-declare class FifthLabelsCardSettings extends FormattingSettingsCard {
+declare class FifthLabelsCardSettings extends FormattingSettingsCompositeCard {
     name: string;
     displayName: string;
     description: string;
@@ -146,9 +170,12 @@ declare class FifthLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
     fontSize: formattingSettings.NumUpDown;
-    slices: Array<FormattingSettingsSlice>;
+    titleFont: formattingSettings.FontControl;
+    titleGroup: formattingSettings.Group;
+    valuesGroup: formattingSettings.Group;
+    groups: formattingSettings.Group[];
 }
-declare class SixthLabelsCardSettings extends FormattingSettingsCard {
+declare class SixthLabelsCardSettings extends FormattingSettingsCompositeCard {
     name: string;
     displayName: string;
     description: string;
@@ -160,9 +187,12 @@ declare class SixthLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits: formattingSettings.AutoDropdown;
     labelPrecision: formattingSettings.NumUpDown;
     fontSize: formattingSettings.NumUpDown;
-    slices: Array<FormattingSettingsSlice>;
+    titleFont: formattingSettings.FontControl;
+    titleGroup: formattingSettings.Group;
+    valuesGroup: formattingSettings.Group;
+    groups: formattingSettings.Group[];
 }
-declare class GMOColumnChartTitleCardSettings extends FormattingSettingsCard {
+declare class GMOColumnChartTitleCardSettings extends FormattingSettingsCompositeCard {
     name: string;
     displayName: string;
     show: formattingSettings.ToggleSwitch;
@@ -173,7 +203,11 @@ declare class GMOColumnChartTitleCardSettings extends FormattingSettingsCard {
     fontSize: formattingSettings.NumUpDown;
     backgroundColor: formattingSettings.ColorPicker;
     tooltipText: formattingSettings.TextInput;
-    slices: Array<FormattingSettingsSlice>;
+    font: formattingSettings.FontControl;
+    titleGroup: formattingSettings.Group;
+    appearanceGroup: formattingSettings.Group;
+    tooltipGroup: formattingSettings.Group;
+    groups: formattingSettings.Group[];
 }
 export declare class VisualFormattingSettingsModel extends FormattingSettingsModel {
     legendCard: LegendCardSettings;

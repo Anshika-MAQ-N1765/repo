@@ -1,6 +1,8 @@
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
  
 const FormattingSettingsCard = formattingSettings.SimpleCard;
+const FormattingSettingsCompositeCard = formattingSettings.CompositeCard;
+const FormattingSettingsGroup = formattingSettings.Group;
 const FormattingSettingsModel = formattingSettings.Model;
 type FormattingSettingsSlice = formattingSettings.Slice;
  
@@ -31,6 +33,13 @@ function createFontPicker(name: string, displayName: string, value: string): for
     return new formattingSettings.FontPicker({ name, displayName, value });
 }
  
+// Native Power BI typography control (Font family + size shown together, like
+// built-in visuals). It binds the existing fontFamily/fontSize properties, so
+// no capabilities change is required.
+function createFontControl(name: string, fontFamily: formattingSettings.FontPicker, fontSize: formattingSettings.NumUpDown): formattingSettings.FontControl {
+    return new formattingSettings.FontControl({ name, displayName: "Font", fontFamily, fontSize });
+}
+ 
 function createDropdown(name: string, displayName: string, value: { value: string; displayName: string }, items: Array<{ value: string; displayName: string }>): formattingSettings.ItemDropdown {
     return new formattingSettings.ItemDropdown({ name, displayName, value, items });
 }
@@ -39,7 +48,16 @@ function createAutoDropdown(name: string, displayName: string, value: number): f
     return new formattingSettings.AutoDropdown({ name, displayName, value });
 }
  
-class LegendCardSettings extends FormattingSettingsCard {
+// Small helper to build a collapsible group inside a composite card. All groups
+// in a composite card bind their slices to the card's object name, so grouping
+// is purely a presentation concern and preserves the existing capabilities.
+function createGroup(name: string, displayName: string, slices: Array<FormattingSettingsSlice>): formattingSettings.Group {
+    const group = new FormattingSettingsGroup({ name, displayName, slices });
+    group.collapsible = true;
+    return group;
+}
+ 
+class LegendCardSettings extends FormattingSettingsCompositeCard {
     name = "legend";
     displayName = "Legend";
     description = "Display legend options";
@@ -54,24 +72,37 @@ class LegendCardSettings extends FormattingSettingsCard {
     labelColor = createColorPicker("labelColor", "Color", "#777777");
     fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 9);
+    font = createFontControl("legendFont", this.fontFamily, this.fontSize);
  
-    slices: Array<FormattingSettingsSlice> = [this.position, this.showTitle, this.titleText, this.labelColor, this.fontFamily, this.fontSize];
-}class CategoryAxisCardSettings extends FormattingSettingsCard {
+    valuesGroup = createGroup("legendValues", "Values", [this.labelColor, this.font]);
+    titleGroup = createGroup("legendTitle", "Title", [this.showTitle, this.titleText]);
+    layoutGroup = createGroup("legendLayout", "Layout", [this.position]);
+ 
+    groups = [this.valuesGroup, this.titleGroup, this.layoutGroup];
+}
+ 
+class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
     name = "categoryAxis";
     displayName = "X Axis";
-    showAxisTitle = createToggle("showAxisTitle", "Title", false);
  
     show = createToggle("show", "Show", false);
     topLevelSlice = this.show;
  
+    showAxisTitle = createToggle("showAxisTitle", "Title", false);
     labelColor = createColorPicker("labelColor", "Color", "#777777");
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     fontSize = createNumberInput("fontSize", "Text size", 11);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
+    font = createFontControl("categoryAxisFont", this.fontFamily, this.fontSize);
  
-    slices: Array<FormattingSettingsSlice> = [this.showAxisTitle, this.labelColor, this.labelDisplayUnits, this.fontFamily, this.fontSize, this.labelPrecision];
-}class TextWrapCardSettings extends FormattingSettingsCard {
+    valuesGroup = createGroup("categoryAxisValues", "Values", [this.labelColor, this.font, this.labelDisplayUnits, this.labelPrecision]);
+    titleGroup = createGroup("categoryAxisTitle", "Title", [this.showAxisTitle]);
+ 
+    groups = [this.valuesGroup, this.titleGroup];
+}
+ 
+class TextWrapCardSettings extends FormattingSettingsCard {
     name = "textWrap";
     displayName = "X-Axis Text Wrap";
     show = createToggle("show", "Show", false);
@@ -86,11 +117,13 @@ class MeasureTitlesCardSettings extends FormattingSettingsCard {
     slices: Array<FormattingSettingsSlice> = [this.ellipses];
 }
  
-class ValueAxisCardSettings extends FormattingSettingsCard {
+class ValueAxisCardSettings extends FormattingSettingsCompositeCard {
     name = "valueAxis";
     displayName = "Y Axis";
+ 
     show = createToggle("show", "Show", false);
     topLevelSlice = this.show;
+ 
     start = createNumberInput("start", "Start", 0);
     end = createNumberInput("end", "End", 0);
     showAxisTitle = createToggle("showAxisTitle", "Title", false);
@@ -99,7 +132,12 @@ class ValueAxisCardSettings extends FormattingSettingsCard {
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     fontFamily = createFontPicker("fontFamily", "Font", "Segoe UI");
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
-    slices: Array<FormattingSettingsSlice> = [this.start, this.end, this.showAxisTitle, this.intersection, this.labelColor, this.labelDisplayUnits, this.fontFamily, this.labelPrecision];
+ 
+    valuesGroup = createGroup("valueAxisValues", "Values", [this.labelColor, this.fontFamily, this.labelDisplayUnits, this.labelPrecision]);
+    titleGroup = createGroup("valueAxisTitle", "Title", [this.showAxisTitle]);
+    layoutGroup = createGroup("valueAxisLayout", "Layout", [this.start, this.end, this.intersection]);
+ 
+    groups = [this.valuesGroup, this.titleGroup, this.layoutGroup];
 }
  
 class DataPointCardSettings extends FormattingSettingsCard {
@@ -114,7 +152,7 @@ class DataPointCardSettings extends FormattingSettingsCard {
     slices: Array<FormattingSettingsSlice> = [this.defaultColor];
 }
  
-class LabelsCardSettings extends FormattingSettingsCard {
+class LabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "labels";
     displayName = "Data labels";
     description = "Display data label options";
@@ -127,10 +165,12 @@ class LabelsCardSettings extends FormattingSettingsCard {
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 10);
  
-    slices: Array<FormattingSettingsSlice> = [this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    valuesGroup = createGroup("labelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+ 
+    groups = [this.valuesGroup];
 }
  
-class TotalLabelsCardSettings extends FormattingSettingsCard {
+class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "totalLabels";
     displayName = "Total Labels";
     description = "Display total label options";
@@ -146,8 +186,15 @@ class TotalLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
-}class SecondaryLabelsCardSettings extends FormattingSettingsCard {
+    titleFont = createFontControl("totalTitleFont", this.titleFontFamily, this.titleFontSize);
+ 
+    titleGroup = createGroup("totalLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
+    valuesGroup = createGroup("totalLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+ 
+    groups = [this.titleGroup, this.valuesGroup];
+}
+ 
+class SecondaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "secondaryLabels";
     displayName = "Secondary Labels";
     description = "Display secondary label options";
@@ -159,10 +206,15 @@ class TotalLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    titleFont = createFontControl("secondaryTitleFont", this.titleFontFamily, this.titleFontSize);
+ 
+    titleGroup = createGroup("secondaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
+    valuesGroup = createGroup("secondaryLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+ 
+    groups = [this.titleGroup, this.valuesGroup];
 }
  
-class TertiaryLabelsCardSettings extends FormattingSettingsCard {
+class TertiaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "tertiaryLabels";
     displayName = "Tertiary Labels";
     description = "Display tertiary label options";
@@ -174,10 +226,15 @@ class TertiaryLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    titleFont = createFontControl("tertiaryTitleFont", this.titleFontFamily, this.titleFontSize);
+ 
+    titleGroup = createGroup("tertiaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
+    valuesGroup = createGroup("tertiaryLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+ 
+    groups = [this.titleGroup, this.valuesGroup];
 }
  
-class QuaternaryLabelsCardSettings extends FormattingSettingsCard {
+class QuaternaryLabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "quaternaryLabels";
     displayName = "Quaternary Labels";
     description = "Display quaternary label options";
@@ -189,10 +246,15 @@ class QuaternaryLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    titleFont = createFontControl("quaternaryTitleFont", this.titleFontFamily, this.titleFontSize);
+ 
+    titleGroup = createGroup("quaternaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
+    valuesGroup = createGroup("quaternaryLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+ 
+    groups = [this.titleGroup, this.valuesGroup];
 }
  
-class FifthLabelsCardSettings extends FormattingSettingsCard {
+class FifthLabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "FifthLabels";
     displayName = "Fifth Labels";
     description = "Display fifth label options";
@@ -204,10 +266,15 @@ class FifthLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    titleFont = createFontControl("fifthTitleFont", this.titleFontFamily, this.titleFontSize);
+ 
+    titleGroup = createGroup("FifthLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
+    valuesGroup = createGroup("FifthLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+ 
+    groups = [this.titleGroup, this.valuesGroup];
 }
  
-class SixthLabelsCardSettings extends FormattingSettingsCard {
+class SixthLabelsCardSettings extends FormattingSettingsCompositeCard {
     name = "SixthLabels";
     displayName = "Sixth Labels";
     description = "Display sixth label options";
@@ -219,10 +286,15 @@ class SixthLabelsCardSettings extends FormattingSettingsCard {
     labelDisplayUnits = createAutoDropdown("labelDisplayUnits", "Display units", 0);
     labelPrecision = createNumberInput("labelPrecision", "Decimal places", 0);
     fontSize = createNumberInput("fontSize", "Text size", 9);
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.titleColor, this.titleFontFamily, this.titleFontSize, this.color, this.labelDisplayUnits, this.labelPrecision, this.fontSize];
+    titleFont = createFontControl("sixthTitleFont", this.titleFontFamily, this.titleFontSize);
+ 
+    titleGroup = createGroup("SixthLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
+    valuesGroup = createGroup("SixthLabelsValues", "Values", [this.color, this.fontSize, this.labelDisplayUnits, this.labelPrecision]);
+ 
+    groups = [this.titleGroup, this.valuesGroup];
 }
  
-class GMOColumnChartTitleCardSettings extends FormattingSettingsCard {
+class GMOColumnChartTitleCardSettings extends FormattingSettingsCompositeCard {
     name = "GMOColumnChartTitle";
     displayName = "Stacked Chart Title";
  
@@ -235,8 +307,13 @@ class GMOColumnChartTitleCardSettings extends FormattingSettingsCard {
     fontSize = createNumberInput("fontSize", "Text size", 12);
     backgroundColor = createColorPicker("backgroundColor", "Background color", "#ffffff");
     tooltipText = createTextInput("tooltipText", "Tooltip text", "");
+    font = createFontControl("titleFont", this.fontFamily, this.fontSize);
  
-    slices: Array<FormattingSettingsSlice> = [this.titleText, this.fill1, this.fontFamily, this.fontSize, this.backgroundColor, this.tooltipText];
+    titleGroup = createGroup("GMOColumnChartTitleTitle", "Title", [this.titleText, this.fill1, this.font]);
+    appearanceGroup = createGroup("GMOColumnChartTitleAppearance", "Appearance", [this.backgroundColor]);
+    tooltipGroup = createGroup("GMOColumnChartTitleTooltip", "Tooltip", [this.tooltipText]);
+ 
+    groups = [this.titleGroup, this.appearanceGroup, this.tooltipGroup];
 }
  
 export class VisualFormattingSettingsModel extends FormattingSettingsModel {
@@ -290,3 +367,4 @@ export class VisualFormattingSettingsModel extends FormattingSettingsModel {
         }));
     }
 }
+ 

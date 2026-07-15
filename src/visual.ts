@@ -3493,11 +3493,11 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
                    showAxisTitle: categoryAxisObject['showAxisTitle'] == null ? axisTitleOnByDefault : categoryAxisObject['showAxisTitle'], 
                    axisStyle: categoryAxisObject['axisStyle'], 
                    labelDisplayUnits: categoryAxisObject['labelDisplayUnits'],  
-                   fontSize : categoryAxisObject['fontSize'],
-                   fontFamily : categoryAxisObject['fontFamily'],
-                   fontBold : categoryAxisObject['fontBold'],
-                   fontItalic : categoryAxisObject['fontItalic'],
-                   fontUnderline : categoryAxisObject['fontUnderline'],
+                   fontSize: categoryAxisObject['fontSize'],
+                   fontFamily: categoryAxisObject['fontFamily'],
+                   fontBold: categoryAxisObject['fontBold'],
+                   fontItalic: categoryAxisObject['fontItalic'],
+                   fontUnderline: categoryAxisObject['fontUnderline'],
                    labelColor: categoryAxisObject['labelColor'],
                    titleColor: categoryAxisObject['titleColor'],
                    titleFontFamily: categoryAxisObject['titleFontFamily'],
@@ -5927,8 +5927,13 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                    .attr('x', xAxisValue) 
                    .attr('y', yAxisValue) 
                    .attr('text-anchor', 'middle') 
-                   .attr('font-size', totalLabelSettings.fontSize) 
-                   .text(totalText) 
+                   .attr('font-size', totalLabelSettings.fontSize)
+                   .attr('font-family', totalLabelSettings.fontFamily || 'Segoe UI')
+                   .attr('fill', totalLabelSettings.color)
+                   .attr('font-weight', totalLabelSettings.fontBold ? 'bold' : 'normal')
+                   .attr('font-style', totalLabelSettings.fontItalic ? 'italic' : 'normal')
+                   .style('text-decoration', totalLabelSettings.fontUnderline ? 'underline' : 'none')
+                   .text(totalText)
            } 
             
            //secondary 
@@ -5966,7 +5971,12 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                    .attr('x', xAxisValue) 
                    .attr('y', yAxisValue) 
                    .attr('text-anchor', 'middle') 
-                   .attr('font-size', secondaryLabelSettings.fontSize) 
+                   .attr('font-size', secondaryLabelSettings.fontSize)
+                    .attr('font-family', secondaryLabelSettings.fontFamily || 'Segoe UI')
+                    .attr('fill', secondaryLabelSettings.color)
+                    .attr('font-weight', secondaryLabelSettings.fontBold ? 'bold' : 'normal')
+                    .attr('font-style', secondaryLabelSettings.fontItalic ? 'italic' : 'normal')
+                    .style('text-decoration', secondaryLabelSettings.fontUnderline ? 'underline' : 'none')
                    .text(secText); 
            } 
  
@@ -6004,6 +6014,11 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                    .attr('y', yAxisValue) 
                    .attr('text-anchor', 'middle') 
                    .attr('font-size', tertiaryLabelSettings.fontSize) 
+                   .attr('font-family', tertiaryLabelSettings.fontFamily || 'Segoe UI') 
+                   .attr('fill', tertiaryLabelSettings.color) 
+                   .attr('font-weight', tertiaryLabelSettings.fontBold ? 'bold' : 'normal') 
+                   .attr('font-style', tertiaryLabelSettings.fontItalic ? 'italic' : 'normal') 
+                   .style('text-decoration', tertiaryLabelSettings.fontUnderline ? 'underline' : 'none') 
                    .text(terText); 
            } 
  
@@ -6042,6 +6057,11 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                    .attr('y', yAxisValue) 
                    .attr('text-anchor', 'middle') 
                    .attr('font-size', quaternaryLabelSettings.fontSize) 
+                   .attr('font-family', quaternaryLabelSettings.fontFamily || 'Segoe UI') 
+                   .attr('fill', quaternaryLabelSettings.color) 
+                   .attr('font-weight', quaternaryLabelSettings.fontBold ? 'bold' : 'normal') 
+                   .attr('font-style', quaternaryLabelSettings.fontItalic ? 'italic' : 'normal') 
+                   .style('text-decoration', quaternaryLabelSettings.fontUnderline ? 'underline' : 'none') 
                    .text(quatText); 
            } 
            //fifth 
@@ -6079,6 +6099,11 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                    .attr('y', yAxisValue) 
                    .attr('text-anchor', 'middle') 
                    .attr('font-size', FifthLabelSettings.fontSize) 
+                   .attr('font-family', FifthLabelSettings.fontFamily || 'Segoe UI') 
+                   .attr('fill', FifthLabelSettings.color) 
+                   .attr('font-weight', FifthLabelSettings.fontBold ? 'bold' : 'normal') 
+                   .attr('font-style', FifthLabelSettings.fontItalic ? 'italic' : 'normal') 
+                   .style('text-decoration', FifthLabelSettings.fontUnderline ? 'underline' : 'none') 
                    .text(fiveText); 
            } 
             
@@ -6116,7 +6141,12 @@ let  value=this.dataViews[1] && this.dataViews[1].categorical && this.dataViews[
                    .attr('x', xAxisValue) 
                    .attr('y', yAxisValue) 
                    .attr('text-anchor', 'middle') 
-                   .attr('font-size', SixthLabelSettings.fontSize) 
+                   .attr('font-size', SixthLabelSettings.fontSize)
+                   .attr('font-family', SixthLabelSettings.fontFamily || 'Segoe UI')
+                   .attr('fill', SixthLabelSettings.color)
+                   .attr('font-weight', SixthLabelSettings.fontBold ? 'bold' : 'normal')
+                   .attr('font-style', SixthLabelSettings.fontItalic ? 'italic' : 'normal')
+                   .style('text-decoration', SixthLabelSettings.fontUnderline ? 'underline' : 'none') 
                    .text(SixText); 
            } 
            len--; 

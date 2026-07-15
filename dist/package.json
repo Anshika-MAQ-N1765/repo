@@ -1,5 +1,5 @@
 {
-		"version": "1.6.0.3",
+		"version": "1.6.0.0",
 		"author": {"name":"Anshika Tripathi","email":"anshikat@maqsoftware.com"},
 		"resources": [
 			{
@@ -8,7 +8,7 @@
 				"file": "resources/PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2.pbiviz.json"
 			}
 		],
-		"visual": {"name":"100per-Stackchart","displayName":"100per-Stackchart","guid":"PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2","visualClassName":"Visual","version":"1.6.0.3","description":"100 percent Stacked Chart is used for comparing the contribution of each value in total value.","supportUrl":"https://github.com/maqsoftware/PowerBI-visuals/issues/","gitHubUrl":"https://github.com/maqsoftware/PowerBI-visuals/"},
+		"visual": {"name":"100per-Stackchart","displayName":"100per-Stackchart","guid":"PBI_CV_CDA74AB7_05E6_46FA_BEC9_92D47E483FFD_2","visualClassName":"Visual","version":"1.6.0.0","description":"100 percent Stacked Chart is used for comparing the contribution of each value in total value.","supportUrl":"https://github.com/maqsoftware/PowerBI-visuals/issues/","gitHubUrl":"https://github.com/maqsoftware/PowerBI-visuals/"},
 		"metadata": {
 			"pbivizjson": {
 				"resourceId": "rId0"

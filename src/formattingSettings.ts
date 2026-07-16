@@ -125,8 +125,11 @@ class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
     titleItalic = createToggle("titleItalic", "Italic", false);
     titleUnderline = createToggle("titleUnderline", "Underline", false);
     titleFont = createFontControl("categoryAxisTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
- 
-    valuesGroup = createGroup("categoryAxisValues", "Values", [this.labelColor, this.font, this.labelDisplayUnits, this.labelPrecision]);
+    textWrap = new formattingSettings.ToggleSwitch({
+    name: "wrap", displayName: "Text wrap", value: false});
+    // add to an existing group's slices, e.g.:
+    valuesGroup = createGroup("categoryAxisValues", "Values",
+    [this.labelColor, this.font, this.labelDisplayUnits, this.labelPrecision, this.textWrap]);
     titleGroup = createGroup("categoryAxisTitle", "Title", [this.titleColor, this.titleFont]);
  
     groups = [this.valuesGroup, this.titleGroup];
@@ -140,9 +143,8 @@ class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
 }class TextWrapCardSettings extends FormattingSettingsCard {
     name = "textWrap";
     displayName = "X-Axis Text Wrap";
-    show = createToggle("show", "Show", false);
-    topLevelSlice = this.show;
-    slices: Array<FormattingSettingsSlice> = [];
+    wrap = createToggle("wrap", "Wrap", false);
+    slices: Array<FormattingSettingsSlice> = [this.wrap];
 }
  
 class MeasureTitlesCardSettings extends FormattingSettingsCard {

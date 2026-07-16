@@ -46,6 +46,7 @@ declare class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
     titleItalic: formattingSettings.ToggleSwitch;
     titleUnderline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    textWrap: formattingSettings.ToggleSwitch;
     valuesGroup: formattingSettings.Group;
     titleGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -54,8 +55,7 @@ declare class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
 declare class TextWrapCardSettings extends FormattingSettingsCard {
     name: string;
     displayName: string;
-    show: formattingSettings.ToggleSwitch;
-    topLevelSlice: formattingSettings.ToggleSwitch;
+    wrap: formattingSettings.ToggleSwitch;
     slices: Array<FormattingSettingsSlice>;
 }
 declare class MeasureTitlesCardSettings extends FormattingSettingsCard {

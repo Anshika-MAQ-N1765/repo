@@ -13,7 +13,7 @@ import * as typeUtils from "powerbi-visuals-utils-typeutils";
 import * as tooltipUtils from "powerbi-visuals-utils-tooltiputils";
  
 class LegendBehaviorImpl implements interactivityLegacy.IInteractiveBehavior {
-    public static dimmedLegendColor = "#bfbfbf";
+    public static readonly dimmedLegendColor = "#bfbfbf";
     private options: powerbi.extensibility.utils.chart.legend.LegendBehaviorOptions;
  
     public bindEvents(
@@ -80,16 +80,16 @@ legacyD3.transform = (transformStr: string) => {
     }
     const translateMatch = /translate\(\s*([-\d.eE]+)[ ,]*([-\d.eE]+)?\s*\)/.exec(transformStr);
     if (translateMatch) {
-        result.translate = [parseFloat(translateMatch[1]) || 0, parseFloat(translateMatch[2]) || 0];
+        result.translate = [Number.parseFloat(translateMatch[1]) || 0, Number.parseFloat(translateMatch[2]) || 0];
     }
     const rotateMatch = /rotate\(\s*([-\d.eE]+)/.exec(transformStr);
     if (rotateMatch) {
-        result.rotate = parseFloat(rotateMatch[1]) || 0;
+        result.rotate = Number.parseFloat(rotateMatch[1]) || 0;
     }
     const scaleMatch = /scale\(\s*([-\d.eE]+)[ ,]*([-\d.eE]+)?\s*\)/.exec(transformStr);
     if (scaleMatch) {
-        const sx = parseFloat(scaleMatch[1]) || 1;
-        const sy = scaleMatch[2] != null ? (parseFloat(scaleMatch[2]) || sx) : sx;
+        const sx = Number.parseFloat(scaleMatch[1]) || 1;
+        const sy = scaleMatch[2] != null ? (Number.parseFloat(scaleMatch[2]) || sx) : sx;
         result.scale = [sx, sy];
     }
     return result;
@@ -108,7 +108,7 @@ legacyD3.transform = (transformStr: string) => {
  
     const patchObjectForm = (methodName: "attr" | "style"): void => {
         const original = selectionProto[methodName];
-        selectionProto[methodName] = function (name: any, value?: any, priority?: any) {
+        selectionProto[methodName] = function (name: any) {
             // Object form: apply each pair.
             if (name && typeof name === "object") {
                 for (const key of Object.keys(name)) {
@@ -125,7 +125,7 @@ legacyD3.transform = (transformStr: string) => {
     patchObjectForm("style");
 
     // Restore d3 v3 `selection[0]` access for legacy indexing.
-    if (!Object.prototype.hasOwnProperty.call(selectionProto, "0")) {
+    if (!Object.hasOwn(selectionProto, "0")) {
         Object.defineProperty(selectionProto, "0", {
             configurable: true,
             get(this: any) {
@@ -187,7 +187,7 @@ legacyUtilsRoot.CartesianHelper = {
     getPrecision(precision: any) {
         return precision == null ? null : precision;
     },
-    lookupXValue(data: any, index: number, type: any, isScalar: boolean) {
+    lookupXValue(data: any, index: number, isScalar: boolean) {
         if (!data) {
             return undefined;
         }
@@ -227,8 +227,7 @@ legacyUtilsRoot.chart = {
 // imported `powerbi` namespace: in the real Power BI/webpack bundle the imported
 // `powerbi` is a different (read-only) object than the host global we populate,
 // so `powerbi.extensibility.utils.chart...` would throw at load.
-LegendBehaviorImpl.dimmedLegendColor = "#bfbfbf";
-if (legacyUtilsRoot.chart && legacyUtilsRoot.chart.legend) {
+if (legacyUtilsRoot.chart?.legend) {
     legacyUtilsRoot.chart.legend.LegendBehavior = LegendBehaviorImpl;
 }
 
@@ -272,9 +271,9 @@ const jqProto: any = {
     children(selector?: string): JQLike {
         const out: any[] = [];
         for (const node of this._nodes) {
-            if (!node || !node.children) continue;
+            if (!node?.children) continue;
             for (const child of Array.from(node.children) as any[]) {
-                if (!selector || (child.matches && child.matches(selector))) {
+                if (!selector || (child.matches?.(selector))) {
                     out.push(child);
                 }
             }
@@ -284,7 +283,7 @@ const jqProto: any = {
     find(selector: string): JQLike {
         const out: any[] = [];
         for (const node of this._nodes) {
-            if (!node || !node.querySelectorAll) continue;
+            if (!node?.querySelectorAll) continue;
             try {
                 out.push(...(Array.from(node.querySelectorAll(selector)) as any[]));
             } catch (ignored) { /* invalid selector -> no matches */ }
@@ -309,69 +308,69 @@ const jqProto: any = {
     attr(name: string, value?: any): any {
         if (value === undefined) {
             const first = this._nodes[0];
-            return first && first.getAttribute ? first.getAttribute(name) : undefined;
+            return first?.getAttribute ? first.getAttribute(name) : undefined;
         }
         for (const node of this._nodes) {
-            if (node && node.setAttribute) node.setAttribute(name, value);
+            if (node?.setAttribute) node.setAttribute(name, value);
         }
         return this;
     },
     css(name: string, value?: any): any {
         if (value === undefined) {
             const first = this._nodes[0];
-            return first && first.style ? first.style[name] : undefined;
+            return first?.style ? first.style[name] : undefined;
         }
         for (const node of this._nodes) {
-            if (node && node.style) node.style[name] = value;
+            if (node?.style) node.style[name] = value;
         }
         return this;
     },
     hide(): JQLike {
         for (const node of this._nodes) {
-            if (node && node.style) node.style.display = "none";
+            if (node?.style) node.style.display = "none";
         }
         return this;
     },
     show(): JQLike {
         for (const node of this._nodes) {
-            if (node && node.style) node.style.display = "";
+            if (node?.style) node.style.display = "";
         }
         return this;
     },
     remove(): JQLike {
         for (const node of this._nodes) {
-            if (node && node.parentNode) node.parentNode.removeChild(node);
+            if (node?.parentNode) node.remove();
         }
         return this;
     },
     empty(): JQLike {
         for (const node of this._nodes) {
-            while (node && node.firstChild) node.removeChild(node.firstChild);
+            while (node?.firstChild) node.firstChild.remove();
         }
         return this;
     },
     addClass(name: string): JQLike {
         for (const node of this._nodes) {
-            if (node && node.classList) node.classList.add(name);
+            if (node?.classList) node.classList.add(name);
         }
         return this;
     },
     removeClass(name: string): JQLike {
         for (const node of this._nodes) {
-            if (node && node.classList) node.classList.remove(name);
+            if (node?.classList) node.classList.remove(name);
         }
         return this;
     },
     on(type: string, handler: any): JQLike {
         for (const node of this._nodes) {
-            if (node && node.addEventListener) node.addEventListener(type, handler);
+            if (node?.addEventListener) node.addEventListener(type, handler);
         }
         return this;
     },
     parent(): JQLike {
         const out: any[] = [];
         for (const node of this._nodes) {
-            if (node && node.parentNode) out.push(node.parentNode);
+            if (node?.parentNode) out.push(node.parentNode);
         }
         return makeJQ(out);
     },
@@ -380,11 +379,11 @@ const jqProto: any = {
     },
     width(): number {
         const first = this._nodes[0];
-        return first && first.getBoundingClientRect ? first.getBoundingClientRect().width : 0;
+        return first?.getBoundingClientRect ? first.getBoundingClientRect().width : 0;
     },
     height(): number {
         const first = this._nodes[0];
-        return first && first.getBoundingClientRect ? first.getBoundingClientRect().height : 0;
+        return first?.getBoundingClientRect ? first.getBoundingClientRect().height : 0;
     },
     get(index?: number): any {
         if (index === undefined) return this._nodes.slice();
@@ -398,7 +397,7 @@ function legacyJQuery(arg: any): JQLike {
         nodes = [];
     } else if (typeof arg === "string") {
         const str = arg.trim();
-        if (str.charAt(0) === "<") {
+        if (str.startsWith("<")) {
             nodes = []; // HTML-string creation is not used in render paths
         } else if (typeof document !== "undefined") {
             try {
@@ -452,19 +451,19 @@ const legacyLodash = {
     filter(collection: any, predicate: any): any[] {
         if (!collection) return [];
         const arr: any[] = Array.isArray(collection) ? collection : Object.values(collection);
-        const fn = typeof predicate === "function" ? predicate : (x: any) => x && x[predicate];
-        return arr.filter(fn);
+        const fn = typeof predicate === "function" ? predicate : (x: any) => x?.[predicate];
+        return arr.filter(element => fn(element));
     },
     map(collection: any, iteratee: any): any[] {
         if (!collection) return [];
         const arr: any[] = Array.isArray(collection) ? collection : Object.values(collection);
-        const fn = typeof iteratee === "function" ? iteratee : (x: any) => x && x[iteratee];
-        return arr.map(fn);
+        const fn = typeof iteratee === "function" ? iteratee : (x: any) => x?.[iteratee];
+        return arr.map(element => fn(element));
     },
     forEach(collection: any, iteratee: (value: any, key: any) => void): any {
         if (!collection) return collection;
         if (Array.isArray(collection)) {
-            collection.forEach(iteratee);
+            collection.forEach(element => iteratee(element, undefined));
         } else {
             for (const key of Object.keys(collection)) iteratee(collection[key], key);
         }
@@ -473,8 +472,8 @@ const legacyLodash = {
     find(collection: any, predicate: any): any {
         if (!collection) return undefined;
         const arr: any[] = Array.isArray(collection) ? collection : Object.values(collection);
-        const fn = typeof predicate === "function" ? predicate : (x: any) => x && x[predicate];
-        return arr.find(fn);
+        const fn = typeof predicate === "function" ? predicate : (x: any) => x?.[predicate];
+        return arr.find(element => fn(element));
     },
     isArray: Array.isArray,
     keys: (obj: any) => (obj ? Object.keys(obj) : []),

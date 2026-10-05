@@ -2,14 +2,14 @@
 import "./legacyUtils";
 import "./layout";
 import powerbiApi from "powerbi-visuals-api";
-import { axis as AxisHelper, dataLabelUtils, legendInterfaces, legendPosition } from "powerbi-visuals-utils-chartutils";
-import type { IAxisProperties, IMargin } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
+import { axis as AxisHelper, dataLabelUtils, legendInterfaces} from "powerbi-visuals-utils-chartutils";
+import type { IAxisProperties} from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
 import type { VisualDataLabelsSettings } from "powerbi-visuals-utils-chartutils/lib/dataLabel/dataLabelInterfaces";
 import * as formattingUtils from "powerbi-visuals-utils-formattingutils";
 import type { SelectableDataPoint } from "powerbi-visuals-utils-interactivityutils/lib/interactivityService";
 import type { TooltipEnabledDataPoint } from "powerbi-visuals-utils-tooltiputils";
 import { CssConstants } from "powerbi-visuals-utils-svgutils";
-import { valueType, double as Double, prototype as Prototype } from "powerbi-visuals-utils-typeutils";
+import { valueType, prototype as Prototype } from "powerbi-visuals-utils-typeutils";
 
 type DataViewObjectPropertyIdentifier = powerbiApi.DataViewObjectPropertyIdentifier;
 type DataViewCategorical = powerbiApi.DataViewCategorical;

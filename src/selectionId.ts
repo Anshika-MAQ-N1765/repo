@@ -18,9 +18,7 @@ namespace powerbi.extensibility.visual {
         public selector: Selector;
         // This is a new data structure to support drilling -- in the long term it should replace the 'selector' field
         private selectorsByColumn: Selector;
-        private key: string;
-        private keyWithoutHighlight: string;
-        private DataViewScopeIdentity: DataViewScopeIdentity;
+        private readonly key: string;
         public highlight: boolean;
 
         constructor(selector: Selector, highlight: boolean) {
@@ -117,14 +115,14 @@ namespace powerbi.extensibility.visual {
         }
 
         public withCategory(categoryColumn: DataViewCategoryColumn, index: number): this{
-            if (categoryColumn && categoryColumn.source && categoryColumn.source.queryName && categoryColumn.identity)
+            if (categoryColumn?.source?.queryName && categoryColumn.identity)
                 this.ensureDataMap()[categoryColumn.source.queryName] = categoryColumn.identity[index];
             
             return this;
         }
 
         public withSeries(seriesColumn: DataViewValueColumns, valueColumn: DataViewValueColumn | DataViewValueColumnGroup): this {
-            if (seriesColumn && seriesColumn.source && seriesColumn.source.queryName && valueColumn)
+            if (seriesColumn?.source?.queryName && valueColumn)
                 this.ensureDataMap()[seriesColumn.source.queryName] = valueColumn.identity;
 
             return this;
@@ -155,7 +153,7 @@ namespace powerbi.extensibility.visual {
     g.powerbi = g.powerbi || {};
     g.powerbi.extensibility = g.powerbi.extensibility || {};
     g.powerbi.extensibility.visual = g.powerbi.extensibility.visual || {};
-    if (typeof powerbi !== "undefined" && powerbi.extensibility && powerbi.extensibility.visual) {
+    if (typeof powerbi !== "undefined" && powerbi.extensibility?.visual) {
         Object.assign(g.powerbi.extensibility.visual, powerbi.extensibility.visual);
     }
 }

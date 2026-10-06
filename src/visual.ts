@@ -462,7 +462,7 @@ export class GMOSVGLegend implements IGMOLegend {
    private lastCalculatedWidth = 0; 
    private visibleLegendWidth = 0; 
    public TooltipServiceWrapper: ITooltipServiceWrapper; 
-   private static identity: ISelectionId; 
+   private static readonly identity: ISelectionId; 
    private visibleLegendHeight = 0; 
    private legendFontSizeMarginDifference = 0; 
    private legendFontSizeMarginValue = 0; 
@@ -478,8 +478,8 @@ export class GMOSVGLegend implements IGMOLegend {
    private static readonly LegendEdgeMariginWidth = 10; 
    private static readonly LegendMaxWidthFactor = 0.3; 
    private static readonly TopLegendHeight = 24; 
-   private static DefaultTextMargin: number; 
-   DefaultTextMargin = PixelConverter.fromPointToPixel(GMOSVGLegend.DefaultFontSizeInPt); 
+   private static readonly DefaultTextMargin: number; 
+   readonly DefaultTextMargin = PixelConverter.fromPointToPixel(GMOSVGLegend.DefaultFontSizeInPt); 
    private static readonly DefaultMaxLegendFactor = GMOSVGLegend.MaxTitleLength / GMOSVGLegend.DefaultTextMargin; 
    private readonly secondaryExists: number = 0; 
    private static readonly LegendArrowOffset = 10; 
@@ -637,6 +637,12 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
        this.group 
            .selectAll(GMOSVGLegend.LegendTitle.selector).remove(); 
  
+       this.applyLegendGroupTransform(group); 
+       this.renderLegendTitle(group, titleLayout, titleData, data); 
+       this.renderLegendItems(group, data, layout, hasSelection, detailedLegend, titleLayout); 
+   } 
+
+   private applyLegendGroupTransform(group): void { 
        if (this.isCentered(this.orientation)) { 
            let centerOffset = 0; 
            if (this.isTopOrBottom(this.orientation)) { 
@@ -651,27 +657,31 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
        else { 
            group.attr('transform', null); 
        } 
-       if (titleLayout) { 
-           let legendTitle = group 
-               .selectAll(GMOSVGLegend.LegendTitle.selector) 
-               .data(titleData); 
+   } 
+
+   private renderLegendTitle(group, titleLayout, titleData, data): void { 
+       if (!titleLayout) { return; } 
+       let legendTitle = group 
+           .selectAll(GMOSVGLegend.LegendTitle.selector) 
+           .data(titleData); 
  
-           legendTitle.enter() 
-               .append('text').attr({ 
-                   'x': (d: TitleLayout) => d.x, 
-                   'y': (d: TitleLayout) => d.y 
-               }).text(titleLayout.text).style({ 
-                   'fill': data.labelColor, 
-                   'font-size': PixelConverter.fromPoint(data.fontSize), 
-                   'font-family': (data as any).fontFamily || GMOSVGLegend.DefaultTitleFontFamily
-               }).classed(GMOSVGLegend.LegendTitle.class, true); 
-           legendTitle 
-               .append('title').text(this.data.title); 
+       legendTitle.enter() 
+           .append('text').attr({ 
+               'x': (d: TitleLayout) => d.x, 
+               'y': (d: TitleLayout) => d.y 
+           }).text(titleLayout.text).style({ 
+               'fill': data.labelColor, 
+               'font-size': PixelConverter.fromPoint(data.fontSize), 
+               'font-family': (data as any).fontFamily || GMOSVGLegend.DefaultTitleFontFamily
+           }).classed(GMOSVGLegend.LegendTitle.class, true); 
+       legendTitle 
+           .append('title').text(this.data.title); 
  
-           legendTitle.exit().remove(); 
-       } 
- 
-       if (data.dataPoints.length) {
+       legendTitle.exit().remove(); 
+   } 
+
+   private renderLegendItems(group, data, layout, hasSelection, detailedLegend, titleLayout): void { 
+       if (!data.dataPoints.length) { return; }
            let virtualizedDataPoints = data.dataPoints.slice(this.legendDataStartIndex, this.legendDataStartIndex + layout.numberOfItems);
            let iconRadius = TextMeasurementService.estimateSvgTextHeight(GMOSVGLegend.getTextProperties(false, '', this.data.fontSize)) / GMOSVGLegend.LegendIconRadiusFactor;
            iconRadius = (this.legendFontSizeMarginValue > GMOSVGLegend.DefaultTextMargin) && iconRadius > GMOSVGLegend.LegendIconRadius
@@ -717,20 +727,7 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
                .text((d: LegendDataPoint) => d.tooltip);
  
            // Wrap long labels using the real text nodes, since d3 v7 selections do not support the old index-based loop.
-           if (this.maxLegendTextLength) {
-               let textNodes = mergedItems.selectAll(GMOSVGLegend.LegendText.selector).nodes();
-               for (const node of textNodes) {
-                   let SVGTextElement = <SVGTextElement>node;
-                   TextMeasurementService.wordBreak(SVGTextElement, this.maxLegendTextLength, 150);
-                   let tSpanElements = SVGTextElement.childNodes.length;
-                   for (let j = 0; j < tSpanElements; j++) {
-                       (<HTMLElement>SVGTextElement.childNodes[j]).setAttribute('x', SVGTextElement.getAttribute('x'));
-                   }
-                   if (SVGTextElement.childNodes?.[0]) {
-                       (<HTMLElement>SVGTextElement.childNodes[0]).setAttribute('y', '0');
-                   }
-               }
-           }
+           this.wrapLegendTextNodes(mergedItems);
            mergedItems
                .select(GMOSVGLegend.LegendIcon.selector)
                .attr({
@@ -760,7 +757,22 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
            legendItems.exit().remove(); 
            this.updateLayout(detailedLegend); 
            this.drawNavigationArrows(layout.navigationArrows, detailedLegend, titleLayout); 
-       } 
+   } 
+
+   private wrapLegendTextNodes(mergedItems): void { 
+       if (!this.maxLegendTextLength) { return; } 
+       let textNodes = mergedItems.selectAll(GMOSVGLegend.LegendText.selector).nodes();
+       for (const node of textNodes) {
+           let SVGTextElement = <SVGTextElement>node;
+           TextMeasurementService.wordBreak(SVGTextElement, this.maxLegendTextLength, 150);
+           let tSpanElements = SVGTextElement.childNodes.length;
+           for (let j = 0; j < tSpanElements; j++) {
+               (<HTMLElement>SVGTextElement.childNodes[j]).setAttribute('x', SVGTextElement.getAttribute('x'));
+           }
+           if (SVGTextElement.childNodes?.[0]) {
+               (<HTMLElement>SVGTextElement.childNodes[0]).setAttribute('y', '0');
+           }
+       }
    } 
  
    private normalizePosition(points: any[]): void { 
@@ -774,59 +786,54 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
    } 
  
    private calculateTitleLayout(title: string): TitleLayout { 
-       let width = 0; 
-       let hasTitle = !_.isEmpty(title); 
- 
-       if (hasTitle) { 
-           let isHorizontal = this.isTopOrBottom(this.orientation); 
-           let maxMeasureLength: number; 
- 
-           if (isHorizontal) { 
-               let fontSizeMargin = this.legendFontSizeMarginValue > GMOSVGLegend.DefaultTextMargin ? GMOSVGLegend.TextAndIconPadding + this.legendFontSizeMarginDifference : GMOSVGLegend.TextAndIconPadding; 
-               let fixedHorizontalIconShift = GMOSVGLegend.TextAndIconPadding + GMOSVGLegend.LegendIconRadius; 
-               let fixedHorizontalTextShift = GMOSVGLegend.LegendIconRadius + fontSizeMargin + fixedHorizontalIconShift; 
-               maxMeasureLength = this.parentViewport.width * GMOSVGLegend.LegendMaxWidthFactor - fixedHorizontalTextShift - GMOSVGLegend.LegendEdgeMariginWidth; 
+       if (_.isEmpty(title)) { return null; } 
+
+       let isHorizontal = this.isTopOrBottom(this.orientation); 
+       let maxMeasureLength = this.computeTitleMaxMeasureLength(isHorizontal); 
+       let textProperties = GMOSVGLegend.getTextProperties(true, title, this.data.fontSize); 
+       let text = title; 
+       let titlewidth = TextMeasurementService.measureSvgTextWidth(textProperties); 
+       let primaryTitleWidth: number = 0; 
+       if (this.data['primaryTitle']) 
+           primaryTitleWidth = TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(true, this.data['primaryTitle'], this.data.fontSize)); 
+       let width = Math.max(titlewidth, primaryTitleWidth); 
+       if (titlewidth > maxMeasureLength || primaryTitleWidth > maxMeasureLength) { 
+
+           text = TextMeasurementService.getTailoredTextOrDefault(textProperties, maxMeasureLength); 
+           width = maxMeasureLength; 
+           if (this.data['primaryTitle']) { 
+               this.primaryTitle = this.data['primaryTitle'] = TextMeasurementService.getTailoredTextOrDefault(GMOSVGLegend.getTextProperties(true, this.data['primaryTitle'], this.data.fontSize), maxMeasureLength); 
            } 
-           else { 
-               maxMeasureLength = this.legendFontSizeMarginValue < GMOSVGLegend.DefaultTextMargin ? GMOSVGLegend.MaxTitleLength : 
-                   GMOSVGLegend.MaxTitleLength + (GMOSVGLegend.DefaultMaxLegendFactor * this.legendFontSizeMarginDifference); 
-           } 
-           let textProperties = GMOSVGLegend.getTextProperties(true, title, this.data.fontSize); 
-           let text = title; 
-           let titlewidth = TextMeasurementService.measureSvgTextWidth(textProperties); 
-           let primaryTitleWidth: number = 0; 
-           if (this.data['primaryTitle']) 
-               primaryTitleWidth = TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(true, this.data['primaryTitle'], this.data.fontSize)); 
-           width = Math.max(titlewidth, primaryTitleWidth); 
-           if (titlewidth > maxMeasureLength || primaryTitleWidth > maxMeasureLength) { 
- 
-               text = TextMeasurementService.getTailoredTextOrDefault(textProperties, maxMeasureLength); 
-               width = maxMeasureLength; 
-               if (this.data['primaryTitle']) { 
-                   this.primaryTitle = this.data['primaryTitle'] = TextMeasurementService.getTailoredTextOrDefault(GMOSVGLegend.getTextProperties(true, this.data['primaryTitle'], this.data.fontSize), maxMeasureLength); 
-               } 
-           } 
-           else { 
-               this.primaryTitle = this.data['primaryTitle']; 
-           } 
- 
-           if (isHorizontal) 
-               width += GMOSVGLegend.TitlePadding; 
-           else if (width < maxMeasureLength) { 
-               text = TextMeasurementService.getTailoredTextOrDefault(textProperties, titlewidth); 
-               if (this.data['primaryTitle']) { 
-                   this.primaryTitle = this.data['primaryTitle'] = TextMeasurementService.getTailoredTextOrDefault(GMOSVGLegend.getTextProperties(true, this.data['primaryTitle'], this.data.fontSize), width); 
-               } 
-           } 
-           return { 
-               x: 0, 
-               y: 0, 
-               text: text, 
-               width: width, 
-           }; 
        } 
-       return null; 
- 
+       else { 
+           this.primaryTitle = this.data['primaryTitle']; 
+       } 
+
+       if (isHorizontal) 
+           width += GMOSVGLegend.TitlePadding; 
+       else if (width < maxMeasureLength) { 
+           text = TextMeasurementService.getTailoredTextOrDefault(textProperties, titlewidth); 
+           if (this.data['primaryTitle']) { 
+               this.primaryTitle = this.data['primaryTitle'] = TextMeasurementService.getTailoredTextOrDefault(GMOSVGLegend.getTextProperties(true, this.data['primaryTitle'], this.data.fontSize), width); 
+           } 
+       } 
+       return { 
+           x: 0, 
+           y: 0, 
+           text: text, 
+           width: width, 
+       }; 
+   } 
+
+   private computeTitleMaxMeasureLength(isHorizontal: boolean): number { 
+       if (isHorizontal) { 
+           let fontSizeMargin = this.legendFontSizeMarginValue > GMOSVGLegend.DefaultTextMargin ? GMOSVGLegend.TextAndIconPadding + this.legendFontSizeMarginDifference : GMOSVGLegend.TextAndIconPadding; 
+           let fixedHorizontalIconShift = GMOSVGLegend.TextAndIconPadding + GMOSVGLegend.LegendIconRadius; 
+           let fixedHorizontalTextShift = GMOSVGLegend.LegendIconRadius + fontSizeMargin + fixedHorizontalIconShift; 
+           return this.parentViewport.width * GMOSVGLegend.LegendMaxWidthFactor - fixedHorizontalTextShift - GMOSVGLegend.LegendEdgeMariginWidth; 
+       } 
+       return this.legendFontSizeMarginValue < GMOSVGLegend.DefaultTextMargin ? GMOSVGLegend.MaxTitleLength : 
+           GMOSVGLegend.MaxTitleLength + (GMOSVGLegend.DefaultMaxLegendFactor * this.legendFontSizeMarginDifference); 
    } 
    /** Performs layout offline for optimal perfomance */ 
    private calculateLayout(data: LegendData, autoWidth: boolean, detailedLegend): LegendLayout { 
@@ -978,9 +985,10 @@ let check=(detailedLegend!=="None"); if (this.isTopOrBottom(this.orientation)) {
        maxTextLength = Math.max(maxTextLength, GMOSVGLegend.MaxTextLength); 
        this.maxLegendTextLength = maxTextLength; 
  
-let dp,textProperties: any,primaryWidth=0,labelwidth:any;; for (let i = 0; i < dataPointsLength; i++) { dp = dataPoints[i]; 
+       for (let i = 0; i < dataPointsLength; i++) { 
+           let dp = dataPoints[i]; 
 
-          dp.glyphPosition = { 
+           dp.glyphPosition = { 
                x: totalSpaceOccupiedThusFar + GMOSVGLegend.LegendIconRadius, 
                y: fixedIconShift 
            }; 
@@ -989,40 +997,10 @@ let dp,textProperties: any,primaryWidth=0,labelwidth:any;; for (let i = 0; i < d
                y: fixedTextShift 
            }; 
  
-           textProperties = GMOSVGLegend.getTextProperties(false, dp.label, this.data.fontSize); 
-            labelwidth = TextMeasurementService.measureSvgTextWidth(textProperties); 
-            
-               if (detailedLegend === "Value") { 
-                   primaryWidth = TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(false, dp.measure, this.data.fontSize)); 
-               } 
-               else if (detailedLegend === "Percentage") { 
-                   primaryWidth = TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(false, dp['percentage'], this.data.fontSize)); 
-               } 
-               else if(detailedLegend==="Both"){ 
-                   primaryWidth = TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(false, dp.measure + ' ' + dp['percentage'], this.data.fontSize)); 
-               } 
-           let width = Math.max(labelwidth, primaryWidth); 
-           width += 15;//indicators 
-           let spaceTakenByItem = 0; 
-           if (width < maxTextLength) { 
-               spaceTakenByItem = iconTotalItemPadding + width; 
-               if (detailedLegend === "Both") { 
-                   dp.measure = dp.measure + ' ' + dp['percentage']; 
-               } 
-           } else { 
-               let text = TextMeasurementService.getTailoredTextOrDefault( 
-                   textProperties, 
-                   maxTextLength); 
-               dp.label = text; 
-               if (detailedLegend === "Value") { 
-                   dp.measure = TextMeasurementService.getTailoredTextOrDefault( 
-                       GMOSVGLegend.getTextProperties(false, dp.measure, this.data.fontSize), 
-                       maxTextLength); 
-               } 
-               spaceTakenByItem = iconTotalItemPadding + maxTextLength; 
-           } 
- 
-           totalSpaceOccupiedThusFar += spaceTakenByItem; 
+           let textProperties = GMOSVGLegend.getTextProperties(false, dp.label, this.data.fontSize); 
+           let labelwidth = TextMeasurementService.measureSvgTextWidth(textProperties); 
+           let primaryWidth = this.measureDetailedPrimaryWidth(dp, detailedLegend); 
+           totalSpaceOccupiedThusFar += this.layoutHorizontalItemWidth(dp, detailedLegend, labelwidth, primaryWidth, textProperties, maxTextLength, iconTotalItemPadding); 
  
            if (totalSpaceOccupiedThusFar > parentWidth) { 
                numberOfItems = i; 
@@ -1035,6 +1013,39 @@ let dp,textProperties: any,primaryWidth=0,labelwidth:any;; for (let i = 0; i < d
        this.updateNavigationArrowLayout(navigationArrows, dataPointsLength, numberOfItems, title); 
  
        return numberOfItems; 
+   } 
+
+   // Width of the detailed measure/percentage text for a legend data point; 0 when no detailed legend applies. 
+   private measureDetailedPrimaryWidth(dp, detailedLegend): number { 
+       if (detailedLegend === "Value") { 
+           return TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(false, dp.measure, this.data.fontSize)); 
+       } 
+       if (detailedLegend === "Percentage") { 
+           return TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(false, dp['percentage'], this.data.fontSize)); 
+       } 
+       if (detailedLegend === "Both") { 
+           return TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(false, dp.measure + ' ' + dp['percentage'], this.data.fontSize)); 
+       } 
+       return 0; 
+   } 
+
+   // Computes the horizontal space an item occupies, truncating label/measure in place when needed. 
+   private layoutHorizontalItemWidth(dp, detailedLegend, labelwidth, primaryWidth, textProperties, maxTextLength, iconTotalItemPadding): number { 
+       let width = Math.max(labelwidth, primaryWidth); 
+       width += 15;//indicators 
+       if (width < maxTextLength) { 
+           if (detailedLegend === "Both") { 
+               dp.measure = dp.measure + ' ' + dp['percentage']; 
+           } 
+           return iconTotalItemPadding + width; 
+       } 
+       dp.label = TextMeasurementService.getTailoredTextOrDefault(textProperties, maxTextLength); 
+       if (detailedLegend === "Value") { 
+           dp.measure = TextMeasurementService.getTailoredTextOrDefault( 
+               GMOSVGLegend.getTextProperties(false, dp.measure, this.data.fontSize), 
+               maxTextLength); 
+       } 
+       return iconTotalItemPadding + maxTextLength; 
    } 
  
    private calculateVerticalLayout( 
@@ -1058,36 +1069,17 @@ let dp,textProperties: any,primaryWidth=0,labelwidth:any;; for (let i = 0; i < d
            - fixedHorizontalTextShift - GMOSVGLegend.LegendEdgeMariginWidth; 
        let numberOfItems: number = dataPoints.length; 
  
-       let maxHorizontalSpaceUsed = 0; 
        let parentHeight = this.parentViewport.height; 
-       if (title) { 
-           totalSpaceOccupiedThusFar += spaceNeededByTitle; 
-           title.x = GMOSVGLegend.TextAndIconPadding; 
-           title.y = spaceNeededByTitle; 
-           maxHorizontalSpaceUsed = title.width || 0; 
-           if (this.data['primaryTitle'] && this.data['secondaryTitle'] && detailedLegend !== 'None' && detailedLegend !== undefined) { 
-               spaceNeededByTitle = 3 * title.y + this.legendFontSizeMarginDifference / 2; 
-               totalSpaceOccupiedThusFar += spaceNeededByTitle; 
-           } 
-           else if (this.data['primaryTitle']) { 
-               spaceNeededByTitle = 2 * title.y + this.legendFontSizeMarginDifference / 2; 
-               totalSpaceOccupiedThusFar += spaceNeededByTitle; 
-           } 
-           else { 
-               totalSpaceOccupiedThusFar += spaceNeededByTitle; 
-           } 
-       } 
-       else { 
-           totalSpaceOccupiedThusFar += spaceNeededByTitle; 
-       } 
+       let titleSpacing = this.applyVerticalTitleSpacing(title, spaceNeededByTitle, detailedLegend); 
+       totalSpaceOccupiedThusFar = titleSpacing.totalSpace; 
+       let maxHorizontalSpaceUsed = titleSpacing.maxUsed; 
  
        if (this.legendDataStartIndex > 0) {
            totalSpaceOccupiedThusFar += GMOSVGLegend.LegendArrowOffset;
        }
-       let dp, textProperties: any, primaryWidth = 0, labelwidth: any;
        let dataPointsLength = dataPoints.length; 
        for (let i = 0; i < dataPointsLength; i++) { 
-         dp = dataPoints[i]; 
+           let dp = dataPoints[i]; 
  
            dp.glyphPosition = { 
                x: fixedHorizontalIconShift, 
@@ -1100,35 +1092,10 @@ let dp,textProperties: any,primaryWidth=0,labelwidth:any;; for (let i = 0; i < d
            if (detailedLegend !== "None") { 
                totalSpaceOccupiedThusFar = totalSpaceOccupiedThusFar + 20 + (this.legendFontSizeMarginDifference / 2); 
            } 
-         
-           textProperties = GMOSVGLegend.getTextProperties(false, dp.label, this.data.fontSize); 
-           labelwidth = TextMeasurementService.measureSvgTextWidth(textProperties); 
-               if (detailedLegend === "Value") { 
-                   primaryWidth = TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(false, dp.measure, this.data.fontSize)); 
-               } 
-               else if (detailedLegend === "Percentage") { 
-                   primaryWidth = TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(false, dp['percentage'], this.data.fontSize)); 
-               } 
-               else if(detailedLegend === "Both"){ 
-                   primaryWidth = TextMeasurementService.measureSvgTextWidth(GMOSVGLegend.getTextProperties(false, dp.measure + ' ' + dp['percentage'], this.data.fontSize)); 
-               } 
-         //  } 
-           let width = Math.max(labelwidth, primaryWidth); 
-           width += 15;//indicators 
+
+           let width = this.layoutVerticalItemWidth(dp, detailedLegend, maxHorizontalSpaceAvaliable); 
            if (width > maxHorizontalSpaceUsed) { 
                maxHorizontalSpaceUsed = width; 
-           } 
- 
-           if (width > maxHorizontalSpaceAvaliable) { 
-               let text = TextMeasurementService.getTailoredTextOrDefault( 
-                   GMOSVGLegend.getTextProperties(false, dp.label, this.data.fontSize), 
-                   maxHorizontalSpaceAvaliable); 
-               dp.label = text; 
-               if (detailedLegend === "Value") { 
-                   dp.measure = TextMeasurementService.getTailoredTextOrDefault( 
-                       GMOSVGLegend.getTextProperties(false, dp.measure, this.data.fontSize), 
-                       maxHorizontalSpaceAvaliable); 
-               } 
            } 
  
            totalSpaceOccupiedThusFar += verticalLegendHeight; 
@@ -1157,6 +1124,47 @@ let dp,textProperties: any,primaryWidth=0,labelwidth:any;; for (let i = 0; i < d
  
        return numberOfItems; 
    } 
+
+   // Applies title-driven vertical spacing, mutating title position; returns running totals. 
+   private applyVerticalTitleSpacing(title, spaceNeededByTitle, detailedLegend): { totalSpace: number; maxUsed: number } { 
+       if (!title) { 
+           return { totalSpace: spaceNeededByTitle, maxUsed: 0 }; 
+       } 
+       let totalSpace = spaceNeededByTitle; 
+       title.x = GMOSVGLegend.TextAndIconPadding; 
+       title.y = spaceNeededByTitle; 
+       let maxUsed = title.width || 0; 
+       if (this.data['primaryTitle'] && this.data['secondaryTitle'] && detailedLegend !== 'None' && detailedLegend !== undefined) { 
+           totalSpace += 3 * title.y + this.legendFontSizeMarginDifference / 2; 
+       } 
+       else if (this.data['primaryTitle']) { 
+           totalSpace += 2 * title.y + this.legendFontSizeMarginDifference / 2; 
+       } 
+       else { 
+           totalSpace += spaceNeededByTitle; 
+       } 
+       return { totalSpace, maxUsed }; 
+   } 
+
+   // Computes the width of a vertical legend item, truncating label/measure in place when needed. 
+   private layoutVerticalItemWidth(dp, detailedLegend, maxHorizontalSpaceAvaliable): number { 
+       let textProperties = GMOSVGLegend.getTextProperties(false, dp.label, this.data.fontSize); 
+       let labelwidth = TextMeasurementService.measureSvgTextWidth(textProperties); 
+       let primaryWidth = this.measureDetailedPrimaryWidth(dp, detailedLegend); 
+       let width = Math.max(labelwidth, primaryWidth); 
+       width += 15;//indicators 
+       if (width > maxHorizontalSpaceAvaliable) { 
+           dp.label = TextMeasurementService.getTailoredTextOrDefault( 
+               GMOSVGLegend.getTextProperties(false, dp.label, this.data.fontSize), 
+               maxHorizontalSpaceAvaliable); 
+           if (detailedLegend === "Value") { 
+               dp.measure = TextMeasurementService.getTailoredTextOrDefault( 
+                   GMOSVGLegend.getTextProperties(false, dp.measure, this.data.fontSize), 
+                   maxHorizontalSpaceAvaliable); 
+           } 
+       } 
+       return width; 
+   } 
  
    private drawNavigationArrows(layout: NavigationArrow[], detailedLegend, title) { 
        let arrows = this.group.selectAll(GMOSVGLegend.NavigationArrow.selector) 
@@ -1184,48 +1192,56 @@ let dp,textProperties: any,primaryWidth=0,labelwidth:any;; for (let i = 0; i < d
            }); 
  
        if (this.isTopOrBottom(this.orientation)) { 
-           let legendGroupHeight = Number.parseInt(this.svg.style('height'), 10); 
-           let translateY = 0; 
-           if (detailedLegend!=="None") { 
-               translateY = legendGroupHeight / 3; 
-           } 
-           else if ((detailedLegend === undefined || detailedLegend === "None")) { 
-               translateY = 3.5; 
-           } 
-           arrows 
-               .attr('transform', (d: NavigationArrow) => manipulation.translate(d.x, translateY)) 
-               .select('path') 
-               .attr({ 
-                   'd': (d: NavigationArrow) => d.path, 
-                   'transform': (d: NavigationArrow) => d.rotateTransform 
-               }); 
+           this.positionTopBottomArrows(arrows, detailedLegend); 
        } 
  
        if (this.isLeftOrRight(this.orientation)) { 
-           let translateY = 0; 
-           let hasTitle = !_.isEmpty(title); 
+           this.positionLeftRightArrows(detailedLegend, title); 
+       } 
  
-           if (hasTitle) { 
-               if (detailedLegend!=="None") { 
-                   translateY = title.y * 2 + this.legendFontSizeMarginDifference; 
-               } 
-               else { 
-                   translateY = GMOSVGLegend.LegendArrowHeight + GMOSVGLegend.LegendArrowOffset / 2; 
-               } 
+       arrows.exit().remove(); 
+   } 
+
+   private positionTopBottomArrows(arrows, detailedLegend): void { 
+       let legendGroupHeight = Number.parseInt(this.svg.style('height'), 10); 
+       let translateY = 0; 
+       if (detailedLegend!=="None") { 
+           translateY = legendGroupHeight / 3; 
+       } 
+       else if ((detailedLegend === undefined || detailedLegend === "None")) { 
+           translateY = 3.5; 
+       } 
+       arrows 
+           .attr('transform', (d: NavigationArrow) => manipulation.translate(d.x, translateY)) 
+           .select('path') 
+           .attr({ 
+               'd': (d: NavigationArrow) => d.path, 
+               'transform': (d: NavigationArrow) => d.rotateTransform 
+           }); 
+   } 
+
+   private positionLeftRightArrows(detailedLegend, title): void { 
+       let translateY = 0; 
+       let hasTitle = !_.isEmpty(title); 
+ 
+       if (hasTitle) { 
+           if (detailedLegend!=="None") { 
+               translateY = title.y * 2 + this.legendFontSizeMarginDifference; 
            } 
            else { 
                translateY = GMOSVGLegend.LegendArrowHeight + GMOSVGLegend.LegendArrowOffset / 2; 
            } 
-           if (this.svg.select('.navArrow')[0][0] !== null) { 
-               let t = d3.transform(this.svg.select('.navArrow').attr("transform")); 
-               if (t.translate[1] === 0) { 
-                   this.svg.select('.navArrow').attr('transform', (d: NavigationArrow) => manipulation.translate(d.x, translateY)); 
-                   this.svg.select('.navArrow').style('fill', 'black'); 
-               } 
+       } 
+       else { 
+           translateY = GMOSVGLegend.LegendArrowHeight + GMOSVGLegend.LegendArrowOffset / 2; 
+       } 
+       if (this.svg.select('.navArrow')[0][0] !== null) { 
+           let t = d3.transform(this.svg.select('.navArrow').attr("transform")); 
+           if (t.translate[1] === 0) { 
+               this.svg.select('.navArrow').attr('transform', (d: NavigationArrow) => manipulation.translate(d.x, translateY)); 
+               this.svg.select('.navArrow').style('fill', 'black'); 
            } 
        } 
- 
-       arrows.exit().remove(); 
    } 
  
    private isTopOrBottom(orientation: LegendPositionType) { 
@@ -1687,36 +1703,32 @@ export class StackedChartGMOStrategy implements IColumnChartStrategyGMO {
        let isDateTime = AxisHelper.isDateTime(type); 
  
        if (isScalar) { 
-           if (isDateTime) 
-               return new Date(index); 
- 
-           // index is the numeric value 
-           return index; 
+           return isDateTime ? new Date(index) : index; 
        } 
  
        if (type.text) { 
- 
            return data.categories[index]; 
        } 
  
-       if (data.series.length > 0) { 
-           let firstSeries = data.series[0]; 
-           if (firstSeries) { 
-               let seriesValues = firstSeries.data; 
-               if (seriesValues) { 
-                   if (data.hasHighlights) 
-                       index = index * 2; 
-                   let dataAtIndex = seriesValues[index]; 
-                   if (dataAtIndex) { 
-                       if (isDateTime && dataAtIndex.categoryValue != null) 
-                           return new Date(dataAtIndex.categoryValue); 
-                       return dataAtIndex.categoryValue; 
-                   } 
-               } 
-           } 
+       return this.lookupSeriesXValue(data, index, isDateTime); 
+   } 
+
+   private lookupSeriesXValue(data: StackedChartGMOData, index: number, isDateTime: boolean): any { 
+       let seriesValues = data.series.length > 0 && data.series[0] ? data.series[0].data : null; 
+       if (!seriesValues) { 
+           return index; 
        } 
- 
-       return index; 
+       // Preserve original behaviour: with highlights the effective index is doubled, 
+       // and that doubled value is also what we fall back to when no datum is found. 
+       let effectiveIndex = data.hasHighlights ? index * 2 : index; 
+       let dataAtIndex = seriesValues[effectiveIndex]; 
+       if (!dataAtIndex) { 
+           return effectiveIndex; 
+       } 
+       if (isDateTime && dataAtIndex.categoryValue != null) { 
+           return new Date(dataAtIndex.categoryValue); 
+       } 
+       return dataAtIndex.categoryValue; 
    } 
  
    public calcValueDomain(data, is100pct) { 
@@ -2008,49 +2020,52 @@ export class StackedChartGMOStrategy implements IColumnChartStrategyGMO {
                if ((data.hasHighlights && !dataPoint.highlight) || dataPoint.value == null) { 
                    continue; 
                } 
- 
-               // Calculate parent rectangle 
-               let parentRect: IRect = { 
-                   left: shapeLayout.x(dataPoint), 
-                   top: shapeLayout.y(dataPoint), 
-                   width: shapeLayout.width(dataPoint), 
-                   height: shapeLayout.height(dataPoint), 
-               }; 
- 
-               let text = dataPoint.value.toString(); 
- 
-               // Calculate text size
-               let properties: TextProperties = {
-                   text: text,
-                   fontFamily: (labelSettings as any).fontFamily || NewDataLabelUtils.LabelTextProperties.fontFamily,
-                   fontSize: PixelConverter.fromPoint(labelSettings.fontSize || 12),
-                   fontWeight: (labelSettings as any).fontBold ? 'bold' : NewDataLabelUtils.LabelTextProperties.fontWeight,
-               };
-               let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
-               let textHeight = TextMeasurementService.estimateSvgTextHeight(properties, true /* tightFitForNumeric */);
-
-               labelDataPoints.push({ 
-                   isPreferred: true, 
-                   text: text, 
-                   textSize: { 
-                       width: textWidth, 
-                       height: textHeight, 
-                   }, 
-                   outsideFill: ColumnChartGMO.getLabelFill(labelSettings.labelColor, false, this.isComboChart), 
-                   insideFill: ColumnChartGMO.getLabelFill(labelSettings.labelColor, true, this.isComboChart), 
-                   parentType: LabelDataPointParentTypeGMO.Rectangle, 
-                   parentShape: { 
-                       rect: parentRect, 
-                       orientation: dataPoint.value >= 0 ? NewRectOrientationGMO.VerticalBottomBased : NewRectOrientationGMO.VerticalTopBased, 
-                       validPositions: ColumnChartGMO.stackedValidLabelPositions, 
-                   }, 
-                   identity: undefined, 
-                   fontSize: labelSettings.fontSize || 12, 
-               }); 
+               labelDataPoints.push(this.buildLabelDataPoint(dataPoint, labelSettings, shapeLayout)); 
            } 
        } 
  
        return labelDataPoints; 
+   } 
+
+   private buildLabelDataPoint(dataPoint: any, labelSettings: any, shapeLayout: any): LabelDataPointGMO { 
+       // Calculate parent rectangle 
+       let parentRect: IRect = { 
+           left: shapeLayout.x(dataPoint), 
+           top: shapeLayout.y(dataPoint), 
+           width: shapeLayout.width(dataPoint), 
+           height: shapeLayout.height(dataPoint), 
+       }; 
+
+       let text = dataPoint.value.toString(); 
+
+       // Calculate text size
+       let properties: TextProperties = {
+           text: text,
+           fontFamily: (labelSettings as any).fontFamily || NewDataLabelUtils.LabelTextProperties.fontFamily,
+           fontSize: PixelConverter.fromPoint(labelSettings.fontSize || 12),
+           fontWeight: (labelSettings as any).fontBold ? 'bold' : NewDataLabelUtils.LabelTextProperties.fontWeight,
+       };
+       let textWidth = TextMeasurementService.measureSvgTextWidth(properties);
+       let textHeight = TextMeasurementService.estimateSvgTextHeight(properties, true /* tightFitForNumeric */);
+
+       return { 
+           isPreferred: true, 
+           text: text, 
+           textSize: { 
+               width: textWidth, 
+               height: textHeight, 
+           }, 
+           outsideFill: ColumnChartGMO.getLabelFill(labelSettings.labelColor, false, this.isComboChart), 
+           insideFill: ColumnChartGMO.getLabelFill(labelSettings.labelColor, true, this.isComboChart), 
+           parentType: LabelDataPointParentTypeGMO.Rectangle, 
+           parentShape: { 
+               rect: parentRect, 
+               orientation: dataPoint.value >= 0 ? NewRectOrientationGMO.VerticalBottomBased : NewRectOrientationGMO.VerticalTopBased, 
+               validPositions: ColumnChartGMO.stackedValidLabelPositions, 
+           }, 
+           identity: undefined, 
+           fontSize: labelSettings.fontSize || 12, 
+       }; 
    } 
 } 
  
@@ -2481,6 +2496,12 @@ export interface IVisualStyle {
 /** 
 * Renders a stacked and clustered column chart. 
 */ 
+interface PivotedCategoryInfo { 
+   categories?: any[]; 
+   categoryFormatter?: IValueFormatter; 
+   categoryIdentities?: DataViewScopeIdentity[]; 
+   categoryObjects?: DataViewObjects[]; 
+} 
 export class Visual implements IVisual { 
    private readonly root: Selection<any>; 
    private updateCount: number = 0; 
@@ -2718,28 +2739,90 @@ export class Visual implements IVisual {
            (rowLevels[1]?.sources?.[0]) || null;
        const rootChildren: any[] = (matrix?.rows?.root?.children) || [];
        const colChildren: any[] = (matrix?.columns?.root?.children) || [];
- 
+
        // role name -> value-source index (first column carrying that role)
+       const roleIndex = this.mtcBuildRoleIndex(valueSources, M);
+
+       // Flatten the column hierarchy so each series/measure combination has a stable position.
+       const flat = this.mtcFlattenColumns(colChildren, M);
+       const seriesLeafPos = flat.seriesLeafPos;
+       const subtotalLeafByMeasure = flat.subtotalLeafByMeasure;
+       const hasSubtotalColumn = flat.hasSubtotalColumn;
+       const seriesList = flat.seriesList;
+       const seriesPos = flat.seriesPos;
+       const useColumns: boolean = flat.leafPos > 0;
+
+       // Nested-rows fallback: series are the row nodes' children.
+       if (!useColumns) {
+           this.mtcCollectNestedSeries(rootChildren, seriesList, seriesPos);
+       }
+       const hasSeriesLevel: boolean = seriesList.length > 0;
+       const S: number = Math.max(1, seriesList.length);
+
+       // (1) categories (level-0 row nodes)
+       const catNames: any[] = [];
+       const catIdentities: any[] = [];
+       const catObjects: any[] = [];
+       for (const cn of rootChildren) {
+           catNames.push(cn.value === undefined ? null : cn.value);
+           catIdentities.push(cn.identity);
+           catObjects.push(cn.objects);
+       }
+       const N: number = catNames.length;
+       const categoryColumn: any = { source: categorySource, values: catNames, identity: catIdentities };
+       if (catObjects.some((o) => !!o)) { categoryColumn.objects = catObjects; }
+
+       // (2b) nested fallback: per-category lookup seriesKey -> series node
+       const seriesNodeByCat: { [k: string]: any }[] = useColumns ? [] : this.mtcBuildSeriesNodeByCat(rootChildren, N);
+
+       // (3) grouped value columns, series-major (M measure columns per series)
+       const valueColumns = this.mtcBuildValueColumns({
+           seriesList, N, M, useColumns, seriesLeafPos, rootChildren, seriesNodeByCat, hasSeriesLevel, S, seriesSource, valueSources
+       });
+
+       // Keep category-grain totals for extra measure roles.
+       const grain = this.mtcBuildGrain({ roleIndex, N, M, useColumns, rootChildren, subtotalLeafByMeasure, valueSources });
+
+       // (5) metadata.columns so the downstream role scan still finds Category/Series/Y/...
+       const columns: any[] = [];
+       if (categorySource) { columns.push(categorySource); }
+       if (seriesSource) { columns.push(seriesSource); }
+       for (let m = 0; m < M; m++) { columns.push(valueSources[m]); }
+
+       const out: any = {
+           metadata: { columns, objects: dv.metadata ? dv.metadata.objects : null },
+           categorical: { categories: [categoryColumn], values: valueColumns },
+           matrix,
+       };
+       out._categoryGrainTotals = grain;
+       out.categorical._categoryGrainTotals = grain;
+       (out as any)._diag = this.mtcBuildDiag({ useColumns, N, seriesList, M, hasSubtotalColumn, valueSources, grain });
+       return out;
+   }
+
+   // read measure m from a matrix node's value bag (nested shape: keyed by measure idx)
+   private static matrixNodeVal(node: any, m: number): any {
+       if (!node?.values) { return null; }
+       const cell: any = node.values[m];
+       return cell?.value !== undefined ? cell.value : null;
+   }
+   // read a row node's value at a flattened column-leaf position (rows/cols shape)
+   private static matrixNodeAt(node: any, leafPos: number): any {
+       if (!node?.values || leafPos == null) { return null; }
+       const cell: any = node.values[leafPos];
+       return cell?.value !== undefined ? cell.value : null;
+   }
+
+   private mtcBuildRoleIndex(valueSources: any[], M: number): { [role: string]: number } {
        const roleIndex: { [role: string]: number } = {};
        for (let m = 0; m < M; m++) {
            const roles: any = valueSources[m]?.roles ? valueSources[m].roles : {};
            for (const r in roles) { if (roles[r] && roleIndex[r] === undefined) { roleIndex[r] = m; } }
        }
+       return roleIndex;
+   }
 
-       // read measure m from a matrix node's value bag (nested shape: keyed by measure idx)
-       const nodeVal = (node: any, m: number): any => {
-           if (!node?.values) { return null; }
-           const cell: any = node.values[m];
-           return cell?.value !== undefined ? cell.value : null;
-       };
-       // read a row node's value at a flattened column-leaf position (rows/cols shape)
-       const nodeAt = (node: any, leafPos: number): any => {
-           if (!node?.values || leafPos == null) { return null; }
-           const cell: any = node.values[leafPos];
-           return cell?.value !== undefined ? cell.value : null;
-       };
- 
-       // Flatten the column hierarchy so each series/measure combination has a stable position.
+   private mtcFlattenColumns(colChildren: any[], M: number): any {
        const seriesLeafPos: { [key: string]: { [m: number]: number } } = {};
        const subtotalLeafByMeasure: { [m: number]: number } = {};
        let hasSubtotalColumn = false;
@@ -2771,48 +2854,34 @@ export class Visual implements IVisual {
                for (let m = 0; m < M; m++) { emit(m); }
            }
        }
-       const useColumns: boolean = leafPos > 0;
- 
-       // Nested-rows fallback: series are the row nodes' children.
-       if (!useColumns) {
-           for (const cn of rootChildren) {
-               for (const sn of (cn.children || [])) {
-                   if (sn?.isSubtotal) { continue; }
-                   const key = String(sn.value);
-                   if (seriesPos[key] === undefined) {
-                       seriesPos[key] = seriesList.length;
-                       seriesList.push({ key, name: sn.value, identity: sn.identity, objects: sn.objects });
-                   }
+       return { seriesLeafPos, subtotalLeafByMeasure, hasSubtotalColumn, seriesList, seriesPos, leafPos };
+   }
+
+   private mtcCollectNestedSeries(rootChildren: any[], seriesList: any[], seriesPos: any): void {
+       for (const cn of rootChildren) {
+           for (const sn of (cn.children || [])) {
+               if (sn?.isSubtotal) { continue; }
+               const key = String(sn.value);
+               if (seriesPos[key] === undefined) {
+                   seriesPos[key] = seriesList.length;
+                   seriesList.push({ key, name: sn.value, identity: sn.identity, objects: sn.objects });
                }
            }
        }
-       const hasSeriesLevel: boolean = seriesList.length > 0;
-       const S: number = Math.max(1, seriesList.length);
- 
-       // (1) categories (level-0 row nodes)
-       const catNames: any[] = [];
-       const catIdentities: any[] = [];
-       const catObjects: any[] = [];
-       for (const cn of rootChildren) {
-           catNames.push(cn.value === undefined ? null : cn.value);
-           catIdentities.push(cn.identity);
-           catObjects.push(cn.objects);
-       }
-       const N: number = catNames.length;
-       const categoryColumn: any = { source: categorySource, values: catNames, identity: catIdentities };
-       if (catObjects.some((o) => !!o)) { categoryColumn.objects = catObjects; }
- 
-       // (2b) nested fallback: per-category lookup seriesKey -> series node
+   }
+
+   private mtcBuildSeriesNodeByCat(rootChildren: any[], N: number): { [k: string]: any }[] {
        const seriesNodeByCat: { [k: string]: any }[] = [];
-       if (!useColumns) {
-           for (let ci = 0; ci < N; ci++) {
-               const map: { [k: string]: any } = {};
-               for (const sn of (rootChildren[ci].children || [])) { if (sn?.isSubtotal) { continue; } map[String(sn.value)] = sn; }
-               seriesNodeByCat.push(map);
-           }
+       for (let ci = 0; ci < N; ci++) {
+           const map: { [k: string]: any } = {};
+           for (const sn of (rootChildren[ci].children || [])) { if (sn?.isSubtotal) { continue; } map[String(sn.value)] = sn; }
+           seriesNodeByCat.push(map);
        }
- 
-       // (3) grouped value columns, series-major (M measure columns per series)
+       return seriesNodeByCat;
+   }
+
+   private mtcBuildValueColumns(p: any): any {
+       const { seriesList, N, M, rootChildren, hasSeriesLevel, S, seriesSource, valueSources } = p;
        const valueColumns: any = [];
        const makeMeasureSource = (base: any, seriesName: any): any => {
            const src: any = {};
@@ -2823,16 +2892,7 @@ export class Visual implements IVisual {
        for (const series of seriesList) {
            const seriesName: any = series.name;
            for (let m = 0; m < M; m++) {
-               const vals: any[] = new Array(N).fill(null);
-               for (let ci = 0; ci < N; ci++) {
-                   if (useColumns) {
-                       const lp = seriesLeafPos[series.key];
-                       vals[ci] = lp ? nodeAt(rootChildren[ci], lp[m]) : null;
-                   } else {
-                       vals[ci] = nodeVal(seriesNodeByCat[ci][series.key], m);
-                   }
-               }
-               const col: any = { source: makeMeasureSource(valueSources[m], seriesName), values: vals };
+               const col: any = { source: makeMeasureSource(valueSources[m], seriesName), values: this.mtcSeriesMeasureValues(p, series.key, m) };
                col.identity = series.identity;
                valueColumns.push(col);
            }
@@ -2841,7 +2901,7 @@ export class Visual implements IVisual {
        if (seriesList.length === 0) {
            for (let m = 0; m < M; m++) {
                const vals: any[] = new Array(N).fill(null);
-               for (let ci = 0; ci < N; ci++) { vals[ci] = nodeVal(rootChildren[ci], m); }
+               for (let ci = 0; ci < N; ci++) { vals[ci] = Visual.matrixNodeVal(rootChildren[ci], m); }
                valueColumns.push({ source: makeMeasureSource(valueSources[m], undefined), values: vals });
            }
        }
@@ -2855,57 +2915,73 @@ export class Visual implements IVisual {
            }
            return groups;
        };
- 
-       // Keep category-grain totals for extra measure roles.
-       const subtotalNodeForCat = (ci: number): any => {
-           const cn: any = rootChildren[ci];
-           if (cn?.values) { return cn; }
-           for (const sn of ((cn?.children) || [])) { if (sn?.isSubtotal) { return sn; } }
-           return null;
-       };
-       const readGrainForMeasure = (m: number): any[] => {
-           const arr: any[] = new Array(N).fill(null);
-           for (let ci = 0; ci < N; ci++) {
-               arr[ci] = useColumns
-                   ? nodeAt(rootChildren[ci], subtotalLeafByMeasure[m])
-                   : nodeVal(subtotalNodeForCat(ci), m);
+       return valueColumns;
+   }
+
+   // Values array (one per category) for a given series/measure, in either matrix shape.
+   private mtcSeriesMeasureValues(p: any, seriesKey: string, m: number): any[] {
+       const { N, useColumns, seriesLeafPos, rootChildren, seriesNodeByCat } = p;
+       const vals: any[] = new Array(N).fill(null);
+       for (let ci = 0; ci < N; ci++) {
+           if (useColumns) {
+               const lp = seriesLeafPos[seriesKey];
+               vals[ci] = lp ? Visual.matrixNodeAt(rootChildren[ci], lp[m]) : null;
+           } else {
+               vals[ci] = Visual.matrixNodeVal(seriesNodeByCat[ci][seriesKey], m);
            }
-           return arr;
-       };
-       const anyNonNull = (arr: any[]): boolean => !!arr?.some((v) => v != null);
-       const qnameOf = (m: number): string =>
-           (valueSources[m] && (valueSources[m].queryName || valueSources[m].displayName)) || '';
+       }
+       return vals;
+   }
+
+   private mtcBuildGrain(p: any): { [role: string]: any[] } {
+       const { roleIndex } = p;
        const grain: { [role: string]: any[] } = {};
        for (const role in roleIndex) {
-           let m: number = roleIndex[role];
-           let arr: any[] = readGrainForMeasure(m);
-           // If a measure appears in two roles, fall back to the matching subtotal source.
-           if (!anyNonNull(arr)) {
-               const qn = qnameOf(m);
-               for (let m2 = 0; m2 < M; m2++) {
-                   if (m2 !== m && qn && qnameOf(m2) === qn) {
-                       const alt = readGrainForMeasure(m2);
-                       if (anyNonNull(alt)) { arr = alt; m = m2; break; }
-                   }
-               }
-           }
-           grain[role] = arr;
+           grain[role] = this.mtcResolveGrainArray(p, roleIndex[role]);
        }
- 
-       // (5) metadata.columns so the downstream role scan still finds Category/Series/Y/...
-       const columns: any[] = [];
-       if (categorySource) { columns.push(categorySource); }
-       if (seriesSource) { columns.push(seriesSource); }
-       for (let m = 0; m < M; m++) { columns.push(valueSources[m]); }
- 
-       const out: any = {
-           metadata: { columns, objects: dv.metadata ? dv.metadata.objects : null },
-           categorical: { categories: [categoryColumn], values: valueColumns },
-           matrix,
-       };
-       out._categoryGrainTotals = grain;
-       out.categorical._categoryGrainTotals = grain;
-       (out as any)._diag = {
+       return grain;
+   }
+
+   // Grain array for a measure; if empty, fall back to a same-queryName measure (role sharing).
+   private mtcResolveGrainArray(p: any, m: number): any[] {
+       const arr: any[] = this.mtcReadGrainForMeasure(p, m);
+       if (this.mtcAnyNonNull(arr)) { return arr; }
+       const qn = this.mtcQnameOf(p.valueSources, m);
+       for (let m2 = 0; m2 < p.M; m2++) {
+           if (m2 === m || !qn || this.mtcQnameOf(p.valueSources, m2) !== qn) { continue; }
+           const alt = this.mtcReadGrainForMeasure(p, m2);
+           if (this.mtcAnyNonNull(alt)) { return alt; }
+       }
+       return arr;
+   }
+
+   private mtcReadGrainForMeasure(p: any, m: number): any[] {
+       const { N, useColumns, rootChildren, subtotalLeafByMeasure } = p;
+       const arr: any[] = new Array(N).fill(null);
+       for (let ci = 0; ci < N; ci++) {
+           arr[ci] = useColumns
+               ? Visual.matrixNodeAt(rootChildren[ci], subtotalLeafByMeasure[m])
+               : Visual.matrixNodeVal(this.mtcSubtotalNodeForCat(rootChildren, ci), m);
+       }
+       return arr;
+   }
+
+   private mtcSubtotalNodeForCat(rootChildren: any[], ci: number): any {
+       const cn: any = rootChildren[ci];
+       if (cn?.values) { return cn; }
+       for (const sn of ((cn?.children) || [])) { if (sn?.isSubtotal) { return sn; } }
+       return null;
+   }
+
+   private mtcAnyNonNull(arr: any[]): boolean { return !!arr?.some((v) => v != null); }
+
+   private mtcQnameOf(valueSources: any[], m: number): string {
+       return (valueSources[m] && (valueSources[m].queryName || valueSources[m].displayName)) || '';
+   }
+
+   private mtcBuildDiag(p: any): any {
+       const { useColumns, N, seriesList, M, hasSubtotalColumn, valueSources, grain } = p;
+       return {
            shape: useColumns ? 'rows/cols' : 'nested',
            N, S: seriesList.length, M,
            hasSubtotalColumn,
@@ -2917,7 +2993,6 @@ export class Visual implements IVisual {
            grainSecondary: grain['secondaryMeasure'] || null,
            grainSixth: grain['sixthMeasure'] || null,
        };
-       return out;
    }
    private showNoDataMessage(): void {
        this.updateCount = 0;
@@ -2959,175 +3034,23 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        this.isSameAxis = false;
        let dataViews = options.dataViews;
        this.viewport = (options.viewport);
-       let axisIterator = 0, legendIterator = 0;
-       if (!dataViews || 0 === dataViews.length) {
-           this.updateCount = 0;
-           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
-           this.root.select('.legend').style({ 'display': 'none' });
-           this.svg.style({ 'display': 'none' });
-           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
-           return;
-       }
-       else if (dataViews.length !== 0 && dataViews[0].metadata.columns.length === 0) {
-           this.showNoDataMessage();
-           return;
-       }
-       else if (!dataViews[0].categorical?.categories
-           || dataViews[0].categorical.categories.length === 0
-           || !dataViews[0].categorical.categories[0]) {
-           // A 100% stacked chart needs a Category. With only a measure bound (e.g.
-           // Primary added before Category) downstream code would throw, so show a
-           // recoverable prompt; the next update that includes a Category clears it.
-           this.updateCount = 0;
-           this.root.select('.errorMessage').text('Please select Category data');
-           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
-           this.root.select('.legend').style({ 'display': 'none' });
-           this.svg.style({ 'display': 'none' });
-           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
-           return;
-       }
-       else if (dataViews[0].categorical.categories?.[0].values.length == 0 && dataViews[0].categorical.values?.[0].values.length == 0) {
-           this.showNoDataMessage();
+       let legendIterator = 0;
+       if (this.updateValidateInput(dataViews)) {
            return;
        }
  
        let axisName;
        let legendName;
        let metadataarray=dataViews[0].metadata.columns;
-       if (metadataarray) {
-           for (const column of metadataarray) {
-               if (column.roles?.hasOwnProperty('Y')) {
-                   this.isPrimaryMeasure = true;
-               }
-               if (column.roles?.hasOwnProperty('Category') && !axisIterator) {
-                   this.isAxistype = true;
-                   axisName = column.displayName;
-                   axisIterator++;
-
-               }
-               if (column.roles?.hasOwnProperty('Series') && !legendIterator) {
-                   legendName = column.displayName;
-                   legendIterator++;
-               }
-           }
-       }
+       const roleScan = this.updateScanRoles(metadataarray);
+       axisName = roleScan.axisName;
+       legendName = roleScan.legendName;
+       legendIterator = roleScan.legendIterator;
        let resize: boolean = false;
        if (this.dataView === options.dataViews[0]) {
            resize = true;
        }
-       this.dataView = options.dataViews[0];
-       // Normalize grouped API 5.x measures into the legacy per-measure views.
-       {
-           const host0: any = options.dataViews[0];
-           const cat: any = host0?.categorical;
-           const allValues: any = cat?.values ? cat.values : null;
-           // Title-case display names once so labels stay consistent.
-           if (host0?.metadata && Array.isArray(host0.metadata.columns)) {
-               for (const col of host0.metadata.columns) {
-                   if (col && typeof col.displayName === 'string') {
-                       col.displayName = toTitleCase(col.displayName);
-                   }
-               }
-           }
-           // A field can carry multiple roles, so test each role independently.
-           const hasRole = (col: any, role: string): boolean => {
-               const r = col?.source?.roles;
-               if (!r) { return false; }
-               if (r[role]) { return true; }
-               const wanted = role.toLowerCase();
-               return Object.keys(r).some((k) => !!r[k] && k.toLowerCase() === wanted);
-           };
-           const normalized: DataView[] = [];
-           if (allValues && typeof allValues.grouped === 'function') {
-               const origGroups: any[] = allValues.grouped() || [];
-               const categories: any = cat.categories;
-               const catLen: number = categories?.[0]?.values
-                   ? categories[0].values.length : 0;
-               // Keep only series whose Primary measure (Y) has data, so a series
-               // like "0-N/A" (null Y, non-null secondary) is dropped from the legend
-               // as it was under API 1.x. Applied to both the flat values array and
-               // the grouped() override so series indices stay aligned with the legend.
-               const yColHasData = (c: any): boolean =>
-                   hasRole(c, 'Y') && !!c.values?.some((v: any) => v != null);
-               const keptGroups: any[] = origGroups.filter(
-                   (g: any) => (g.values || []).some((c: any) => yColHasData(c)));
- 
-               // Build a Y-only view for the chart.
-               const yOnlyValues: any = allValues.filter((c: any) => yColHasData(c));
-               yOnlyValues.source = allValues.source;
-               yOnlyValues.grouped = () => keptGroups.map((g: any) => {
-                   const ng: any = { ...g };
-                   ng.values = (g.values || []).filter((c: any) => hasRole(c, 'Y'));
-                   return ng;
-               });
-
-               const chartDataView: any = { ...host0 };
-               chartDataView.categorical = { ...cat, values: yOnlyValues };
-               normalized[0] = chartDataView;
-               this.dataView = chartDataView;
- 
-               // Synthesize extra-measure views for labels and tooltips.
-               const ROLE_TO_INDEX: { [role: string]: number } = {
-                   secondaryMeasure: 1,
-                   sampleSize: 2,
-                   tertiaryMeasure: 3,
-                   quaternaryMeasure: 4,
-                   fifthMeasure: 5,
-                   sixthMeasure: 6,
-               };
-               const mainHasExtraMeasures: boolean = !!(origGroups[0] &&
-                   (origGroups[0].values || []).some(
-                       (c: any) => Object.keys(ROLE_TO_INDEX).some((r) => hasRole(c, r))));
-               if (!mainHasExtraMeasures) {
-                   // Separate per-mapping delivery: copy as-is (dataViews[0] already
-                   // replaced by the Y-only chart view above).
-                   for (let i = 1; i < options.dataViews.length; i++) {
-                       normalized[i] = options.dataViews[i];
-                   }
-                              } else {
-                   // Prefer the model's per-category subtotal (correct for non-additive
-                   // measures such as DISTINCTCOUNT); fall back to summing the per-series
-                   // segments only when the matrix delivered no Category-node subtotal.
-                   const grainTotals: any = (host0?._categoryGrainTotals) || null;
-                   for (const role in ROLE_TO_INDEX) {
-                       let srcCol: any = null;
-                       for (const g of origGroups) {
-                           const found = (g.values || []).find((c: any) => hasRole(c, role));
-                           if (found) { srcCol = found; break; }
-                       }
-                       if (!srcCol) { continue; }
-                       const grain: any[] = grainTotals?.[role] ? grainTotals[role] : null;
-                       let outVals: any[];
-                       if (grain?.some((v: any) => v != null)) {
-                           outVals = grain.slice(0, catLen);
-                       } else {
-                           const sums: any[] = new Array(catLen).fill(null);
-                           for (const g of origGroups) {
-                               const col = (g.values || []).find((c: any) => hasRole(c, role));
-                               if (!col?.values) { continue; }
-                               for (let c = 0; c < catLen; c++) {
-                                   const v = col.values[c];
-                                   if (v != null) {
-                                       const n = typeof v === 'number' ? v : (Number.parseFloat(v) || 0);
-                                       sums[c] = (sums[c] ?? 0) + n;
-                                   }
-                               }
-                           }
-                           outVals = sums;
-                       }
-                       const synthValues: any = [{ source: srcCol.source, values: outVals }];
-                       synthValues.source = undefined;
-                       normalized[ROLE_TO_INDEX[role]] = <any>{
-                           metadata: { columns: [srcCol.source], objects: host0.metadata ? host0.metadata.objects : null },
-                           categorical: { categories: categories, values: synthValues },
-                       };
-                   }
-               }
-           } else {
-               normalized[0] = host0;
-           }
-           this.dataViews = normalized;
-       }
+       this.updateNormalizeDataViews(options);
        this.svg.selectAll('.columnChartMainGraphicsContext').remove();
        this.mainGraphicsContext = this.svg.append('g').classed('columnChartMainGraphicsContext', true);
        this.axisGraphicsContextScrollable.selectAll('.' + Visual.MainGraphicsContextClassName).remove();
@@ -3138,65 +3061,16 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        if (axisName === legendName)
            this.isSameAxis = true;
        
-       if (!this.isPrimaryMeasure) {
-           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
-           this.root.select('.legend').style({ 'display': 'none' });
-           this.svg.style({ 'display': 'none' });
-           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
+       if (this.updateApplyPrimaryMeasureVisibility()) {
            return;
        }
-       else {
-           this.root.select('.errorMessage').style({ 'display': 'none' });
-           this.root.select('.legend').style({ 'display': 'inherit' });
-           this.svg.style({ 'display': 'block' });
-           this.root.select('.Title_Div_Text').style({ 'display': 'inline-block' });
-       }
  
-       if (dataViews[0]?.categorical?.values?.source?.roles) {
-           if (dataViews[0].categorical.values.source.roles.hasOwnProperty('Series'))
-               this.isLegendValue = true;
-       }
+       this.updateDetectLegendValue(dataViews);
  
        if (dataViews.length > 0) { 
            this.populateObjectProperties(dataViews); 
        } 
-       let GMOColumnChartTitleOnOffStatus: boolean = false 
-           , titleText: string = "" 
-           , tooltiptext: string = "" 
-           , titlefontsize 
- 
-           , titlecolor: string 
-           , titlebgcolor: string; 
- 
-       if (this.getShowTitle(this.dataView)) { 
-           GMOColumnChartTitleOnOffStatus = true; 
-       } 
-       let title=this.getTitleText(this.dataView) 
-       let Ttext=this.getTooltipText(this.dataView) 
- 
-       if (title) { 
-           titleText = title; 
-       } 
- 
-       if (Ttext) { 
-           tooltiptext = Ttext; 
-       } 
-       this.applyViewportSettings(); 
-       titlefontsize = this.getTitleSize(this.dataView); 
-       if (!titlefontsize) titlefontsize = 12; 
-       let titlefontfamily=this.getTitleFontFamily(this.dataView);
- 
-let Tcolor=this.getTitleFill(this.dataView) 
-if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcolor(this.dataView) 
-    if (TBgcolor) { titlebgcolor = TBgcolor.solid.color; if ("none" === titlebgcolor) { titlebgcolor = "#ffffff"; } } this.root.select('.GMOColumnChartTitleDiv') .text(titleText); 
-
-      this.root.select('.GMOColumnChartTitleIcon').style({ 'display': 'none' }); 
- 
-       if ("" !== tooltiptext && (1 !== this.updateCount || "" !== titleText)) { 
-           this.root.select('.GMOColumnChartTitleIcon') 
-               .style({ 'display': 'inline-block' }) 
-               .attr('title', tooltiptext); 
-       } 
+       const titleCtx = this.updateResolveTitle();
  
        // Feed the reconstructed dataViews (Y-only at [0] + synthesized per-measure
        // views at [1..6]) so the stacking converter sees one Y measure per series.
@@ -3211,65 +3085,10 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
            return; 
        } 
  
-       if (dataViews.length > 0) { 
-           let dataViewMetadata = dataViews[0].metadata; 
-           let dataView = dataViews[0]; 
-           if (dataViewMetadata) { 
-               this.background = { 
-                   image: dataViewObjects.getValue<ImageValue>(dataView.metadata.objects, scatterChartProps.plotArea.image), 
-                   transparency: dataViewObjects.getValue(dataView.metadata.objects, scatterChartProps.plotArea.transparency, visualBackgroundHelper.getDefaultTransparency()), 
-               }; 
-           } 
-       } 
-       let xAxisCardProperties = CartesianHelper.getCategoryAxisProperties(options.dataViews[0].metadata); 
-       let valueAxisProperties = CartesianHelper.getValueAxisProperties(options.dataViews[0].metadata); 
-       this.visualOptions = { 
-           viewport: this.viewport, 
-           margin: this.margin, 
-           forcedXDomain: [xAxisCardProperties ? xAxisCardProperties['start'] : null, xAxisCardProperties ? xAxisCardProperties['end'] : null], 
-           forceMerge: valueAxisProperties?.['secShow'] === false, 
-           showCategoryAxisLabel: true, 
-           showValueAxisLabel: true, 
-           trimOrdinalDataOnOverflow: undefined, 
-           categoryAxisScaleType: xAxisCardProperties?.['axisScale'] != null ? <string>xAxisCardProperties['axisScale'] : axisScale.linear, 
-           valueAxisScaleType: valueAxisProperties?.['axisScale'] != null ? <string>valueAxisProperties['axisScale'] : axisScale.linear, 
-           categoryAxisDisplayUnits: xAxisCardProperties?.['labelDisplayUnits'] != null ? <number>xAxisCardProperties['labelDisplayUnits'] : 0, 
-           valueAxisDisplayUnits: valueAxisProperties?.['labelDisplayUnits'] != null ? <number>valueAxisProperties['labelDisplayUnits'] : 0, 
-           categoryAxisPrecision: xAxisCardProperties ? CartesianHelper.getPrecision(xAxisCardProperties['labelPrecision']) : null, 
-           valueAxisPrecision: valueAxisProperties ? CartesianHelper.getPrecision(valueAxisProperties['labelPrecision']) : null, 
-           playAxisControlLayout: undefined, 
-       }; 
+       this.updateSetBackground(dataViews);
+       this.updateBuildVisualOptions(options);
  
-       if (GMOColumnChartTitleOnOffStatus && (titleText || tooltiptext)) {
-           this.root.select('.Title_Div_Text')
-               .style({
-                   "display": "inline-block",
-                   "background-color": titlebgcolor,
-                   "font-size": PixelConverter.fromPointToPixel(titlefontsize) + 'px',
-                   "font-family": titlefontfamily,
-                   "color": titlecolor,
-                   "font-weight": this.getTitleFontFlag(this.dataView, 'fontBold') ? 'bold' : 'normal',
-                   "font-style": this.getTitleFontFlag(this.dataView, 'fontItalic') ? 'italic' : 'normal',
-                   "text-decoration": this.getTitleFontFlag(this.dataView, 'fontUnderline') ? 'underline' : 'none',
-               }); 
- 
-           this.root.select('.legend').style({ 'padding-top': 0 + 'px' }); 
-           let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar); 
-           if (isBarChart) { 
-               if (this.isSecondaryMeasure && legendIterator === 1) 
-                   this.svg.style({ 'position': 'absolute', 'padding-top': (10) + "px" }); 
-               else 
-                   this.svg.style({ 'position': 'absolute', 'padding-top': 0 + 'px' }); 
-           } 
-           else { 
-               this.svg.style({ 'position': 'absolute', 'padding-top': 0 + 'px' }); 
-           } 
-       } 
-       else { 
-           this.root.select('.Title_Div_Text').style({ 'display': 'none' }); 
-           this.root.select('.legend').style({ 'padding': '0px' }); 
-           this.svg.style({ 'position': 'absolute' }); 
-       } 
+       this.updateApplyTitleStyling(titleCtx, legendIterator);
  
        if (!(this.options.interactivity?.isInteractiveLegend)) { 
            this.renderLegend(); 
@@ -3278,6 +3097,332 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
        this.calculateAxesProperties(this.visualOptions); 
        this.render(true, resize); 
    } 
+
+   // Returns true when the Primary measure is missing (message shown).
+   private updateApplyPrimaryMeasureVisibility(): boolean {
+       if (!this.isPrimaryMeasure) {
+           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
+           this.root.select('.legend').style({ 'display': 'none' });
+           this.svg.style({ 'display': 'none' });
+           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
+           return true;
+       }
+       this.root.select('.errorMessage').style({ 'display': 'none' });
+       this.root.select('.legend').style({ 'display': 'inherit' });
+       this.svg.style({ 'display': 'block' });
+       this.root.select('.Title_Div_Text').style({ 'display': 'inline-block' });
+       return false;
+   }
+
+   private updateDetectLegendValue(dataViews: DataView[]): void {
+       if (dataViews[0]?.categorical?.values?.source?.roles) {
+           if (dataViews[0].categorical.values.source.roles.hasOwnProperty('Series'))
+               this.isLegendValue = true;
+       }
+   }
+
+   private updateResolveTitle(): { onOff: boolean; titleText: string; tooltiptext: string; titlefontsize: any; titlefontfamily: any; titlecolor: string; titlebgcolor: string } {
+       let GMOColumnChartTitleOnOffStatus: boolean = false
+           , titleText: string = ""
+           , tooltiptext: string = ""
+           , titlefontsize
+           , titlecolor: string
+           , titlebgcolor: string;
+       if (this.getShowTitle(this.dataView)) {
+           GMOColumnChartTitleOnOffStatus = true;
+       }
+       let title = this.getTitleText(this.dataView);
+       let Ttext = this.getTooltipText(this.dataView);
+       if (title) {
+           titleText = title;
+       }
+       if (Ttext) {
+           tooltiptext = Ttext;
+       }
+       this.applyViewportSettings();
+       titlefontsize = this.getTitleSize(this.dataView);
+       if (!titlefontsize) titlefontsize = 12;
+       let titlefontfamily = this.getTitleFontFamily(this.dataView);
+       let Tcolor = this.getTitleFill(this.dataView);
+       if (Tcolor) { titlecolor = Tcolor.solid.color; }
+       let TBgcolor = this.getTitleBgcolor(this.dataView);
+       if (TBgcolor) { titlebgcolor = TBgcolor.solid.color; if ("none" === titlebgcolor) { titlebgcolor = "#ffffff"; } }
+       this.root.select('.GMOColumnChartTitleDiv').text(titleText);
+       this.root.select('.GMOColumnChartTitleIcon').style({ 'display': 'none' });
+       if ("" !== tooltiptext && (1 !== this.updateCount || "" !== titleText)) {
+           this.root.select('.GMOColumnChartTitleIcon')
+               .style({ 'display': 'inline-block' })
+               .attr('title', tooltiptext);
+       }
+       return { onOff: GMOColumnChartTitleOnOffStatus, titleText, tooltiptext, titlefontsize, titlefontfamily, titlecolor, titlebgcolor };
+   }
+
+   private updateSetBackground(dataViews: DataView[]): void {
+       if (dataViews.length > 0) {
+           let dataViewMetadata = dataViews[0].metadata;
+           let dataView = dataViews[0];
+           if (dataViewMetadata) {
+               this.background = {
+                   image: dataViewObjects.getValue<ImageValue>(dataView.metadata.objects, scatterChartProps.plotArea.image),
+                   transparency: dataViewObjects.getValue(dataView.metadata.objects, scatterChartProps.plotArea.transparency, visualBackgroundHelper.getDefaultTransparency()),
+               };
+           }
+       }
+   }
+
+   private updateBuildVisualOptions(options: VisualUpdateOptions): void {
+       let xAxisCardProperties = CartesianHelper.getCategoryAxisProperties(options.dataViews[0].metadata);
+       let valueAxisProperties = CartesianHelper.getValueAxisProperties(options.dataViews[0].metadata);
+       this.visualOptions = {
+           viewport: this.viewport,
+           margin: this.margin,
+           forcedXDomain: [xAxisCardProperties ? xAxisCardProperties['start'] : null, xAxisCardProperties ? xAxisCardProperties['end'] : null],
+           forceMerge: valueAxisProperties?.['secShow'] === false,
+           showCategoryAxisLabel: true,
+           showValueAxisLabel: true,
+           trimOrdinalDataOnOverflow: undefined,
+           categoryAxisScaleType: xAxisCardProperties?.['axisScale'] != null ? <string>xAxisCardProperties['axisScale'] : axisScale.linear,
+           valueAxisScaleType: valueAxisProperties?.['axisScale'] != null ? <string>valueAxisProperties['axisScale'] : axisScale.linear,
+           categoryAxisDisplayUnits: xAxisCardProperties?.['labelDisplayUnits'] != null ? <number>xAxisCardProperties['labelDisplayUnits'] : 0,
+           valueAxisDisplayUnits: valueAxisProperties?.['labelDisplayUnits'] != null ? <number>valueAxisProperties['labelDisplayUnits'] : 0,
+           categoryAxisPrecision: xAxisCardProperties ? CartesianHelper.getPrecision(xAxisCardProperties['labelPrecision']) : null,
+           valueAxisPrecision: valueAxisProperties ? CartesianHelper.getPrecision(valueAxisProperties['labelPrecision']) : null,
+           playAxisControlLayout: undefined,
+       };
+   }
+
+   private updateTitleFontStyles(): { fontWeight: string; fontStyle: string; textDecoration: string } {
+       return {
+           fontWeight: this.getTitleFontFlag(this.dataView, 'fontBold') ? 'bold' : 'normal',
+           fontStyle: this.getTitleFontFlag(this.dataView, 'fontItalic') ? 'italic' : 'normal',
+           textDecoration: this.getTitleFontFlag(this.dataView, 'fontUnderline') ? 'underline' : 'none',
+       };
+   }
+
+   private updateApplyTitleStyling(t: { onOff: boolean; titleText: string; tooltiptext: string; titlefontsize: any; titlefontfamily: any; titlecolor: string; titlebgcolor: string }, legendIterator: number): void {
+       if (t.onOff && (t.titleText || t.tooltiptext)) {
+           const fontStyles = this.updateTitleFontStyles();
+           this.root.select('.Title_Div_Text')
+               .style({
+                   "display": "inline-block",
+                   "background-color": t.titlebgcolor,
+                   "font-size": PixelConverter.fromPointToPixel(t.titlefontsize) + 'px',
+                   "font-family": t.titlefontfamily,
+                   "color": t.titlecolor,
+                   "font-weight": fontStyles.fontWeight,
+                   "font-style": fontStyles.fontStyle,
+                   "text-decoration": fontStyles.textDecoration,
+               });
+           this.root.select('.legend').style({ 'padding-top': 0 + 'px' });
+           let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar);
+           if (isBarChart) {
+               if (this.isSecondaryMeasure && legendIterator === 1)
+                   this.svg.style({ 'position': 'absolute', 'padding-top': (10) + "px" });
+               else
+                   this.svg.style({ 'position': 'absolute', 'padding-top': 0 + 'px' });
+           }
+           else {
+               this.svg.style({ 'position': 'absolute', 'padding-top': 0 + 'px' });
+           }
+       }
+       else {
+           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
+           this.root.select('.legend').style({ 'padding': '0px' });
+           this.svg.style({ 'position': 'absolute' });
+       }
+   }
+
+   // Returns true when input is invalid and a recoverable message was shown.
+   private updateValidateInput(dataViews: DataView[]): boolean {
+       if (!dataViews || 0 === dataViews.length) {
+           this.updateCount = 0;
+           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
+           this.root.select('.legend').style({ 'display': 'none' });
+           this.svg.style({ 'display': 'none' });
+           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
+           return true;
+       }
+       else if (dataViews.length !== 0 && dataViews[0].metadata.columns.length === 0) {
+           this.showNoDataMessage();
+           return true;
+       }
+       else if (!dataViews[0].categorical?.categories
+           || dataViews[0].categorical.categories.length === 0
+           || !dataViews[0].categorical.categories[0]) {
+           // A 100% stacked chart needs a Category. With only a measure bound (e.g.
+           // Primary added before Category) downstream code would throw, so show a
+           // recoverable prompt; the next update that includes a Category clears it.
+           this.updateCount = 0;
+           this.root.select('.errorMessage').text('Please select Category data');
+           this.root.select('.errorMessage').style({ 'display': 'block', 'top': this.viewport.height / 2 + 'px' });
+           this.root.select('.legend').style({ 'display': 'none' });
+           this.svg.style({ 'display': 'none' });
+           this.root.select('.Title_Div_Text').style({ 'display': 'none' });
+           return true;
+       }
+       else if (dataViews[0].categorical.categories?.[0].values.length == 0 && dataViews[0].categorical.values?.[0].values.length == 0) {
+           this.showNoDataMessage();
+           return true;
+       }
+       return false;
+   }
+
+   private updateScanRoles(metadataarray: any): { axisName: any; legendName: any; axisIterator: number; legendIterator: number } {
+       let axisName;
+       let legendName;
+       let axisIterator = 0;
+       let legendIterator = 0;
+       if (metadataarray) {
+           for (const column of metadataarray) {
+               if (column.roles?.hasOwnProperty('Y')) {
+                   this.isPrimaryMeasure = true;
+               }
+               if (column.roles?.hasOwnProperty('Category') && !axisIterator) {
+                   this.isAxistype = true;
+                   axisName = column.displayName;
+                   axisIterator++;
+               }
+               if (column.roles?.hasOwnProperty('Series') && !legendIterator) {
+                   legendName = column.displayName;
+                   legendIterator++;
+               }
+           }
+       }
+       return { axisName, legendName, axisIterator, legendIterator };
+   }
+
+   // Normalize grouped API 5.x measures into the legacy per-measure views.
+   private updateNormalizeDataViews(options: VisualUpdateOptions): void {
+       this.dataView = options.dataViews[0];
+       const host0: any = options.dataViews[0];
+       const cat: any = host0?.categorical;
+       const allValues: any = cat?.values ? cat.values : null;
+       this.unTitleCaseColumns(host0);
+       const normalized: DataView[] = [];
+       if (allValues && typeof allValues.grouped === 'function') {
+           this.unBuildNormalizedViews(options, host0, cat, allValues, normalized);
+       } else {
+           normalized[0] = host0;
+       }
+       this.dataViews = normalized;
+   }
+
+   // Title-case display names once so labels stay consistent.
+   private unTitleCaseColumns(host0: any): void {
+       if (host0?.metadata && Array.isArray(host0.metadata.columns)) {
+           for (const col of host0.metadata.columns) {
+               if (col && typeof col.displayName === 'string') {
+                   col.displayName = toTitleCase(col.displayName);
+               }
+           }
+       }
+   }
+
+   // A field can carry multiple roles, so test each role independently.
+   private unHasRole(col: any, role: string): boolean {
+       const r = col?.source?.roles;
+       if (!r) { return false; }
+       if (r[role]) { return true; }
+       const wanted = role.toLowerCase();
+       return Object.keys(r).some((k) => !!r[k] && k.toLowerCase() === wanted);
+   }
+
+   // Keep only series whose Primary measure (Y) has data.
+   private unYColHasData(c: any): boolean {
+       return this.unHasRole(c, 'Y') && !!c.values?.some((v: any) => v != null);
+   }
+
+   private unMainHasExtraMeasures(origGroups: any[], roleToIndex: { [role: string]: number }): boolean {
+       return !!(origGroups[0] &&
+           (origGroups[0].values || []).some(
+               (c: any) => Object.keys(roleToIndex).some((r) => this.unHasRole(c, r))));
+   }
+
+   private unBuildNormalizedViews(options: VisualUpdateOptions, host0: any, cat: any, allValues: any, normalized: DataView[]): void {
+       const origGroups: any[] = allValues.grouped() || [];
+       const categories: any = cat.categories;
+       const catLen: number = categories?.[0]?.values ? categories[0].values.length : 0;
+       const keptGroups: any[] = origGroups.filter(
+           (g: any) => (g.values || []).some((c: any) => this.unYColHasData(c)));
+       // Build a Y-only view for the chart.
+       const yOnlyValues: any = allValues.filter((c: any) => this.unYColHasData(c));
+       yOnlyValues.source = allValues.source;
+       yOnlyValues.grouped = () => keptGroups.map((g: any) => {
+           const ng: any = { ...g };
+           ng.values = (g.values || []).filter((c: any) => this.unHasRole(c, 'Y'));
+           return ng;
+       });
+       const chartDataView: any = { ...host0 };
+       chartDataView.categorical = { ...cat, values: yOnlyValues };
+       normalized[0] = chartDataView;
+       this.dataView = chartDataView;
+       // Synthesize extra-measure views for labels and tooltips.
+       const ROLE_TO_INDEX: { [role: string]: number } = {
+           secondaryMeasure: 1,
+           sampleSize: 2,
+           tertiaryMeasure: 3,
+           quaternaryMeasure: 4,
+           fifthMeasure: 5,
+           sixthMeasure: 6,
+       };
+       if (!this.unMainHasExtraMeasures(origGroups, ROLE_TO_INDEX)) {
+           // Separate per-mapping delivery: copy as-is.
+           for (let i = 1; i < options.dataViews.length; i++) {
+               normalized[i] = options.dataViews[i];
+           }
+       } else {
+           this.unSynthesizeMeasureViews(host0, origGroups, categories, catLen, ROLE_TO_INDEX, normalized);
+       }
+   }
+
+   private unFindSourceColumn(origGroups: any[], role: string): any {
+       for (const g of origGroups) {
+           const found = (g.values || []).find((c: any) => this.unHasRole(c, role));
+           if (found) { return found; }
+       }
+       return null;
+   }
+
+   private unSumRoleValues(origGroups: any[], role: string, catLen: number): any[] {
+       const sums: any[] = new Array(catLen).fill(null);
+       for (const g of origGroups) {
+           const col = (g.values || []).find((c: any) => this.unHasRole(c, role));
+           if (!col?.values) { continue; }
+           for (let c = 0; c < catLen; c++) {
+               const v = col.values[c];
+               if (v != null) {
+                   const n = typeof v === 'number' ? v : (Number.parseFloat(v) || 0);
+                   sums[c] = (sums[c] ?? 0) + n;
+               }
+           }
+       }
+       return sums;
+   }
+
+   // Prefer the model's per-category subtotal (correct for non-additive measures
+   // such as DISTINCTCOUNT); fall back to summing the per-series segments only when
+   // the matrix delivered no Category-node subtotal.
+   private unSynthesizeMeasureViews(host0: any, origGroups: any[], categories: any, catLen: number, roleToIndex: { [role: string]: number }, normalized: DataView[]): void {
+       const grainTotals: any = (host0?._categoryGrainTotals) || null;
+       for (const role in roleToIndex) {
+           const srcCol: any = this.unFindSourceColumn(origGroups, role);
+           if (!srcCol) { continue; }
+           const grain: any[] = grainTotals?.[role] ? grainTotals[role] : null;
+           let outVals: any[];
+           if (grain?.some((v: any) => v != null)) {
+               outVals = grain.slice(0, catLen);
+           } else {
+               outVals = this.unSumRoleValues(origGroups, role, catLen);
+           }
+           const synthValues: any = [{ source: srcCol.source, values: outVals }];
+           synthValues.source = undefined;
+           normalized[roleToIndex[role]] = <any>{
+               metadata: { columns: [srcCol.source], objects: host0.metadata ? host0.metadata.objects : null },
+               categorical: { categories: categories, values: synthValues },
+           };
+       }
+   }
+
    private shouldRenderAxis(axisProperties: IAxisProperties, propertyName: string = "show"): boolean { 
 
       if (!axisProperties) { 
@@ -3404,46 +3549,14 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
  
        this.layerLegendData = this.data.legendData;
        //** added if else for title*/
-       if (this.layerLegendData) {
-           if (!this.legendObjectProperties['showTitle']) {
-               legendData.title = "";
-           }
-           else {
-               legendData.title = <string>this.legendObjectProperties['titleText'] || this.layerLegendData.title;
-           }
-           if (this.legendObjectProperties['labelColor']) {
-               let labelcolor = this.legendObjectProperties['labelColor'];
-               let solid = labelcolor['solid'];
-               legendData.labelColor = solid['color'];
-           }
- 
-          legendData.fontSize = this.legendLabelFontSize;            if (this.layerLegendData.grouped) {
-               legendData.grouped = true;
-           }
-       }
-       let showPrimaryMeasure;
-       if (this.isPrimaryMeasure) {
-           showPrimaryMeasure = 'Value';
-       }
-       else {
-           showPrimaryMeasure = 'None';
-       }
-       if (this.layerLegendData) {
-           if (this.isPrimaryMeasure) {
-               legendData['primaryTitle'] = this.getLegendTitle('primaryTitle', showPrimaryMeasure);
-           }
+       this.configureLegendData(legendData);
+
+       let showPrimaryMeasure = this.isPrimaryMeasure ? 'Value' : 'None';
+       if (this.layerLegendData && this.isPrimaryMeasure) {
+           legendData['primaryTitle'] = this.getLegendTitle('primaryTitle', showPrimaryMeasure);
        }
  
-       if (legendProperties) {
-           let position = <string>legendProperties[legendProps.position];
-           if (position) {
-               legend.changeOrientation(LegendPosition[position]);
-           }
- 
-       }
-       else {
-           legend.changeOrientation(LegendPosition.Top);
-       }
+       this.applyLegendOrientation(legend, legendProperties);
         
        legend.drawLegendInternal(
             
@@ -3453,33 +3566,64 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
        legend['viewport'].height += customTitleHeight;
        Legend.positionChartArea(this.svg, legend);
    }
+
+   private configureLegendData(legendData): void {
+       if (!this.layerLegendData) { return; }
+       if (!this.legendObjectProperties['showTitle']) {
+           legendData.title = "";
+       }
+       else {
+           legendData.title = <string>this.legendObjectProperties['titleText'] || this.layerLegendData.title;
+       }
+       if (this.legendObjectProperties['labelColor']) {
+           let labelcolor = this.legendObjectProperties['labelColor'];
+           let solid = labelcolor['solid'];
+           legendData.labelColor = solid['color'];
+       }
+       legendData.fontSize = this.legendLabelFontSize;
+       if (this.layerLegendData.grouped) {
+           legendData.grouped = true;
+       }
+   }
+
+   private applyLegendOrientation(legend: IGMOLegend, legendProperties): void {
+       if (legendProperties) {
+           let position = <string>legendProperties[legendProps.position];
+           if (position) {
+               legend.changeOrientation(LegendPosition[position]);
+           }
+       }
+       else {
+           legend.changeOrientation(LegendPosition.Top);
+       }
+   }
  
    public getLegendTitle(name, showPrimaryMeasure): string {
        switch (name) {
            case 'title':
-               // If category exists, we render title using category source. If not, we render title
-               // using measure.
-               {
-                   let categories = this.dataView?.categorical?.categories;
-                   let dvCategorySourceName = categories?.length > 0 && categories[0].source ? categories[0].source.displayName : "";
-                   if (categories?.length > 0 && categories[0].values) { return dvCategorySourceName; }
-                   return dvCategorySourceName;
-               }
+               return this.getCategoryLegendTitle();
            case 'primaryTitle':
-               {
-                   let values = this.dataView?.categorical?.values;
-                   let dvValuesSourceName: string = '';
-                   if (!values || values.length === 0) { return dvValuesSourceName; }
-                   let source = values[0].source || (values[1]?.source);
-                   if (source && showPrimaryMeasure && showPrimaryMeasure !== 'None') {
-                       let roles = values[0].source?.roles;
-                       let fallbackIndex: number = values[1] ? 1 : 0;
-                       let index: number = roles?.hasOwnProperty('Y') ? 0 : fallbackIndex;
-                       dvValuesSourceName = values[index]?.source ? values[index].source.displayName : '';
-                   }
-                   return dvValuesSourceName;
-               }
+               return this.getPrimaryLegendTitle(showPrimaryMeasure);
        }
+   }
+
+   // If category exists, we render title using category source. If not, we render title using measure.
+   private getCategoryLegendTitle(): string {
+       let categories = this.dataView?.categorical?.categories;
+       return categories?.length > 0 && categories[0].source ? categories[0].source.displayName : "";
+   }
+
+   private getPrimaryLegendTitle(showPrimaryMeasure): string {
+       let values = this.dataView?.categorical?.values;
+       if (!values || values.length === 0) { return ''; }
+       let source = values[0].source || (values[1]?.source);
+       if (source && showPrimaryMeasure && showPrimaryMeasure !== 'None') {
+           let roles = values[0].source?.roles;
+           let fallbackIndex: number = values[1] ? 1 : 0;
+           let index: number = roles?.hasOwnProperty('Y') ? 0 : fallbackIndex;
+           return values[index]?.source ? values[index].source.displayName : '';
+       }
+       return '';
    }
 
    private getCategoryLayout(numCategoryValues: number, options: CalculateScaleAndDomainOptions): CategoryLayout { let availableWidth: number; let legendPosition = Number.parseFloat(this.root.select('.legend').attr('orientation')); 
@@ -3640,75 +3784,6 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
         
        const is100PctStacked = true; 
  
-       interface PivotedCategoryInfo { 
-           categories?: any[]; 
-           categoryFormatter?: IValueFormatter; 
-           categoryIdentities?: DataViewScopeIdentity[]; 
-           categoryObjects?: DataViewObjects[]; 
-       } 
-       function getPivotedCategories(dataView: DataViewCategorical, formatStringProp: DataViewObjectPropertyIdentifier): PivotedCategoryInfo { 
-           if (dataView.categories?.length > 0) { 
-               let category = dataView.categories[0]; 
-               let categoryValues = category.values; 
- 
-               for (let count = 0; count < categoryValues.length; count++) { 
-                   if (!categoryValues[count]) 
-                       categoryValues[count] = Number.parseInt("0"); 
-               } 
- 
-               return category.values.length > 0 
-                   ? { 
-                       categories: categoryValues, 
-                       categoryFormatter: valueFormatter.create({ 
-                           format: valueFormatter.getFormatString(category.source, formatStringProp), 
-                           value: categoryValues[0], 
-                           value2: categoryValues[categoryValues.length - 1], 
- 
-                       }), 
-                       categoryIdentities: category.identity, 
-                       categoryObjects: category.objects, 
-                   } 
-                   : { 
-                       categories: [], 
-                       categoryFormatter: { format: valueFormatter.format }, 
-                   }; 
-           } 
- 
-           // For cases where the category source is just a series role, we are pivoting the data on the role which means we 
-           // will have no categories. 
-           return defaultCategories(); 
-       } 
-       function defaultCategories(): PivotedCategoryInfo { 
-           return { 
-               categories: [null], 
-               categoryFormatter: { format: valueFormatter.format }, 
-           }; 
-       } 
-       function createAxesLabels(categoryAxisProperties: DataViewObject, 
-           valueAxisProperties: DataViewObject, 
-           category: DataViewMetadataColumn, 
-           values: DataViewMetadataColumn[]) { 
-           let xAxisLabel = null; 
-           let yAxisLabel = null; 
- 
-           if (categoryAxisProperties) { 
-               // Take the value only if it's there 
-               if (category?.displayName) { 
-                   xAxisLabel = category.displayName; 
-               } 
-           } 
- 
-           if (valueAxisProperties) { 
-               let valuesNames: string[] = []; 
- 
-               if (values) { 
-                   // Take the name from the values, and make it unique because there are sometimes duplications 
-                   valuesNames = values.map(v => v ? v.displayName : '').filter((value, index, self) => value !== '' && self.indexOf(value) === index); 
-                   yAxisLabel = valueFormatter.formatListAnd(valuesNames); 
-               } 
-           } 
-           return { xAxisLabel: xAxisLabel, yAxisLabel: yAxisLabel }; 
-       } 
        let xAxisCardProperties = CartesianHelper.getCategoryAxisProperties(dataViewAll[0].metadata); 
        let valueAxisProperties = CartesianHelper.getValueAxisProperties(dataViewAll[0].metadata); 
  
@@ -3717,7 +3792,7 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
  
        let converterStrategy = new ColumnChartConverterHelper(dataView); 
        let sampleFilterSettings: sampleFilterSettings = this.getSampleFilterSettings(this.dataViews[0]); 
-       let categoryInfo = getPivotedCategories(dataView, columnChartProps.general.formatString); 
+       let categoryInfo = this.convGetPivotedCategories(dataView, columnChartProps.general.formatString); 
        let DCategory=dataView.categories 
        let categories = categoryInfo.categories, 
            categoryFormatter: IValueFormatter = categoryInfo.categoryFormatter, 
@@ -3764,87 +3839,14 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
        let columnSeries: StackedChartGMOSeries[] = result.series; 
        this.removeFlags = []; 
        if (sampleFilterSettings.show) { 
-           let dataSeries = columnSeries.slice(0); 
-           let dataCategories = categories.slice(0); 
-           let aggregatedValues = []; 
-           let sampleSize; 
-           sampleSize = -9999; 
-           let dvaCategorical=dataViewAll[2]?.categorical 
-           if (dataViewAll[2] && dvaCategorical?.values) { 
-               let values= dvaCategorical.values[0].values; 
-               for (const value of values) { 
-                   if (value !== null) { 
-                       sampleSize = value; 
-                       break; 
-                   } 
-               } 
-               let dclength=dataCategories.length,dslength=dataSeries.length 
-               for (let k = 0; k < dclength; k++) { 
-                   let sum = 0; 
-                   for (let i = 0; i < dslength; i++) { 
-                       for (let j = 0; j < dclength; j++) { 
-                           if (dataSeries[i].data[j]) { 
-                               if (dataSeries[i].data[j].categoryValue == dataCategories[k]) { 
-                                   sum = sum + dataSeries[i].data[j].valueOriginal; 
-                                   break; 
-                               } 
-                           } 
-                           else { 
-                               break; 
-                           } 
-                       } 
-                   } 
-                   aggregatedValues.push(sum); 
-               } 
-               let newCategoryIndex = -1,avlength=aggregatedValues.length; 
-               for (let k = avlength - 1; k >= 0; k--) { 
-                   if (aggregatedValues[k] < sampleSize) { 
-                       this.removeFlags.push(k); 
-                       for (let i = 0; i < dslength; i++) { 
-                           for (let j = 0; j < dclength; j++) { 
-                               if (dataSeries[i].data[j]) { 
-                                   if (dataSeries[i].data[j].categoryValue == dataCategories[k]) { 
-                                       dataSeries[i].data.splice(j, 1); 
-                                       break; 
-                                   } 
-                               } 
-                               else { 
-                                   break; 
-                               } 
-                           } 
-                       } 
-                       aggregatedValues.splice(k, 1); 
-                       dataCategories.splice(k, 1); 
-                   } 
-               } 
- 
-               newCategoryIndex = -1; 
-               for (let k = 0; k < avlength; k++) { 
-                   newCategoryIndex++; 
-                   for (let i = 0; i < dslength; i++) { 
-                       for (let j = 0; j < dclength; j++) { 
-                           if (dataSeries[i].data[j]) { 
-                               if (dataSeries[i].data[j].categoryValue == dataCategories[k]) { 
-                                   dataSeries[i].data[j].categoryIndex = newCategoryIndex; 
-                                   break; 
-                               } 
-                           } 
-                           else { 
-                               break; 
-                           } 
-                       } 
-                   } 
-               } 
-               categories = dataCategories; 
- 
-           } 
+           categories = this.applySampleFilter(dataViewAll, columnSeries, categories); 
        } 
        let valuesMetadata: DataViewMetadataColumn[] = []; 
        for (let j = 0, jlen = legend.length; j < jlen; j++) { 
            valuesMetadata.push(seriesSources[j]); 
        } 
  
-       let labels = createAxesLabels(xAxisCardProperties, valueAxisProperties, categoryMetadata, valuesMetadata); 
+       let labels = this.convCreateAxesLabels(xAxisCardProperties, valueAxisProperties, categoryMetadata, valuesMetadata); 
        if (!EnumExtensions.hasFlag(chartType, flagColumn)) { 
  
            let temp = labels.xAxisLabel; 
@@ -3868,7 +3870,138 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
            showAllDataPoints: showAllDataPoints, 
        }; 
    } 
- 
+
+   private convGetPivotedCategories(dataView: DataViewCategorical, formatStringProp: DataViewObjectPropertyIdentifier): PivotedCategoryInfo { 
+       if (dataView.categories?.length > 0) { 
+           let category = dataView.categories[0]; 
+           let categoryValues = category.values; 
+
+           for (let count = 0; count < categoryValues.length; count++) { 
+               if (!categoryValues[count]) 
+                   categoryValues[count] = Number.parseInt("0"); 
+           } 
+
+           return category.values.length > 0 
+               ? { 
+                   categories: categoryValues, 
+                   categoryFormatter: valueFormatter.create({ 
+                       format: valueFormatter.getFormatString(category.source, formatStringProp), 
+                       value: categoryValues[0], 
+                       value2: categoryValues[categoryValues.length - 1], 
+
+                   }), 
+                   categoryIdentities: category.identity, 
+                   categoryObjects: category.objects, 
+               } 
+               : { 
+                   categories: [], 
+                   categoryFormatter: { format: valueFormatter.format }, 
+               }; 
+       } 
+
+       // For cases where the category source is just a series role, we are pivoting the data on the role which means we 
+       // will have no categories. 
+       return this.convDefaultCategories(); 
+   } 
+
+   private convDefaultCategories(): PivotedCategoryInfo { 
+       return { 
+           categories: [null], 
+           categoryFormatter: { format: valueFormatter.format }, 
+       }; 
+   } 
+
+   private convCreateAxesLabels(categoryAxisProperties: DataViewObject, 
+       valueAxisProperties: DataViewObject, 
+       category: DataViewMetadataColumn, 
+       values: DataViewMetadataColumn[]) { 
+       let xAxisLabel = null; 
+       let yAxisLabel = null; 
+
+       if (categoryAxisProperties && category?.displayName) { 
+           // Take the value only if it's there 
+           xAxisLabel = category.displayName; 
+       } 
+
+       if (valueAxisProperties && values) { 
+           // Take the name from the values, and make it unique because there are sometimes duplications 
+           let valuesNames: string[] = values.map(v => v ? v.displayName : '').filter((value, index, self) => value !== '' && self.indexOf(value) === index); 
+           yAxisLabel = valueFormatter.formatListAnd(valuesNames); 
+       } 
+       return { xAxisLabel: xAxisLabel, yAxisLabel: yAxisLabel }; 
+   } 
+
+   // Removes categories whose aggregate is below the sample threshold and reindexes the rest. 
+   private applySampleFilter(dataViewAll: DataView[], columnSeries: StackedChartGMOSeries[], categories: any[]): any[] { 
+       let dataSeries = columnSeries.slice(0); 
+       let dataCategories = categories.slice(0); 
+       let dvaCategorical = dataViewAll[2]?.categorical; 
+       if (!(dataViewAll[2] && dvaCategorical?.values)) { return categories; } 
+
+       let sampleSize = this.sfResolveSampleSize(dvaCategorical.values[0].values); 
+       let dclength = dataCategories.length, dslength = dataSeries.length; 
+       let aggregatedValues = this.sfComputeAggregates(dataSeries, dataCategories, dclength, dslength); 
+       let avlength = aggregatedValues.length; 
+       this.sfRemoveBelowSample(dataSeries, dataCategories, aggregatedValues, sampleSize, dclength, dslength); 
+       this.sfReindexCategories(dataSeries, dataCategories, avlength, dclength, dslength); 
+       return dataCategories; 
+   } 
+
+   private sfResolveSampleSize(values: any[]): any { 
+       let sampleSize = -9999; 
+       for (const value of values) { 
+           if (value !== null) { sampleSize = value; break; } 
+       } 
+       return sampleSize; 
+   } 
+
+   private sfComputeAggregates(dataSeries: any[], dataCategories: any[], dclength: number, dslength: number): number[] { 
+       let aggregatedValues: number[] = []; 
+       for (let k = 0; k < dclength; k++) { 
+           let sum = 0; 
+           for (let i = 0; i < dslength; i++) { 
+               let j = this.sfFindCategoryIndex(dataSeries[i].data, dclength, dataCategories[k]); 
+               if (j >= 0) { sum = sum + dataSeries[i].data[j].valueOriginal; } 
+           } 
+           aggregatedValues.push(sum); 
+       } 
+       return aggregatedValues; 
+   } 
+
+   // First index in a series' data whose categoryValue matches, scanning until a gap; -1 if none. 
+   private sfFindCategoryIndex(seriesData: any[], dclength: number, categoryValue: any): number { 
+       for (let j = 0; j < dclength; j++) { 
+           if (!seriesData[j]) { return -1; } 
+           if (seriesData[j].categoryValue == categoryValue) { return j; } 
+       } 
+       return -1; 
+   } 
+
+   private sfRemoveBelowSample(dataSeries: any[], dataCategories: any[], aggregatedValues: number[], sampleSize: any, dclength: number, dslength: number): void { 
+       let avlength = aggregatedValues.length; 
+       for (let k = avlength - 1; k >= 0; k--) { 
+           if (aggregatedValues[k] >= sampleSize) { continue; } 
+           this.removeFlags.push(k); 
+           for (let i = 0; i < dslength; i++) { 
+               let j = this.sfFindCategoryIndex(dataSeries[i].data, dclength, dataCategories[k]); 
+               if (j >= 0) { dataSeries[i].data.splice(j, 1); } 
+           } 
+           aggregatedValues.splice(k, 1); 
+           dataCategories.splice(k, 1); 
+       } 
+   } 
+
+   private sfReindexCategories(dataSeries: any[], dataCategories: any[], avlength: number, dclength: number, dslength: number): void { 
+       let newCategoryIndex = -1; 
+       for (let k = 0; k < avlength; k++) { 
+           newCategoryIndex++; 
+           for (let i = 0; i < dslength; i++) { 
+               let j = this.sfFindCategoryIndex(dataSeries[i].data, dclength, dataCategories[k]); 
+               if (j >= 0) { dataSeries[i].data[j].categoryIndex = newCategoryIndex; } 
+           } 
+       } 
+   } 
+
    private static canSupportOverflow(chartType: any, seriesCount: number): boolean { 
        return !EnumExtensions.hasFlag(chartType, flagStacked) || seriesCount === 1; 
    } 
@@ -4003,30 +4136,11 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
        let hasDynamicSeries = !!(dvc?.source); 
        let isMultiMeasure = !hasDynamicSeries && seriesCount > 1; 
  
-       let highlightsOverflow = false; // Overflow means the highlight larger than value or the signs being different 
        let hasHighlights = converterStrategy.hasHighlightValues(0); 
-       for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) { 
-            
-           let seriesValues = []; 
-           let seriesHighlightValues = []; 
-           for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) { 
-               let value = converterStrategy.getValueBySeriesAndCategory(seriesIndex, categoryIndex); 
-               seriesValues[categoryIndex] = value; 
-               if (hasHighlights) { 
-                   let highlightValue = converterStrategy.getHighlightBySeriesAndCategory(seriesIndex, categoryIndex); 
-                   seriesHighlightValues[categoryIndex] = highlightValue; 
-                   // There are two cases where we don't use overflow logic; if all are false, use overflow logic appropriate for the chart. 
-                   if (!((value >= 0 && highlightValue >= 0 && value >= highlightValue) || // Both positive; value greater than highlight 
-                       (value <= 0 && highlightValue <= 0 && value <= highlightValue))) { // Both negative; value less than highlight 
-                       highlightsOverflow = true; 
-                   } 
-               } 
-           } 
-           rawValues.push(seriesValues); 
-           if (hasHighlights) { 
-               rawHighlightValues.push(seriesHighlightValues); 
-           } 
-       } 
+       const rawResult = this.cdpBuildRawValues(seriesCount, categoryCount, converterStrategy, hasHighlights); 
+       rawValues = rawResult.rawValues; 
+       rawHighlightValues = rawResult.rawHighlightValues; 
+       let highlightsOverflow = rawResult.highlightsOverflow; 
        if (highlightsOverflow && !Visual.canSupportOverflow(chartType, seriesCount)) { 
            highlightsOverflow = false; 
            hasHighlights = false; 
@@ -4035,182 +4149,20 @@ if (Tcolor) { titlecolor = Tcolor.solid.color; } let TBgcolor=this.getTitleBgcol
        let dataPointObjects: DataViewObjects[] = categoryObjectsList; 
 
        for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) { 
-           let seriesDataPoints: StackedChartGMODataPoint[] = [], 
-               legendItem = legend[seriesIndex], 
-               seriesLabelSettings: VisualDataLabelsSettings; 
- 
-           if (!hasDynamicSeries) { 
-               let labelsSeriesGroup = grouped?.length > 0 && grouped[0].values ? grouped[0].values[seriesIndex] : null; 
-               let lsgsoruce = labelsSeriesGroup ? labelsSeriesGroup.source : null; 
-               let labelObjects = (labelsSeriesGroup && lsgsoruce?.objects) ? <DataLabelObject>lsgsoruce.objects['labels'] : null; 
-               if (labelObjects) { 
-                   seriesLabelSettings = Prototype.inherit(defaultLabelSettings); 
-                   dataLabelUtils.updateLabelSettingsFromLabelsObject(labelObjects, seriesLabelSettings); 
-               } 
-           } 
-           let tooltipInfo: VisualTooltipDataItem[] = this.createTooltipInfo(seriesIndex, seriesIndex); 
-           let color; 
- 
-let dvcvalues=this.dataView.categorical.values 
-if (dvcvalues?.[seriesIndex]) { let valueObj = dvcvalues[seriesIndex]; let vosObjects=valueObj.source.objects 
-    if (vosObjects?.["dataPoint"]) { let dataPointObj = vosObjects["dataPoint"]; color = dataPointObj["fill"]; legendItem.color = color.solid.color; } } columnSeries.push({ displayName: legendItem.label, key: 'series' + seriesIndex, index: seriesIndex, data: seriesDataPoints, identity: legendItem.identity['selector'], color: legendItem.color, labelSettings: seriesLabelSettings }); 
+           let seriesDataPoints: StackedChartGMODataPoint[] = []; 
+           let legendItem = legend[seriesIndex]; 
+           let seriesLabelSettings: VisualDataLabelsSettings = this.cdpResolveSeriesLabelSettings(hasDynamicSeries, grouped, seriesIndex, defaultLabelSettings); 
+           this.cdpApplySeriesColor(seriesIndex, legendItem); 
+           columnSeries.push({ displayName: legendItem.label, key: 'series' + seriesIndex, index: seriesIndex, data: seriesDataPoints, identity: legendItem.identity['selector'], color: legendItem.color, labelSettings: seriesLabelSettings }); 
 
           if (seriesCount > 1) { 
                dataPointObjects = seriesObjectsList[seriesIndex]; 
            } 
  
            let metadata = dataViewCat.values[seriesIndex].source; 
-           
+           const ctx = { seriesIndex, seriesCount, categories, isDateTime, isScalar, is100PctStacked, chartType, hasHighlights, highlightsOverflow, dataViewCat, grouped, converterStrategy, legendItem, dataPointObjects, columnSeries, defaultLabelSettings, metadata, baseValuesPos, baseValuesNeg, rawValues, rawHighlightValues, seriesDataPoints }; 
            for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) { 
-                
-               if (seriesIndex === 0) { 
-                   baseValuesPos.push(0); 
-                   baseValuesNeg.push(0); 
-               } 
- 
-               let value = Visual.normalizeNonFiniteNumber(rawValues[seriesIndex][categoryIndex]); 
-               if (value == null) { 
-                   // Optimization: Ignore null dataPoints from the fabricated category/series combination in the self cross-join. 
-                   // However, we must retain the first series because it is used to compute things like axis scales, and value lookups. 
-                   if (seriesIndex > 0) 
-                       continue; 
-               } 
- 
-              // let originalValue: number = value; 
-               let categoryValue = categories[categoryIndex]; 
- 
-               // ignore variant measures 
-               if (isDateTime && categoryValue != null && !(categoryValue instanceof Date)) 
-                   continue; 
- 
-               if (isDateTime && categoryValue) 
-                   categoryValue = categoryValue.getTime(); 
- 
-               if (isScalar && (categoryValue == null || Number.isNaN(categoryValue))) 
-                   continue; 
- 
-               let multipliers: ValueMultiplers; 
-               if (is100PctStacked) 
-                   multipliers = Visual.getStackedMultiplier(rawValues, categoryIndex); 
- 
-               let unadjustedValue = value, 
-                   isNegative = value < 0; 
- 
-               if (multipliers) { 
-                   if (isNegative) 
-                       value *= multipliers.neg; 
-                   else 
-                       value *= multipliers.pos; 
-               } 
- 
-               let valueAbsolute = Math.abs(value); 
-               let position: number; 
-               if (isNegative) { 
-                   position = baseValuesNeg[categoryIndex]; 
- 
-                   if (!Number.isNaN(valueAbsolute)) 
-                       baseValuesNeg[categoryIndex] -= valueAbsolute; 
-               } 
-               else { 
-                   if (!Number.isNaN(valueAbsolute)) 
-                       baseValuesPos[categoryIndex] += valueAbsolute; 
- 
-                   position = baseValuesPos[categoryIndex]; 
-               } 
- 
-let dvcCategories= dataViewCat.categories 
-
-let seriesGroup = grouped?.length > seriesIndex && grouped[seriesIndex].values ? grouped[seriesIndex].values[0] : null; let category = dvcCategories?.length > 0 ? dvcCategories[0] : null; let identity = SelectionIdBuilder.builder() .withCategory(category, categoryIndex) .withSeries(dataViewCat.values, seriesGroup) .withMeasure(converterStrategy.getMeasureNameByIndex(seriesIndex)) .createSelectionId(); 
-
-             // let rawCategoryValue = categories[categoryIndex]; 
-               let color = Visual.getDataPointColor(legendItem, categoryIndex, dataPointObjects); 
-               let series = columnSeries[seriesIndex]; 
-               let dataPointLabelSettings = (series.labelSettings) ? series.labelSettings : defaultLabelSettings; 
-               let labelColor = dataPointLabelSettings.labelColor; 
-               let lastValue = undefined; 
- 
-               if ((EnumExtensions.hasFlag(chartType, flagStacked))) { 
-                   lastValue = Visual.getStackedLabelColor(isNegative, seriesIndex, seriesCount, categoryIndex, rawValues); 
-                   labelColor = (lastValue || (seriesIndex === seriesCount - 1 && !isNegative)) ? labelColor : dataLabelUtils.defaultInsideLabelColor; 
-               } 
-               tooltipInfo = this.createTooltipInfo(seriesIndex, categoryIndex); 
-               let dataPoint: StackedChartGMODataPoint = { 
-                   categoryValue: categoryValue, 
-                   value: value, 
-                   position: position, 
-                   valueAbsolute: valueAbsolute, 
-                   valueOriginal: unadjustedValue, 
-                   seriesIndex: seriesIndex, 
-                   labelSettings: dataPointLabelSettings, 
-                   categoryIndex: categoryIndex, 
-                   color: color, 
-                   selected: false, 
-                   originalValue: value, 
-                   originalPosition: position, 
-                   originalValueAbsolute: valueAbsolute, 
-                   identity: identity, 
-                   key: identity.getKey(), 
-                   tooltipInfo: tooltipInfo, 
-                   labelFill: labelColor, 
-                   labelFormatString: metadata.format, 
-                   lastSeries: lastValue, 
-                   chartType: chartType 
-               }; 
-                
-               seriesDataPoints.push(dataPoint); 
-                
-               if (hasHighlights) { 
-                
-                   let valueHighlight = rawHighlightValues[seriesIndex][categoryIndex]; 
-                   let unadjustedValueHighlight = valueHighlight; 
- 
-                   valueHighlight ??= 0; 
-
-                   if (is100PctStacked) { 
-                       valueHighlight *= multipliers.pos; 
-                   } 
-                   let absoluteValueHighlight = Math.abs(valueHighlight); 
-                   let highlightPosition = position; 
- 
-                   if (valueHighlight > 0) { 
-                       highlightPosition -= valueAbsolute - absoluteValueHighlight; 
-                   } 
-                   else if (valueHighlight === 0 && value > 0) { 
-                       highlightPosition -= valueAbsolute; 
-                   } 
- 
-                   let highlightIdentity = SelectionId.createWithHighlight(identity); 
-                 //  let rawCategoryValue = categories[categoryIndex]; 
-                   //let highlightedValue: number = highlightedTooltip ? valueHighlight : undefined; 
- 
-                   let highlightDataPoint: StackedChartGMODataPoint = { 
-                       categoryValue: categoryValue, 
-                       value: valueHighlight, 
-                       position: highlightPosition, 
-                       valueAbsolute: absoluteValueHighlight, 
-                       valueOriginal: unadjustedValueHighlight, 
-                       seriesIndex: seriesIndex, 
-                       labelSettings: dataPointLabelSettings, 
-                       categoryIndex: categoryIndex, 
-                       color: color, 
-                       selected: false, 
-                       highlight: true, 
-                       originalValue: value, 
-                       originalPosition: position, 
-                       originalValueAbsolute: valueAbsolute, 
-                       drawThinner: highlightsOverflow, 
-                       identity: highlightIdentity, 
-                       key: highlightIdentity.getKey(), 
-                       tooltipInfo: tooltipInfo, 
-                       labelFormatString: metadata.format, 
-                       labelFill: labelColor, 
-                       lastSeries: lastValue, 
-                       chartType: chartType 
-                   }; 
- 
-                   seriesDataPoints.push(highlightDataPoint); 
-               } 
-                
+               this.cdpProcessCategory(ctx, categoryIndex); 
            } 
            globalallDataPoints = globalallDataPoints.concat(seriesDataPoints); 
             
@@ -4222,7 +4174,215 @@ let seriesGroup = grouped?.length > seriesIndex && grouped[seriesIndex].values ?
            isMultiMeasure: isMultiMeasure, 
        }; 
    } 
- 
+
+   private cdpBuildRawValues(seriesCount: number, categoryCount: number, converterStrategy: ColumnChartConverterHelper, hasHighlights: boolean): { rawValues: number[][]; rawHighlightValues: number[][]; highlightsOverflow: boolean } { 
+       let rawValues: number[][] = []; 
+       let rawHighlightValues: number[][] = []; 
+       let highlightsOverflow = false; 
+       for (let seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) { 
+           let seriesValues = []; 
+           let seriesHighlightValues = []; 
+           for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) { 
+               let value = converterStrategy.getValueBySeriesAndCategory(seriesIndex, categoryIndex); 
+               seriesValues[categoryIndex] = value; 
+               if (hasHighlights) { 
+                   let highlightValue = converterStrategy.getHighlightBySeriesAndCategory(seriesIndex, categoryIndex); 
+                   seriesHighlightValues[categoryIndex] = highlightValue; 
+                   if (Visual.cdpIsHighlightOverflow(value, highlightValue)) { 
+                       highlightsOverflow = true; 
+                   } 
+               } 
+           } 
+           rawValues.push(seriesValues); 
+           if (hasHighlights) { 
+               rawHighlightValues.push(seriesHighlightValues); 
+           } 
+       } 
+       return { rawValues, rawHighlightValues, highlightsOverflow }; 
+   } 
+
+   private static cdpIsHighlightOverflow(value: number, highlightValue: number): boolean { 
+       return !((value >= 0 && highlightValue >= 0 && value >= highlightValue) || 
+           (value <= 0 && highlightValue <= 0 && value <= highlightValue)); 
+   } 
+
+   private cdpResolveSeriesLabelSettings(hasDynamicSeries: boolean, grouped: any, seriesIndex: number, defaultLabelSettings: VisualDataLabelsSettings): VisualDataLabelsSettings { 
+       let seriesLabelSettings: VisualDataLabelsSettings; 
+       if (!hasDynamicSeries) { 
+           let labelsSeriesGroup = grouped?.length > 0 && grouped[0].values ? grouped[0].values[seriesIndex] : null; 
+           let lsgsoruce = labelsSeriesGroup ? labelsSeriesGroup.source : null; 
+           let labelObjects = (labelsSeriesGroup && lsgsoruce?.objects) ? <DataLabelObject>lsgsoruce.objects['labels'] : null; 
+           if (labelObjects) { 
+               seriesLabelSettings = Prototype.inherit(defaultLabelSettings); 
+               dataLabelUtils.updateLabelSettingsFromLabelsObject(labelObjects, seriesLabelSettings); 
+           } 
+       } 
+       return seriesLabelSettings; 
+   } 
+
+   private cdpApplySeriesColor(seriesIndex: number, legendItem: LegendDataPoint): void { 
+       let dvcvalues = this.dataView.categorical.values; 
+       if (dvcvalues?.[seriesIndex]) { 
+           let valueObj = dvcvalues[seriesIndex]; 
+           let vosObjects = valueObj.source.objects; 
+           if (vosObjects?.["dataPoint"]) { 
+               let dataPointObj = vosObjects["dataPoint"]; 
+               let color: any = dataPointObj["fill"]; 
+               legendItem.color = color.solid.color; 
+           } 
+       } 
+   } 
+
+   private cdpProcessCategory(ctx: any, categoryIndex: number): void { 
+       const seriesIndex = ctx.seriesIndex; 
+       if (seriesIndex === 0) { 
+           ctx.baseValuesPos.push(0); 
+           ctx.baseValuesNeg.push(0); 
+       } 
+       let value = Visual.normalizeNonFiniteNumber(ctx.rawValues[seriesIndex][categoryIndex]); 
+       if (value == null && seriesIndex > 0) { 
+           return; 
+       } 
+       let categoryValue = ctx.categories[categoryIndex]; 
+       if (ctx.isDateTime && categoryValue != null && !(categoryValue instanceof Date)) { 
+           return; 
+       } 
+       if (ctx.isDateTime && categoryValue) { 
+           categoryValue = categoryValue.getTime(); 
+       } 
+       if (ctx.isScalar && (categoryValue == null || Number.isNaN(categoryValue))) { 
+           return; 
+       } 
+       const comp = this.cdpComputeValuePosition(value, categoryIndex, ctx.is100PctStacked, ctx.rawValues, ctx.baseValuesPos, ctx.baseValuesNeg); 
+       const built = this.cdpBuildDataPoint(ctx, categoryIndex, categoryValue, comp); 
+       ctx.seriesDataPoints.push(built.dataPoint); 
+       if (ctx.hasHighlights) { 
+           ctx.seriesDataPoints.push(this.cdpBuildHighlightDataPoint(ctx, categoryIndex, categoryValue, comp, built)); 
+       } 
+   } 
+
+   private cdpComputeValuePosition(value: number, categoryIndex: number, is100PctStacked: boolean, rawValues: number[][], baseValuesPos: number[], baseValuesNeg: number[]): any { 
+       let multipliers: ValueMultiplers; 
+       if (is100PctStacked) { 
+           multipliers = Visual.getStackedMultiplier(rawValues, categoryIndex); 
+       } 
+       let unadjustedValue = value; 
+       let isNegative = value < 0; 
+       if (multipliers) { 
+           if (isNegative) { 
+               value *= multipliers.neg; 
+           } 
+           else { 
+               value *= multipliers.pos; 
+           } 
+       } 
+       let valueAbsolute = Math.abs(value); 
+       let position: number; 
+       if (isNegative) { 
+           position = baseValuesNeg[categoryIndex]; 
+           if (!Number.isNaN(valueAbsolute)) { 
+               baseValuesNeg[categoryIndex] -= valueAbsolute; 
+           } 
+       } 
+       else { 
+           if (!Number.isNaN(valueAbsolute)) { 
+               baseValuesPos[categoryIndex] += valueAbsolute; 
+           } 
+           position = baseValuesPos[categoryIndex]; 
+       } 
+       return { value, valueAbsolute, position, isNegative, unadjustedValue, multipliers }; 
+   } 
+
+   private cdpBuildDataPoint(ctx: any, categoryIndex: number, categoryValue: any, comp: any): any { 
+       const seriesIndex = ctx.seriesIndex; 
+       const dataViewCat = ctx.dataViewCat; 
+       let dvcCategories = dataViewCat.categories; 
+       let seriesGroup = ctx.grouped?.length > seriesIndex && ctx.grouped[seriesIndex].values ? ctx.grouped[seriesIndex].values[0] : null; 
+       let category = dvcCategories?.length > 0 ? dvcCategories[0] : null; 
+       let identity = SelectionIdBuilder.builder() 
+           .withCategory(category, categoryIndex) 
+           .withSeries(dataViewCat.values, seriesGroup) 
+           .withMeasure(ctx.converterStrategy.getMeasureNameByIndex(seriesIndex)) 
+           .createSelectionId(); 
+       let color = Visual.getDataPointColor(ctx.legendItem, categoryIndex, ctx.dataPointObjects); 
+       let series = ctx.columnSeries[seriesIndex]; 
+       let dataPointLabelSettings = (series.labelSettings) ? series.labelSettings : ctx.defaultLabelSettings; 
+       let labelColor = dataPointLabelSettings.labelColor; 
+       let lastValue = undefined; 
+       if ((EnumExtensions.hasFlag(ctx.chartType, flagStacked))) { 
+           lastValue = Visual.getStackedLabelColor(comp.isNegative, seriesIndex, ctx.seriesCount, categoryIndex, ctx.rawValues); 
+           labelColor = (lastValue || (seriesIndex === ctx.seriesCount - 1 && !comp.isNegative)) ? labelColor : dataLabelUtils.defaultInsideLabelColor; 
+       } 
+       let tooltipInfo = this.createTooltipInfo(seriesIndex, categoryIndex); 
+       let dataPoint: StackedChartGMODataPoint = { 
+           categoryValue: categoryValue, 
+           value: comp.value, 
+           position: comp.position, 
+           valueAbsolute: comp.valueAbsolute, 
+           valueOriginal: comp.unadjustedValue, 
+           seriesIndex: seriesIndex, 
+           labelSettings: dataPointLabelSettings, 
+           categoryIndex: categoryIndex, 
+           color: color, 
+           selected: false, 
+           originalValue: comp.value, 
+           originalPosition: comp.position, 
+           originalValueAbsolute: comp.valueAbsolute, 
+           identity: identity, 
+           key: identity.getKey(), 
+           tooltipInfo: tooltipInfo, 
+           labelFill: labelColor, 
+           labelFormatString: ctx.metadata.format, 
+           lastSeries: lastValue, 
+           chartType: ctx.chartType 
+       }; 
+       return { dataPoint, identity, color, dataPointLabelSettings, labelColor, lastValue, tooltipInfo }; 
+   } 
+
+   private cdpBuildHighlightDataPoint(ctx: any, categoryIndex: number, categoryValue: any, comp: any, built: any): StackedChartGMODataPoint { 
+       const seriesIndex = ctx.seriesIndex; 
+       let valueHighlight = ctx.rawHighlightValues[seriesIndex][categoryIndex]; 
+       let unadjustedValueHighlight = valueHighlight; 
+       valueHighlight ??= 0; 
+       if (ctx.is100PctStacked) { 
+           valueHighlight *= comp.multipliers.pos; 
+       } 
+       let absoluteValueHighlight = Math.abs(valueHighlight); 
+       let highlightPosition = comp.position; 
+       if (valueHighlight > 0) { 
+           highlightPosition -= comp.valueAbsolute - absoluteValueHighlight; 
+       } 
+       else if (valueHighlight === 0 && comp.value > 0) { 
+           highlightPosition -= comp.valueAbsolute; 
+       } 
+       let highlightIdentity = SelectionId.createWithHighlight(built.identity); 
+       let highlightDataPoint: StackedChartGMODataPoint = { 
+           categoryValue: categoryValue, 
+           value: valueHighlight, 
+           position: highlightPosition, 
+           valueAbsolute: absoluteValueHighlight, 
+           valueOriginal: unadjustedValueHighlight, 
+           seriesIndex: seriesIndex, 
+           labelSettings: built.dataPointLabelSettings, 
+           categoryIndex: categoryIndex, 
+           color: built.color, 
+           selected: false, 
+           highlight: true, 
+           originalValue: comp.value, 
+           originalPosition: comp.position, 
+           originalValueAbsolute: comp.valueAbsolute, 
+           drawThinner: ctx.highlightsOverflow, 
+           identity: highlightIdentity, 
+           key: highlightIdentity.getKey(), 
+           tooltipInfo: built.tooltipInfo, 
+           labelFormatString: ctx.metadata.format, 
+           labelFill: built.labelColor, 
+           lastSeries: built.lastValue, 
+           chartType: ctx.chartType 
+       }; 
+       return highlightDataPoint; 
+   } 
+
    private static getDataPointColor( 
  
        legendItem: LegendDataPoint, 
@@ -4438,22 +4598,18 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        }
        if (!dataView.metadata?.objects) { return labelSettings; }
        let objects = dataView.metadata.objects;
-       if (props.titleText) { labelSettings.titleText = dataViewObjects.getValue(objects, props.titleText, labelSettings.titleText); }
-       if (props.titleColor) { labelSettings.titleColor = dataViewObjects.getFillColor(objects, props.titleColor, labelSettings.titleColor); }
-       if (props.titleFontFamily) { labelSettings.titleFontFamily = dataViewObjects.getValue(objects, props.titleFontFamily, labelSettings.titleFontFamily); }
-       if (props.titleFontSize) { labelSettings.titleFontSize = dataViewObjects.getValue(objects, props.titleFontSize, labelSettings.titleFontSize); }
-       if (props.titleBold) { labelSettings.titleBold = dataViewObjects.getValue(objects, props.titleBold, labelSettings.titleBold); }
-       if (props.titleItalic) { labelSettings.titleItalic = dataViewObjects.getValue(objects, props.titleItalic, labelSettings.titleItalic); }
-       if (props.titleUnderline) { labelSettings.titleUnderline = dataViewObjects.getValue(objects, props.titleUnderline, labelSettings.titleUnderline); }
-       if (props.textPrecision) { labelSettings.textPrecision = dataViewObjects.getValue(objects, props.textPrecision, labelSettings.textPrecision); }
+       // Keys resolved through getValue (scalar/string/bool settings).
+       const valueKeys = ['titleText', 'titleFontFamily', 'titleFontSize', 'titleBold', 'titleItalic', 'titleUnderline',
+           'textPrecision', 'fontSize', 'fontFamily', 'fontBold', 'fontItalic', 'fontUnderline', 'displayUnits'];
+       // Keys resolved through getFillColor (color settings).
+       const fillKeys = ['titleColor', 'color'];
+       for (const key of valueKeys) {
+           if (props[key]) { labelSettings[key] = dataViewObjects.getValue(objects, props[key], labelSettings[key]); }
+       }
+       for (const key of fillKeys) {
+           if (props[key]) { labelSettings[key] = dataViewObjects.getFillColor(objects, props[key], labelSettings[key]); }
+       }
        labelSettings.textPrecision = Math.min(Math.max(labelSettings.textPrecision, 0), 20);
-       if (props.fontSize) { labelSettings.fontSize = dataViewObjects.getValue(objects, props.fontSize, labelSettings.fontSize); }
-       if (props.fontFamily) { labelSettings.fontFamily = dataViewObjects.getValue(objects, props.fontFamily, labelSettings.fontFamily); }
-       if (props.fontBold) { labelSettings.fontBold = dataViewObjects.getValue(objects, props.fontBold, labelSettings.fontBold); }
-       if (props.fontItalic) { labelSettings.fontItalic = dataViewObjects.getValue(objects, props.fontItalic, labelSettings.fontItalic); }
-       if (props.fontUnderline) { labelSettings.fontUnderline = dataViewObjects.getValue(objects, props.fontUnderline, labelSettings.fontUnderline); }
-       if (props.displayUnits) { labelSettings.displayUnits = dataViewObjects.getValue(objects, props.displayUnits, labelSettings.displayUnits); }
-       if (props.color) { labelSettings.color = dataViewObjects.getFillColor(objects, props.color, labelSettings.color); }
        return labelSettings;
    }
    private getTitleFontFamily(dataView: DataView): string {
@@ -4639,41 +4795,43 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
  
    /* This function returns the title text given for the title in the format window */ 
    private getTitleText(dataView: DataView): string { 
-       let returnTitleValues: string, returnTitleLegend: string, returnTitleDetails: string, returnTitle: string, tempTitle: string; 
-       returnTitleValues = ""; 
-       returnTitleLegend = ""; 
-       returnTitleDetails = ""; 
-       returnTitle = ""; 
-       tempTitle = ""; 
-       if (dataView?.metadata?.objects) { 
-           if (dataView.metadata.objects.hasOwnProperty('GMOColumnChartTitle')) { 
-               let titletext = dataView.metadata.objects['GMOColumnChartTitle']; 
-               if (titletext?.hasOwnProperty('titleText')) { 
-                   return <string>titletext['titleText']; 
+       let explicit = this.getExplicitTitleText(dataView); 
+       if (explicit !== null) { return explicit; } 
+ 
+       let returnTitleDetails = dataView?.categorical?.values?.source ? dataView.categorical.values.source.displayName : ""; 
+       let returnTitleValues = this.getTitleValuesName(dataView); 
+       let returnTitleLegend = dataView?.categorical?.categories ? dataView.categorical.categories[0].source.displayName : ""; 
+ 
+       return returnTitleValues + this.composeTitleSuffix(returnTitleValues, returnTitleLegend, returnTitleDetails); 
+   } 
+ 
+   // Explicit title override set in the format pane, or null when not configured. 
+   private getExplicitTitleText(dataView: DataView): string | null { 
+       let objects = dataView?.metadata?.objects; 
+       if (objects?.hasOwnProperty('GMOColumnChartTitle')) { 
+           let titletext = objects['GMOColumnChartTitle']; 
+           if (titletext?.hasOwnProperty('titleText')) { 
+               return <string>titletext['titleText']; 
+           } 
+       } 
+       return null; 
+   } 
+ 
+   // Display name of the first value column in the 'Y' role. 
+   private getTitleValuesName(dataView: DataView): string { 
+       let values = dataView?.categorical?.values; 
+       if (values) { 
+           for (const valueColumn of values) { 
+               if (valueColumn.source?.roles.hasOwnProperty('Y') && valueColumn.source.displayName) { 
+                   return valueColumn.source.displayName; 
                } 
            } 
        } 
+       return ""; 
+   } 
  
-       if (dataView?.categorical?.values?.source) { 
-           returnTitleDetails = dataView.categorical.values.source.displayName; 
-       } 
-       if (dataView?.categorical?.values) { 
-           for (const valueColumn of dataView.categorical.values) { 
-               if (valueColumn.source?.roles.hasOwnProperty('Y')) { 
-                   if (valueColumn.source.displayName) { 
-                       returnTitleValues = valueColumn.source.displayName; 
-                       break; 
-                   } 
-               } 
-           } 
-       } 
-       if (dataView?.categorical?.categories) { 
-           returnTitleLegend = dataView.categorical.categories[0].source.displayName; 
-       } 
- 
-       if ("" !== returnTitleValues) { 
-           tempTitle = " by "; 
-       } 
+   private composeTitleSuffix(returnTitleValues: string, returnTitleLegend: string, returnTitleDetails: string): string { 
+       let tempTitle = "" !== returnTitleValues ? " by " : ""; 
        if ("" !== returnTitleLegend && "" !== returnTitleDetails) { 
            tempTitle = tempTitle + returnTitleLegend + " and " + returnTitleDetails; 
        } 
@@ -4683,9 +4841,7 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        else { 
            tempTitle = tempTitle + returnTitleLegend + returnTitleDetails; 
        } 
- 
-       returnTitle = returnTitleValues + tempTitle; 
-       return <string>returnTitle; 
+       return tempTitle; 
    } 
    // This function returns the tool tip text given for the tooltip in the format window 
    private getTooltipText(dataView: DataView): string { 
@@ -4766,11 +4922,8 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
            customTitleHeight = 0; 
        } 
  
-       let legendHeight = Number.parseFloat(this.root.select('.legend').style('height')) - 20; 
        let legendWidth = Number.parseFloat(this.root.select('.legend').style('width')); 
-       if (Number.isNaN(legendHeight) || Number.isNaN(legendWidth) || 0 === legendWidth || !(0 === legendPosition || 5 === legendPosition || 1 === legendPosition || 6 === legendPosition) || !this.legendObjectProperties['show'] || !this.isLegendValue) { 
-           legendHeight = 0; 
-       } 
+       let legendHeight = this.resolveLegendHeight(legendPosition, legendWidth); 
        customTitleHeight = PixelConverter.fromPointToPixel(customTitleHeight); 
  
        legendHeight = PixelConverter.fromPointToPixel(legendHeight); 
@@ -4791,12 +4944,7 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
  
        if (data && !chartLayout.isScalar && !this.isScrollable && options.trimOrdinalDataOnOverflow) { 
            // trim data that doesn't fit on dashboard 
-           let catgSize = Math.min(origCatgSize, chartLayout.categoryCount); 
-           if (catgSize !== origCatgSize) { 
-               data = Prototype.inherit(data); 
-               data.series = ColumnChartGMO.sliceSeries(data.series, catgSize); 
-               data.categories = data.categories.slice(0, catgSize); 
-           } 
+           data = this.trimOverflowData(data, origCatgSize, chartLayout.categoryCount); 
        } 
        this.columnChart.setData(data); 
  
@@ -4805,22 +4953,7 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        /* preferredPlotArea would be same as currentViewport width when there is no scrollbar. 
         In that case we want to calculate the available plot area for the shapes by subtracting the margin from available viewport */ 
  
-       if ((preferredPlotArea.width === this.viewport.width) && this.legendObjectProperties && (this.legendObjectProperties['position'] === 'Left' || this.legendObjectProperties['position'] === 'LeftCenter' || this.legendObjectProperties['position'] === 'Right' || this.legendObjectProperties['position'] === 'RightCenter')) { 
-           if (preferredPlotArea.width > (margin.left + margin.right + legendWidth)) { 
-               preferredPlotArea.width -= (margin.left + margin.right + legendWidth); 
-           } else { 
-               preferredPlotArea.width = (margin.left + margin.right + legendWidth) - preferredPlotArea.width; 
-           } 
- 
-       } 
-       else if (preferredPlotArea.width === this.viewport.width) { 
-           if (preferredPlotArea.width > (margin.left + margin.right)) { 
-               preferredPlotArea.width -= (margin.left + margin.right); 
-           } else { 
-               preferredPlotArea.width = (margin.left + margin.right) - preferredPlotArea.width; 
-           } 
- 
-       } 
+       this.adjustPlotAreaWidth(preferredPlotArea, margin, legendWidth); 
  
        let numberOfMeasures = (totalLabelSettings.show ? 1 : 0) + 
            (this.dataViews[1]?.categorical?.values ? 1 : 0) + 
@@ -4829,39 +4962,9 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
            + (this.dataViews[5]?.categorical?.values ? 1 : 0) + 
            (this.dataViews[6]?.categorical?.values ? 1 : 0); 
  
-       let customHeight; 
+       let customHeight = this.getCustomMeasureHeight(numberOfMeasures); 
  
-       switch (numberOfMeasures) { 
-           case 0: customHeight = 0; 
-               break; 
-           case 1: customHeight = 25; 
-               break; 
-           case 2: customHeight = 50; 
-               break; 
-           case 3: customHeight = 75; 
-               break; 
-           case 4: customHeight = 100; 
-               break; 
-           case 5: customHeight = 125; 
-               break; 
-           case 6: customHeight = 150; 
-               break; 
-            
-       } 
- 
-       if (this.legendObjectProperties && (this.legendObjectProperties['position'] === 'Left' || this.legendObjectProperties['position'] === 'LeftCenter' || this.legendObjectProperties['position'] === 'Right' || this.legendObjectProperties['position'] === 'RightCenter')) { 
-           if (preferredPlotArea.height > (margin.top + margin.bottom + customTitleHeight + customHeight)) { 
-               preferredPlotArea.height -= (margin.top + margin.bottom + customTitleHeight + customHeight); 
-           } else { 
-               preferredPlotArea.height = (margin.top + margin.bottom + customTitleHeight + customHeight) - preferredPlotArea.height; 
-           } 
- 
-       } 
-       else if (preferredPlotArea.height > (margin.top + margin.bottom + customTitleHeight + customHeight + legendHeight)) { 
-           preferredPlotArea.height -= (margin.top + margin.bottom + customTitleHeight + customHeight + legendHeight); 
-       } else { 
-           preferredPlotArea.height = (margin.top + margin.bottom + customTitleHeight + customHeight + legendHeight) - preferredPlotArea.height; 
-       } 
+       this.adjustPlotAreaHeight(preferredPlotArea, margin, customTitleHeight, customHeight, legendHeight); 
 
       // let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar); 
        let is100Pct = EnumExtensions.hasFlag(this.chartType, flagStacked100); 
@@ -4900,6 +5003,59 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
            options.valueAxisScaleType, 
            options.valueAxisDisplayUnits, 
            options.valueAxisPrecision); 
+       this.applyAxisLabels(data, options); 
+ 
+       return [this.xAxisProperties, this.yAxisProperties]; 
+   } 
+
+   // True when the legend is docked to the left or right side. 
+   private isSideLegendPosition(): boolean { 
+       let pos = this.legendObjectProperties?.['position']; 
+       return pos === 'Left' || pos === 'LeftCenter' || pos === 'Right' || pos === 'RightCenter'; 
+   } 
+
+   private resolveLegendHeight(legendPosition: number, legendWidth: number): number { 
+       let legendHeight = Number.parseFloat(this.root.select('.legend').style('height')) - 20; 
+       if (Number.isNaN(legendHeight) || Number.isNaN(legendWidth) || 0 === legendWidth || !(0 === legendPosition || 5 === legendPosition || 1 === legendPosition || 6 === legendPosition) || !this.legendObjectProperties['show'] || !this.isLegendValue) { 
+           return 0; 
+       } 
+       return legendHeight; 
+   } 
+
+   // Trims series/categories to the visible count when overflowing; returns possibly-cloned data. 
+   private trimOverflowData(data: any, origCatgSize: number, visibleCategoryCount: number): any { 
+       let catgSize = Math.min(origCatgSize, visibleCategoryCount); 
+       if (catgSize !== origCatgSize) { 
+           data = Prototype.inherit(data); 
+           data.series = ColumnChartGMO.sliceSeries(data.series, catgSize); 
+           data.categories = data.categories.slice(0, catgSize); 
+       } 
+       return data; 
+   } 
+
+   private adjustPlotAreaWidth(preferredPlotArea: IViewport, margin: IMargin, legendWidth: number): void { 
+       if (preferredPlotArea.width !== this.viewport.width) { return; } 
+       let reserved = this.isSideLegendPosition() ? margin.left + margin.right + legendWidth : margin.left + margin.right; 
+       if (preferredPlotArea.width > reserved) { 
+           preferredPlotArea.width -= reserved; 
+       } else { 
+           preferredPlotArea.width = reserved - preferredPlotArea.width; 
+       } 
+   } 
+
+   private adjustPlotAreaHeight(preferredPlotArea: IViewport, margin: IMargin, customTitleHeight: number, customHeight: number, legendHeight: number): void { 
+       let reserved = margin.top + margin.bottom + customTitleHeight + customHeight; 
+       if (!this.isSideLegendPosition()) { 
+           reserved += legendHeight; 
+       } 
+       if (preferredPlotArea.height > reserved) { 
+           preferredPlotArea.height -= reserved; 
+       } else { 
+           preferredPlotArea.height = reserved - preferredPlotArea.height; 
+       } 
+   } 
+
+   private applyAxisLabels(data: any, options: CalculateScaleAndDomainOptions): void { 
        if (options.showCategoryAxisLabel && this.xAxisProperties.isCategoryAxis || options.showValueAxisLabel && !this.xAxisProperties.isCategoryAxis) { 
            this.xAxisProperties.axisLabel = data.axesLabels.x; 
        } 
@@ -4912,8 +5068,6 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        else { 
            this.yAxisProperties.axisLabel = null; 
        } 
- 
-       return [this.xAxisProperties, this.yAxisProperties]; 
    } 
  
    public getPreferredPlotArea(isScalar: boolean, categoryCount: number, categoryThickness: number): IViewport { 
@@ -5095,77 +5249,10 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        let yAxisOrientation = this.yAxisOrientation; 
        let showY1OnRight = yAxisOrientation === yAxisPosition.right; 
  
-       let doneWithMargins = false, 
-           maxIterations = 2, 
-           numIterations = 0; 
-       while (!doneWithMargins && numIterations < maxIterations) { 
-           numIterations++; 
-           // Modern chartutils (8.x) takes a SINGLE options object here; the
-           // legacy 2018 code passed 13 positional args, which made the library
-           // read `options.axes` as undefined -> "Cannot read properties of
-           // undefined (reading 'x')". Rebuilt as the options object it expects.
-           tickLabelMargins = AxisHelper.getTickLabelMargins({
-               viewport: { width: this.viewportIn.width, height: this.viewport.height },
-               yMarginLimit: this.leftRightMarginLimit,
-               textWidthMeasurer: TextMeasurementService.measureSvgTextWidth,
-               textHeightMeasurer: TextMeasurementService.measureSvgTextHeight,
-               axes: { x: this.xAxisProperties, y1: this.yAxisProperties },
-               bottomMarginLimit: this.bottomMarginLimit,
-               properties: this.textProperties,
-               scrollbarVisible: this.isXScrollBarVisible || this.isYScrollBarVisible,
-               showOnRight: showY1OnRight,
-               renderXAxis: renderXAxis,
-               renderY1Axis: renderY1Axis,
-               renderY2Axis: false,
-           }); 
-           // chartutils 8.x getTickLabelMargins returns { top, left, right, bottom }
-           // (top = x-axis label height, left/right = y-axis label widths), not the
-           // legacy { xMax, yLeft, yRight }. Map to the 8.x names to avoid NaN margins.
-           let maxMainYaxisSide = (showY1OnRight ? tickLabelMargins.right : tickLabelMargins.left) || 0, 
-               maxSecondYaxisSide = (showY1OnRight ? tickLabelMargins.left : tickLabelMargins.right) || 0, 
-               xMax = tickLabelMargins.top || 0; 
-
-           maxMainYaxisSide += 10; 
-           maxSecondYaxisSide += 10; 
-           xMax += 12; 
-           if (showY1OnRight && renderY1Axis) { 
-               maxSecondYaxisSide += 20; 
-           } 
- 
-           if (!showY1OnRight && renderY1Axis) { 
-               maxMainYaxisSide += 20; 
-           } 
- 
-           if (this.hideAxisLabels()) { 
-               this.xAxisProperties.axisLabel = null; 
-               this.yAxisProperties.axisLabel = null; 
-           } 
-           this.addUnitTypeToAxisLabel(this.xAxisProperties, this.yAxisProperties); 
-           axisLabels = { x: this.xAxisProperties.axisLabel, y: this.yAxisProperties.axisLabel, y2: null }; 
-           chartHasAxisLabels = (axisLabels.x != null) || (axisLabels.y != null || axisLabels.y2 != null); 
- 
-           if (axisLabels.x != null) 
-               xMax += 18; 
- 
-           if (axisLabels.y != null) 
-               maxMainYaxisSide += 20; 
- 
-           if (axisLabels.y2 != null) 
-               maxSecondYaxisSide += 20; 
- 
-           this.margin.left = showY1OnRight ? maxSecondYaxisSide : maxMainYaxisSide; 
-           this.margin.right = showY1OnRight ? maxMainYaxisSide : maxSecondYaxisSide; 
-           this.margin.bottom = xMax; 
- 
-           // re-calculate the axes with the new margins 
-           let previousTickCountY1 = this.yAxisProperties.values.length; 
-           this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, this.textProperties, true); 
- 
-           // the minor padding adjustments could have affected the chosen tick values, which would then need to calculate margins again 
-           // e.g. [0,2,4,6,8] vs. [0,5,10] the 10 is wider and needs more margin. 
-           if (this.yAxisProperties.values.length === previousTickCountY1) 
-               doneWithMargins = true; 
-       } 
+       const marginResult = this.renderComputeMargins(renderXAxis, renderY1Axis, showY1OnRight); 
+       tickLabelMargins = marginResult.tickLabelMargins; 
+       axisLabels = marginResult.axisLabels; 
+       chartHasAxisLabels = marginResult.chartHasAxisLabels; 
        let columnChartDrawInfo = this.columnChart.drawColumns(!suppressAnimations); 
  
        if (this.viewportIn.width === 0 || this.viewportIn.height === 0) { 
@@ -5186,108 +5273,7 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
 
        this.updateAxis(); 
        if (this.data.labelSettings.show) { 
-          // let selectedtext = []; 
-           let dataLabelPoints = []; 
-           for (const labelDataPoint of columnChartDrawInfo.labelDataPoints) { 
-               //let DataLabelValue = Number.parseFloat(labelDataPoint.text); 
- 
-               dataLabelPoints.push(labelDataPoint.text) 
- 
-           } 
-           let j = 0; 
-           let allBoxes = this.root.selectAll('.mainGraphicsContext > svg > g > rect'); 
-           $('allBoxes').filter(function () { 
-               return $(this).attr('opacity') == '1'; 
-           }).css("fill", "red"); 
-           let allBoxesLength = allBoxes[0].length - 1; 
- 
-           let all = 0; 
-           let boxWidth = Number.parseFloat((<SVGRectElement>allBoxes[0][0]).width.baseVal.valueAsString); 
- 
-           let dataLabelSvg = this.root.select('.svgScrollable > .axisGraphicsContext > .mainGraphicsContext') 
-               .append('g') 
-               .classed('dataLabels', true) 
- 
-           let objects = this.dataView.metadata.objects; 
-           let labelsObj = <DataLabelObject>objects['labels']; 
- 
-           let precision = labelsObj.labelPrecision ? labelsObj.labelPrecision : 0; 
-           let labelColor = (labelsObj.color ? labelsObj.color.solid.color : 'black'); 
-           let labelFontFamily = labelsObj['fontFamily'] != null ? <string>labelsObj['fontFamily'] : 'Segoe UI';
-           let labelFontWeight = labelsObj['fontBold'] ? 'bold' : 'normal';
-           let labelFontStyle = labelsObj['fontItalic'] ? 'italic' : 'normal';
-           let labelTextDecoration = labelsObj['fontUnderline'] ? 'underline' : 'none';
-           let dataLabelText; 
-           let formattedDataLabelText = ""; 
- 
-           let vis = []; 
-           for (let i = 0; i <= allBoxesLength; i++) 
-               vis[i] = 0; 
-           while (all < dataLabelPoints.length) { 
-               let boxHeight; 
-               let boxX; 
-               let boxY; 
-               let boxCenterX; 
-               let boxCenterY; 
- 
-               if (dataLabelPoints[all] != 0) { 
-                   let b = 0; 
- 
-                   while (b <= allBoxesLength) { 
-                       if (allBoxes[0][b]['__data__'].originalValue == dataLabelPoints[all] && vis[b] == 0 && allBoxes[0][b]['style']['fill-opacity'] == 1) { 
-                           boxHeight = Number.parseFloat((<SVGRectElement>allBoxes[0][b]).height.baseVal.valueAsString); 
-                           boxX = Number.parseFloat((<SVGRectElement>allBoxes[0][b]).x.baseVal.valueAsString); 
-                           boxY = Number.parseFloat((<SVGRectElement>allBoxes[0][b]).y.baseVal.valueAsString); 
-                           boxCenterX = boxX + boxWidth / 2; 
-                           boxCenterY = boxY + boxHeight / 2; 
-                           vis[b] = 1; 
-                           break; 
-                       } 
-                       b++; 
-                   } 
- 
-                   formattedDataLabelText = this.format(Number.parseFloat(dataLabelPoints[all]) * 100, 1, precision, 'sample'); 
- 
-                   if (formattedDataLabelText == "") { 
-                       dataLabelText = dataLabelSvg 
-                           .append('text') 
-                           .classed('dataLabel', true) 
-                           .attr('x', boxCenterX) 
-                           .attr('y', boxCenterY + 3) 
-                           .attr('text-anchor', 'middle') 
-                           .attr('font-size', this.data.labelSettings.fontSize) 
-                           .text(formattedDataLabelText) 
- 
-                   } 
-                   else { 
-                       dataLabelText = dataLabelSvg 
-                           .append('text') 
-                           .classed('dataLabel', true) 
-                           .attr('x', boxCenterX) 
-                           .attr('y', boxCenterY + 3) 
-                           .attr('text-anchor', 'middle') 
-                           .attr('font-size', this.data.labelSettings.fontSize) 
-                           .text(formattedDataLabelText + '%') 
- 
-                   } 
- 
-                   let dataLabelBBox = (dataLabelText.node() as any).getBBox(); 
-                   if (boxX + boxWidth < dataLabelBBox.x + dataLabelBBox.width || boxY + boxHeight < dataLabelBBox.y + dataLabelBBox.height) { 
-                       dataLabelText.text(''); 
-                   } 
- 
-               } 
-               all++; 
- 
-           } 
- 
-           dataLabelSvg.style({ 'fill': labelColor });
-           this.root.selectAll('.dataLabel').style('fill', labelColor);
-           this.root.selectAll('.dataLabel').style('font-family', labelFontFamily);
-           this.root.selectAll('.dataLabel').style('font-weight', labelFontWeight);
-           this.root.selectAll('.dataLabel').style('font-style', labelFontStyle);
-           this.root.selectAll('.dataLabel').style('text-decoration', labelTextDecoration);
- 
+           this.renderDataLabels(columnChartDrawInfo); 
        } 
  
      //  let sampleFilterSettings: sampleFilterSettings = this.getSampleFilterSettings(this.dataViews[0]); 
@@ -5301,320 +5287,16 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
  
        let dataCategories = this.data.categories; 
        let dataSeries = this.data.series; 
-       let aggregatedValues = []; 
-       let aggregatedSecValues = []; 
-       let aggregatedTerValues = []; 
-       let aggregatedQuatValues = []; 
-       let aggregatedfifthValues = []; 
-       let aggregatedsixthValues = []; 
-       let tempAggregatedQuatValues = []; 
-       let tempAggregatedfifthValues = []; 
-       let tempAggregatedsixthValues = []; 
-       let tempAggregatedTerValues = []; 
-       let tempAggregatedSecValues = []; 
- 
-       let sampleSize; 
-       sampleSize = -9999; 
-        
-       let numberOfMeasures = (totalLabelSettings.show ? 1 : 0) + 
-           (this.dataViews[1]?.categorical?.values ? 1 : 0) + 
-           (this.dataViews[3]?.categorical?.values ? 1 : 0) + 
-           (this.dataViews[4]?.categorical?.values ? 1 : 0) 
-           + (this.dataViews[5]?.categorical?.values ? 1 : 0) + 
-           (this.dataViews[6]?.categorical?.values ? 1 : 0); 
- 
-       let measureCounter = numberOfMeasures, yAxisForLabels = 20, yAxisMultiplier = 27; 
- 
+       let numberOfMeasures = this.rmtCountMeasures(totalLabelSettings.show); 
+       let yAxisForLabels = 20, yAxisMultiplier = 27; 
+
        let noAxis = false; 
        if (dataCategories.length === 1 && dataCategories[0] === null) { 
            noAxis = true; 
        } 
  
        let maxLabelTextWidth = measureTitlesSettings.ellipsesStrength; 
-       if (totalLabelSettings.show) { 
-           if (this.dataViews[2]?.categorical?.values) { 
-               for (const sampleValue of this.dataViews[2].categorical.values[0].values) { 
-                   if (sampleValue !== null) { 
-                       sampleSize = sampleValue; 
-                       break; 
-                   } 
-               } 
-           } 
-           if (noAxis) { 
-               if (length !== 0) { 
-                   let sum = 0; 
-                   for (let i = 0; i < length; i++) { 
-                       if (dataSeries[i].data[0]) { 
-                           sum = sum + this.data.series[i].data[0].valueOriginal; 
-                       } 
-                   } 
-                   aggregatedValues.push(sum); 
-               } 
-           } 
-           else { 
-               let dclength=dataCategories.length 
-               let dslength=dataSeries.length 
-               for (let k = 0; k < dclength; k++) { 
-                   let sum = 0; 
-                   for (let i = 0; i < dslength; i++) { 
-                       for (let j = 0; j < dclength; j++) { 
-                           if (dataSeries[i].data[j]) { 
-                               if (dataSeries[i].data[j].categoryValue == dataCategories[k]) { 
-                                   sum = sum + this.data.series[i].data[j].valueOriginal; 
-                                   break; 
-                               } 
-                           } 
-                           else { 
-                               break; 
-                           } 
-                       } 
-                   } 
-                   aggregatedValues.push(sum); 
-               } 
-           } 
-           let totalTitleTextProperties: TextProperties = {
-               text: totalLabelSettings.titleText,
-               fontFamily: totalLabelSettings.titleFontFamily,
-               fontSize: totalLabelSettings.titleFontSize + 'px'
-           };
-           let totalTitleText = TextMeasurementService.getTailoredTextOrDefault(totalTitleTextProperties, maxLabelTextWidth);
- 
-           this.root.select('.cartesianChart')
-               .append('text')
-               .classed('measureLabelTitle', true)
-               .attr('x', 1)
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
-               .attr('font-size', totalLabelSettings.titleFontSize + 'px')
-               .attr('font-family', totalLabelSettings.titleFontFamily)
-               .attr('font-weight', totalLabelSettings.titleBold ? 'bold' : 'normal')
-               .attr('font-style', totalLabelSettings.titleItalic ? 'italic' : 'normal')
-               .style('text-decoration', totalLabelSettings.titleUnderline ? 'underline' : 'none')
-               .attr('fill', totalLabelSettings.titleColor)
-               .text(totalTitleText)
-               .append('title')
-               .text(totalLabelSettings.titleText)
-       }        
-
-       //secondary
-let  value=this.dataViews[1]?.categorical?.values
-       if (value) {
-           let dvcvalue=this.dataViews[1].categorical
-           if (noAxis) {
-               let totalValuesLength = value.length;
-               let sumSec;
-               sumSec = 0;
-               
-               for (let i = 0; i < totalValuesLength; i++) {
-                   sumSec = sumSec + dvcvalue.values[i].values[0];
-               }
-               aggregatedSecValues.push(sumSec);
-           }
-           else {
-               aggregatedSecValues = dvcvalue.values[0].values;
-           }
- 
-           tempAggregatedSecValues = aggregatedSecValues.slice(0);
-           if (this.removeFlags.length > 0) {
-               this.spliceMeasures(tempAggregatedSecValues);
-           }
- 
-           let secMeasuretextProperties: TextProperties = {
-               text: secondaryLabelSettings.titleText,
-               fontFamily: secondaryLabelSettings.titleFontFamily,
-               fontSize: secondaryLabelSettings.titleFontSize + 'px'
-           };
-           let secMeasuretext = TextMeasurementService.getTailoredTextOrDefault(secMeasuretextProperties, maxLabelTextWidth);
-           this.root.select('.cartesianChart')
-               .append('text')
-               .attr('x', 1)
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
-               .classed('measureLabelTitle', true)
-               .attr('font-size', secondaryLabelSettings.titleFontSize + 'px')
-               .attr('font-family', secondaryLabelSettings.titleFontFamily)
-               .attr('font-weight', secondaryLabelSettings.titleBold ? 'bold' : 'normal')
-               .attr('font-style', secondaryLabelSettings.titleItalic ? 'italic' : 'normal')
-               .style('text-decoration', secondaryLabelSettings.titleUnderline ? 'underline' : 'none')
-               .attr('fill', secondaryLabelSettings.titleColor)
-               .text(secMeasuretext)
-               .append('title')
-               .text(secondaryLabelSettings.titleText)
-       }
-       //tertiary
-       let dvcvalues=this.dataViews[3]?.categorical?.values
-       if (dvcvalues) {
-           if (noAxis) {
-               let totalValuesLength = dvcvalues.length;
-               let sumTer;
-               sumTer = 0;
-               for (let i = 0; i < totalValuesLength; i++) {
-                   sumTer = sumTer + dvcvalues[i].values[0];
-               }
-               aggregatedTerValues.push(sumTer);
-           }
-           else {
-               aggregatedTerValues = dvcvalues[0].values;
-           }
- 
-           tempAggregatedTerValues = aggregatedTerValues.slice(0);
-           if (this.removeFlags.length > 0) {
-               this.spliceMeasures(tempAggregatedTerValues);
-           }
- 
-           let terMeasuretextProperties: TextProperties = {
-               text: tertiaryLabelSettings.titleText,
-               fontFamily: tertiaryLabelSettings.titleFontFamily,
-               fontSize: tertiaryLabelSettings.titleFontSize + 'px'
-           };
-           let terMeasuretext = TextMeasurementService.getTailoredTextOrDefault(terMeasuretextProperties, maxLabelTextWidth);
-           this.root.select('.cartesianChart')
-               .append('text')
-               .attr('x', 1)
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
-               .classed('measureLabelTitle', true)
-               .attr('font-size', tertiaryLabelSettings.titleFontSize + 'px')
-               .attr('font-family', tertiaryLabelSettings.titleFontFamily)
-               .attr('font-weight', tertiaryLabelSettings.titleBold ? 'bold' : 'normal')
-               .attr('font-style', tertiaryLabelSettings.titleItalic ? 'italic' : 'normal')
-               .style('text-decoration', tertiaryLabelSettings.titleUnderline ? 'underline' : 'none')
-               .attr('fill', tertiaryLabelSettings.titleColor)
-               .text(terMeasuretext)
-               .append('title')
-               .text(tertiaryLabelSettings.titleText)
-       }
- 
-       //quarternary
-       value=this.dataViews[4]?.categorical?.values
-       if (value) {
-           if (noAxis) {
-               let totalValuesLength = value.length;
-               let sumQuat;
-               sumQuat = 0;
-               for (let i = 0; i < totalValuesLength; i++) {
-                   sumQuat = sumQuat + value[i].values[0];
-               }
-               aggregatedQuatValues.push(sumQuat);
-               noAxis = true;
-           }
-           else {
-               aggregatedQuatValues = value[0].values;
-           }
- 
-           tempAggregatedQuatValues = aggregatedQuatValues.slice(0);
-           if (this.removeFlags.length > 0) {
-               this.spliceMeasures(tempAggregatedQuatValues);
-           }
-           let textMeasurementService = TextMeasurementService;
-           let quatMeasuretextProperties: TextProperties = {
-               text: quaternaryLabelSettings.titleText,
-               fontFamily: quaternaryLabelSettings.titleFontFamily,
-               fontSize: quaternaryLabelSettings.titleFontSize + 'px',
-                
-           };
-           let widthtext = textMeasurementService.measureSvgTextWidth(quatMeasuretextProperties);
-           let quatMeasuretext = TextMeasurementService.getTailoredTextOrDefault(quatMeasuretextProperties, maxLabelTextWidth);
-           this.root.select('.cartesianChart')
-               .append('text')
-               .attr('x', 1)
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
-               .classed('measureLabelTitle', true)
-               .attr('font-size', quaternaryLabelSettings.titleFontSize + 'px')
-               .attr('font-family', quaternaryLabelSettings.titleFontFamily)
-               .attr('font-weight', quaternaryLabelSettings.titleBold ? 'bold' : 'normal')
-               .attr('font-style', quaternaryLabelSettings.titleItalic ? 'italic' : 'normal')
-               .style('text-decoration', quaternaryLabelSettings.titleUnderline ? 'underline' : 'none')
-               .attr('fill', quaternaryLabelSettings.titleColor)
-               .attr('width', widthtext)
-               .text(quatMeasuretext)
-               .append('title')
-               .text(quaternaryLabelSettings.titleText)
-       }
-       //fifth
-       value=this.dataViews[5]?.categorical?.values
-       if (value) {
-           if (noAxis) {
-               let totalValuesLength = value.length;
-               let sumQuat;
-               sumQuat = 0;
-               for (let i = 0; i < totalValuesLength; i++) {
-                   sumQuat = sumQuat + value[i].values[0];
-               }
-               aggregatedfifthValues.push(sumQuat);
-               noAxis = true;
-           }
-           else {
-               aggregatedfifthValues = value[0].values;
-           }
- 
-           tempAggregatedfifthValues = aggregatedfifthValues.slice(0);
-           if (this.removeFlags.length > 0) {
-               this.spliceMeasures(tempAggregatedfifthValues);
-           }
- 
-           let fiveMeasuretextProperties: TextProperties = {
-               text: FifthLabelSettings.titleText,
-               fontFamily: FifthLabelSettings.titleFontFamily,
-               fontSize: FifthLabelSettings.titleFontSize + 'px'
-           };
-           let fiveMeasuretext = TextMeasurementService.getTailoredTextOrDefault(fiveMeasuretextProperties, maxLabelTextWidth);
-           this.root.select('.cartesianChart')
-               .append('text')
-               .attr('x', 1)
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
-               .classed('measureLabelTitle', true)
-               .attr('font-size', FifthLabelSettings.titleFontSize + 'px')
-               .attr('font-family', FifthLabelSettings.titleFontFamily)
-               .attr('font-weight', FifthLabelSettings.titleBold ? 'bold' : 'normal')
-               .attr('font-style', FifthLabelSettings.titleItalic ? 'italic' : 'normal')
-               .style('text-decoration', FifthLabelSettings.titleUnderline ? 'underline' : 'none')
-               .attr('fill', FifthLabelSettings.titleColor)
-               .text(fiveMeasuretext)
-               .append('title')
-               .text(FifthLabelSettings.titleText)
-       }
-        
-       //sixth
-       value=this.dataViews[6]?.categorical?.values
-       if (value) {
-           if (noAxis) {
-               let totalValuesLength = value.length;
-               let sumQuat;
-               sumQuat = 0;
-               for (let i = 0; i < totalValuesLength; i++) {
-                   sumQuat = sumQuat + value[i].values[0];
-               }
-               aggregatedsixthValues.push(sumQuat);
-               noAxis = true;
-           }
-           else {
-               aggregatedsixthValues = value[0].values;
-           }
- 
-           tempAggregatedsixthValues = aggregatedsixthValues.slice(0);
-           if (this.removeFlags.length > 0) {
-               this.spliceMeasures(tempAggregatedsixthValues);
-           }
- 
-           let sixMeasuretextProperties: TextProperties = {
-               text: SixthLabelSettings.titleText,
-               fontFamily: SixthLabelSettings.titleFontFamily,
-               fontSize: SixthLabelSettings.titleFontSize + 'px'
-           };
-           let sixMeasuretext = TextMeasurementService.getTailoredTextOrDefault(sixMeasuretextProperties, maxLabelTextWidth);
-           this.root.select('.cartesianChart')
-               .append('text')
-               .attr('x', 1)
-               .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * --measureCounter))
-               .classed('measureLabelTitle', true)
-               .attr('font-size', SixthLabelSettings.titleFontSize + 'px')
-               .attr('font-family', SixthLabelSettings.titleFontFamily)
-               .attr('font-weight', SixthLabelSettings.titleBold ? 'bold' : 'normal')
-               .attr('font-style', SixthLabelSettings.titleItalic ? 'italic' : 'normal')
-               .style('text-decoration', SixthLabelSettings.titleUnderline ? 'underline' : 'none')
-               .attr('fill', SixthLabelSettings.titleColor)
-               .text(sixMeasuretext)
-               .append('title')
-               .text(SixthLabelSettings.titleText)
-       }
+       const titleResult = this.renderMeasureTitles({ dataCategories, dataSeries, noAxis, totalLabelSettings, secondaryLabelSettings, tertiaryLabelSettings, quaternaryLabelSettings, FifthLabelSettings, SixthLabelSettings, numberOfMeasures, yAxisForLabels, yAxisMultiplier, maxLabelTextWidth, sampleSize: -9999 }); 
 
        let boxes = this.root.selectAll('.mainGraphicsContext > svg'); 
        let box = <SVGRectElement>boxes[0][0]; 
@@ -5623,274 +5305,8 @@ let  value=this.dataViews[1]?.categorical?.values
  
        let barWidthValue = Number.parseInt(box.width.baseVal.valueAsString); 
  
-       let len; 
-       if (dataCategories.length === 1 && dataCategories[0] === null) { 
-           len = 0; 
-       } 
-       else { 
-           len = xTicks[0].length - 1; 
-       } 
- 
-       while (len >= 0) { 
-           let xAxisValue; 
-           let yAxisValue = 32; 
-           if (noAxis) { 
-               let barXValue = Number.parseInt(box.x.baseVal.valueAsString); 
-               xAxisValue = barXValue + barWidthValue / 2; 
-           } 
-           else { 
-               let transformMatch = /translate\(([^)]+)\)/.exec((<HTMLElement>xTicks[0][len]).getAttribute('transform')); 
-               xAxisValue = transformMatch?.[1] ? Number.parseInt(transformMatch[1]) : 0; 
-           } 
- 
-           //total 
-            
-           if (totalLabelSettings.show) { 
-               let formattedTotalText = this.format(Number.parseInt(aggregatedValues[len], 10), totalLabelSettings.displayUnits, totalLabelSettings.textPrecision, 'sample'); 
- 
-               if (sampleSize > aggregatedValues[len]) { 
-                   formattedTotalText = formattedTotalText + '*'; 
-               } 
- 
-               yAxisValue = yAxisValue - 27; 
- 
-               let DatatextProperties: TextProperties = { 
-                   text: formattedTotalText, 
-                   fontFamily: "Segoe UI", 
-                   fontSize: totalLabelSettings.fontSize + 'px' 
-               }; 
-               let totalText = TextMeasurementService.getTailoredTextOrDefault(DatatextProperties, barWidthValue); 
-               let totallength = totalText.length; 
-               if (totalText[totallength - 1] == '%') { 
-                   totalText = this.format(Number.parseFloat(aggregatedValues[len]) * 100, 1, totalLabelSettings.textPrecision, 'sample'); 
-                   totalText = totalText + '%'; 
- 
-               } 
-               this.root.select('.svgScrollable > .axisGraphicsContext') 
-                   .append('text') 
-                   .classed('totalLabels', true) 
-                   .attr('x', xAxisValue) 
-                   .attr('y', yAxisValue) 
-                   .attr('text-anchor', 'middle') 
-                   .attr('font-size', totalLabelSettings.fontSize)
-                   .attr('font-family', totalLabelSettings.fontFamily || 'Segoe UI')
-                   .attr('fill', totalLabelSettings.color)
-                   .attr('font-weight', totalLabelSettings.fontBold ? 'bold' : 'normal')
-                   .attr('font-style', totalLabelSettings.fontItalic ? 'italic' : 'normal')
-                   .style('text-decoration', totalLabelSettings.fontUnderline ? 'underline' : 'none')
-                   .text(totalText)
-           } 
-            
-           //secondary 
-           if (this.dataViews[1]?.categorical?.values) { 
-               let formatString = this.dataViews[1].categorical.values[0].source.format; 
-               let formatter = valueFormatter.create({ format: formatString, value: secondaryLabelSettings.displayUnits, precision: secondaryLabelSettings.textPrecision }); 
-               let formattedSecondaryText; 
-               if (tempAggregatedSecValues[len] !== null) { 
-                   formattedSecondaryText = formatter.format(tempAggregatedSecValues[len]); 
-               } 
-               else { 
-                   formattedSecondaryText = "0" 
-               } 
- 
-               yAxisValue = yAxisValue - 27; 
- 
-               let secDatatextProperties: TextProperties = { 
-                   text: formattedSecondaryText, 
-                   fontFamily: "Segoe UI", 
-                   fontSize: secondaryLabelSettings.fontSize + 'px' 
-               }; 
-               let secText = TextMeasurementService.getTailoredTextOrDefault(secDatatextProperties, barWidthValue); 
-               //  let secText = this.format(Number.parseFloat(dataLabelPoints[i]) * 100, 1, precision, 'sample'); 
- 
-               let seclength = secText.length; 
-               if (secText[seclength - 1] == '%') { 
-                   secText = this.format(Number.parseFloat(tempAggregatedSecValues[len]) * 100, 1, secondaryLabelSettings.textPrecision, 'sample'); 
-                   secText = secText + '%'; 
- 
-               } 
-               this.root.select('.svgScrollable > .axisGraphicsContext') 
-                   .append('text') 
-                   .classed('secLabels', true) 
-                   .attr('x', xAxisValue) 
-                   .attr('y', yAxisValue) 
-                   .attr('text-anchor', 'middle') 
-                   .attr('font-size', secondaryLabelSettings.fontSize)
-                    .attr('font-family', secondaryLabelSettings.fontFamily || 'Segoe UI')
-                    .attr('fill', secondaryLabelSettings.color)
-                    .attr('font-weight', secondaryLabelSettings.fontBold ? 'bold' : 'normal')
-                    .attr('font-style', secondaryLabelSettings.fontItalic ? 'italic' : 'normal')
-                    .style('text-decoration', secondaryLabelSettings.fontUnderline ? 'underline' : 'none')
-                   .text(secText); 
-           } 
- 
-           //tertiary 
-           if ( this.dataViews[3]?.categorical?.values) { 
-               let formatString = this.dataViews[3].categorical.values[0].source.format; 
-               let formatter = valueFormatter.create({ format: formatString, value: tertiaryLabelSettings.displayUnits, precision: tertiaryLabelSettings.textPrecision }); 
-               let formattedTertiaryText; 
-               if (tempAggregatedTerValues[len] !== null) { 
-                   formattedTertiaryText = formatter.format(tempAggregatedTerValues[len]); 
-               } 
-               else { 
-                   formattedTertiaryText = "0" 
-               } 
- 
-               yAxisValue = yAxisValue - 27; 
- 
-               let terDatatextProperties: TextProperties = { 
-                   text: formattedTertiaryText, 
-                   fontFamily: "Segoe UI", 
-                   fontSize: tertiaryLabelSettings.fontSize + 'px' 
-               }; 
-               let terText = TextMeasurementService.getTailoredTextOrDefault(terDatatextProperties, barWidthValue); 
-               let terlength = terText.length; 
-               if (terText[terlength - 1] == '%') { 
-                   terText = this.format(Number.parseFloat(tempAggregatedTerValues[len]) * 100, 1, tertiaryLabelSettings.textPrecision, 'sample'); 
-                   terText = terText + '%'; 
- 
-               } 
-               this.root.select('.svgScrollable > .axisGraphicsContext') 
-                   .append('text') 
-                   .classed('terLabels', true) 
-                   .attr('x', xAxisValue) 
-                   .attr('y', yAxisValue) 
-                   .attr('text-anchor', 'middle') 
-                   .attr('font-size', tertiaryLabelSettings.fontSize) 
-                   .attr('font-family', tertiaryLabelSettings.fontFamily || 'Segoe UI') 
-                   .attr('fill', tertiaryLabelSettings.color) 
-                   .attr('font-weight', tertiaryLabelSettings.fontBold ? 'bold' : 'normal') 
-                   .attr('font-style', tertiaryLabelSettings.fontItalic ? 'italic' : 'normal') 
-                   .style('text-decoration', tertiaryLabelSettings.fontUnderline ? 'underline' : 'none') 
-                   .text(terText); 
-           } 
- 
-           //quarternary 
-           value=this.dataViews[4]?.categorical?.values 
-           if (value) { 
-               let formatString = value[0].source.format; 
-               let formatter = valueFormatter.create({ format: formatString, value: quaternaryLabelSettings.displayUnits, precision: quaternaryLabelSettings.textPrecision }); 
-               let formattedQuaternaryText; 
-               if (tempAggregatedQuatValues[len] !== null) { 
-                   formattedQuaternaryText = formatter.format(tempAggregatedQuatValues[len]); 
-               } 
-               else { 
-                   formattedQuaternaryText = "0" 
-               } 
- 
-               yAxisValue = yAxisValue - 27; 
- 
-               let quatDatatextProperties: TextProperties = { 
-                   text: formattedQuaternaryText, 
-                   fontFamily: "Segoe UI", 
-                   fontSize: quaternaryLabelSettings.fontSize + 'px' 
-               }; 
-               let quatText = TextMeasurementService.getTailoredTextOrDefault(quatDatatextProperties, barWidthValue); 
-               let quatlength = quatText.length; 
-               if (quatText[quatlength - 1] == '%') { 
-                   quatText = this.format(Number.parseFloat(tempAggregatedQuatValues[len]) * 100, 1, quaternaryLabelSettings.textPrecision, 'sample'); 
-                   quatText = quatText + '%'; 
- 
-               } 
-               this.root.select('.svgScrollable > .axisGraphicsContext') 
-                   .append('text') 
-                   .classed('quatLabels', true) 
-                   .attr('x', xAxisValue) 
-                   .attr('y', yAxisValue) 
-                   .attr('text-anchor', 'middle') 
-                   .attr('font-size', quaternaryLabelSettings.fontSize) 
-                   .attr('font-family', quaternaryLabelSettings.fontFamily || 'Segoe UI') 
-                   .attr('fill', quaternaryLabelSettings.color) 
-                   .attr('font-weight', quaternaryLabelSettings.fontBold ? 'bold' : 'normal') 
-                   .attr('font-style', quaternaryLabelSettings.fontItalic ? 'italic' : 'normal') 
-                   .style('text-decoration', quaternaryLabelSettings.fontUnderline ? 'underline' : 'none') 
-                   .text(quatText); 
-           } 
-           //fifth 
-           value=this.dataViews[5]?.categorical?.values 
-           if (value) { 
-               let formatString = value[0].source.format; 
-               let formatter = valueFormatter.create({ format: formatString, value: FifthLabelSettings.displayUnits, precision: FifthLabelSettings.textPrecision }); 
-               let formattedFifthText; 
-               if (tempAggregatedfifthValues[len] !== null) { 
-                   formattedFifthText = formatter.format(tempAggregatedfifthValues[len]); 
-               } 
-               else { 
-                   formattedFifthText = "0" 
-               } 
- 
-               yAxisValue = yAxisValue - 27; 
- 
-               let fiveDatatextProperties: TextProperties = { 
-                   text: formattedFifthText, 
-                   fontFamily: "Segoe UI", 
-                   fontSize: FifthLabelSettings.fontSize + 'px' 
-               }; 
-               let fiveText = TextMeasurementService.getTailoredTextOrDefault(fiveDatatextProperties, barWidthValue); 
-               let fivelength = fiveText.length; 
-               if (fiveText[fivelength - 1] == '%') { 
-                   fiveText = this.format(Number.parseFloat(tempAggregatedfifthValues[len]) * 100, 1, FifthLabelSettings.textPrecision, 'sample'); 
-                   fiveText = fiveText + '%'; 
- 
-               } 
-               this.root.select('.svgScrollable > .axisGraphicsContext') 
-                   .append('text') 
-                   .classed('fiveLabels', true) 
-                   .attr('x', xAxisValue) 
-                   .attr('y', yAxisValue) 
-                   .attr('text-anchor', 'middle') 
-                   .attr('font-size', FifthLabelSettings.fontSize) 
-                   .attr('font-family', FifthLabelSettings.fontFamily || 'Segoe UI') 
-                   .attr('fill', FifthLabelSettings.color) 
-                   .attr('font-weight', FifthLabelSettings.fontBold ? 'bold' : 'normal') 
-                   .attr('font-style', FifthLabelSettings.fontItalic ? 'italic' : 'normal') 
-                   .style('text-decoration', FifthLabelSettings.fontUnderline ? 'underline' : 'none') 
-                   .text(fiveText); 
-           } 
-            
-           //sixth 
-           value=this.dataViews[6]?.categorical?.values 
-           if (value) { 
-               let formatString = value[0].source.format; 
-               let formatter = valueFormatter.create({ format: formatString, value: SixthLabelSettings.displayUnits, precision: SixthLabelSettings.textPrecision }); 
-               let formattedSixthText; 
-               if (tempAggregatedsixthValues[len] !== null) { 
-                   formattedSixthText = formatter.format(tempAggregatedsixthValues[len]); 
-               } 
-               else { 
-                   formattedSixthText = "0" 
-               } 
- 
-               yAxisValue = yAxisValue - 27; 
- 
-               let SixDatatextProperties: TextProperties = { 
-                   text: formattedSixthText, 
-                   fontFamily: "Segoe UI", 
-                   fontSize: SixthLabelSettings.fontSize + 'px' 
-               }; 
-               let SixText = TextMeasurementService.getTailoredTextOrDefault(SixDatatextProperties, barWidthValue); 
-               let Sixlength = SixText.length; 
-               if (SixText[Sixlength - 1] == '%') { 
-                   SixText = this.format(Number.parseFloat(tempAggregatedsixthValues[len]) * 100, 1, SixthLabelSettings.textPrecision, 'sample'); 
-                   SixText = SixText + '%'; 
- 
-               } 
-               this.root.select('.svgScrollable > .axisGraphicsContext') 
-                   .append('text') 
-                   .classed('sixLabels', true) 
-                   .attr('x', xAxisValue) 
-                   .attr('y', yAxisValue) 
-                   .attr('text-anchor', 'middle') 
-                   .attr('font-size', SixthLabelSettings.fontSize)
-                   .attr('font-family', SixthLabelSettings.fontFamily || 'Segoe UI')
-                   .attr('fill', SixthLabelSettings.color)
-                   .attr('font-weight', SixthLabelSettings.fontBold ? 'bold' : 'normal')
-                   .attr('font-style', SixthLabelSettings.fontItalic ? 'italic' : 'normal')
-                   .style('text-decoration', SixthLabelSettings.fontUnderline ? 'underline' : 'none') 
-                   .text(SixText); 
-           } 
-           len--; 
-       } 
+       const valueCtx = { dataCategories, noAxis, box, xTicks, barWidthValue, sampleSize: titleResult.sampleSize, aggregatedValues: titleResult.aggregatedValues, totalLabelSettings, secondaryLabelSettings, tertiaryLabelSettings, quaternaryLabelSettings, FifthLabelSettings, SixthLabelSettings, tempAggregatedSecValues: titleResult.tempSec, tempAggregatedTerValues: titleResult.tempTer, tempAggregatedQuatValues: titleResult.tempQuat, tempAggregatedfifthValues: titleResult.tempFifth, tempAggregatedsixthValues: titleResult.tempSixth }; 
+       this.renderCategoryValueLabels(valueCtx); 
  
        this.root.selectAll('.svgScrollable > .axisGraphicsContext > .totalLabels').style('fill', totalLabelSettings.color); 
        this.root.selectAll('.svgScrollable > .axisGraphicsContext > .secLabels').style('fill', secondaryLabelSettings.color); 
@@ -5902,126 +5318,7 @@ let  value=this.dataViews[1]?.categorical?.values
  
        if (!this.data) 
            return; 
-       if (this.viewportIn.width > 0 && this.viewportIn.height > 0) { 
-           this.mainGraphicsContext.attr('width', this.viewportIn.width) 
-               .attr('height', (this.viewportIn.height)); 
-           let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar); 
-           if (!resize) { 
-               if (isBarChart) { 
-                   //let xZeroTick = this.xAxisGraphicsContext; 
-                   let xTransform = this.xAxisGraphicsContext.attr('transform'); 
-                   let height: number = 0; 
-                   if (Number.isNaN((Number.parseInt(xTransform.split(' ')[1])))) { 
-                       height = (Number.parseInt(xTransform.split(',')[1])); 
-                   } 
-                   else { 
-                       height = (Number.parseInt(xTransform.split(' ')[1])); 
-                   } 
-                   this.mainGraphicsContext 
-                       .attr('height', height); 
-               } 
-               else { 
-                   let yZeroTick = this.y1AxisGraphicsContext.selectAll('g.tick').filter((data) => data === 0); 
-                   if (yZeroTick[0].length != 0) { 
-                       let yTransform = yZeroTick.attr('transform'); 
-                       let height: number = 0; 
-                       if (Number.isNaN((Number.parseInt(yTransform.split(' ')[1])))) { 
-                           height = (Number.parseInt(yTransform.split(',')[1])); 
-                       } 
-                       else { 
-                           height = (Number.parseInt(yTransform.split(' ')[1])); 
-                       } 
-                       this.mainGraphicsContext 
-                           .attr('height', height); 
-                   } 
- 
-               } 
-           } 
-       } 
-       else { 
-           this.mainGraphicsContext.attr('width', 0) 
-               .attr('height', 0); 
-       } 
- 
-       let isLegendPresent = false; 
-       let legendPosition = Number.parseFloat(this.root.select('.legend').attr('orientation')); 
-       let customTitleHeight = Number.parseFloat(this.root.select('.Title_Div_Text').style('height')); 
-       let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar); 
-       let legendHeight1 = Number.parseFloat(this.root.select('.legend').style('height')) - 20; 
-       customTitleHeight = PixelConverter.fromPointToPixel(customTitleHeight); 
-       legendHeight1 = PixelConverter.fromPointToPixel(legendHeight1); 
-       if (Number.isNaN(legendHeight1) || !(0 === legendPosition || 5 === legendPosition || 1 === legendPosition || 6 === legendPosition) || !this.legendObjectProperties['show'] || !this.isLegendValue) { 
- 
-           legendHeight1 = 0; 
-       } 
-       let dvmcolumns=this.dataViews[0].metadata.columns 
-       let columnlength=dvmcolumns.length 
-       for (let i = 0; i < columnlength; i++) { 
-           if (dvmcolumns[i].roles.hasOwnProperty('Series')) { 
-               isLegendPresent = true; 
-               break; 
-           } 
-       } 
-       if (this.isSecondaryMeasure && isLegendPresent) { 
-           this.svg.selectAll('.mainGraphicsContext').attr('transform', 'translate(0, 40)'); 
-           this.xAxisGraphicsContext 
-               .attr('transform', manipulation.translate(0, this.viewportIn.height + 40)); 
-           this.y1AxisGraphicsContext 
-               .attr('transform', manipulation.translate(showY1OnRight ? this.viewportIn.width : 0, 40)); 
-       } 
-       else { 
-       
-           this.svg.selectAll('.mainGraphicsContext').attr('transform', 'translate(0, 20)'); 
-           this.xAxisGraphicsContext 
-               .attr('transform', manipulation.translate(0, this.viewportIn.height + 20)) 
-               .attr('text-anchor', 'middle'); 
-           this.y1AxisGraphicsContext 
-               .attr('transform', manipulation.translate(showY1OnRight ? this.viewportIn.width : 0, 20)); 
- 
-       } 
-       if (((this.isSecondaryMeasure && isLegendPresent) || (!this.isSecondaryMeasure && isLegendPresent)) && isBarChart) { 
-           this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10 - customTitleHeight + 33.333 - legendHeight1 + 67 - 40)); 
-       } 
-       else if (((this.isSecondaryMeasure && isLegendPresent) || (!this.isSecondaryMeasure && isLegendPresent)) && !isBarChart) { 
-           this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10)); 
-       } 
-       else if (!isLegendPresent && isBarChart) { 
-           this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10 - customTitleHeight + 33.33)); 
-       } 
-       else { 
-           this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10)); 
-       } 
- 
-       if (this.legendObjectProperties && (this.legendObjectProperties['position'] === 'Left' || this.legendObjectProperties['position'] === 'LeftCenter' || this.legendObjectProperties['position'] === 'Right' || this.legendObjectProperties['position'] === 'RightCenter')) { 
-           this.svg.selectAll('.mainGraphicsContext').attr('transform', 'translate(0, 20)'); 
-           this.xAxisGraphicsContext 
-               .attr('transform', manipulation.translate(0, this.viewportIn.height + 20)); 
-           this.y1AxisGraphicsContext 
-               .attr('transform', manipulation.translate(showY1OnRight ? this.viewportIn.width : 0, 20)); 
- 
-           if (((this.isSecondaryMeasure && isLegendPresent) || (!this.isSecondaryMeasure && isLegendPresent)) && isBarChart) { 
-               this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10 - customTitleHeight + 33.333)); // 33.33 = initial Title Height 
-           } 
-           else if (((this.isSecondaryMeasure && isLegendPresent) || (!this.isSecondaryMeasure && isLegendPresent)) && !isBarChart) { 
-               this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10)); 
-           } 
-           else { 
-               this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10)); 
-           } 
-       } 
-       let legendHeight = Number.parseFloat(this.root.select('.legend').style('height')) - 20; 
-       if (Number.isNaN(legendHeight) || !(0 === legendPosition || 5 === legendPosition || 1 === legendPosition || 6 === legendPosition) || !this.legendObjectProperties['show'] || !this.isLegendValue) { 
-           legendHeight = 0; 
-           if (!this.legendObjectProperties['show']) { 
-               this.root.select('.navArrow').remove(); 
-           } 
-           if (!this.legendObjectProperties['show']) { 
-               this.root.select('.legend').style({ 'display': 'none' }); 
-           } 
-       } 
-       if (legendPosition === 0 || legendPosition === 5) { 
-           this.svg.style('margin-top', legendHeight + 'px'); 
-       } 
+       this.renderFinalLayout(showY1OnRight, resize); 
  
        behaviorOptions = { 
            datapoints: globalallDataPoints, 
@@ -6038,6 +5335,574 @@ let  value=this.dataViews[1]?.categorical?.values
        return { dataPoints: globalallDataPoints, behaviorOptions: behaviorOptions, labelDataPoints: columnChartDrawInfo.labelDataPoints, labelsAreNumeric: true }; 
    } 
  
+   private renderMeasureTitles(mt: any): { aggregatedValues: any[]; sampleSize: any; tempSec: any[]; tempTer: any[]; tempQuat: any[]; tempFifth: any[]; tempSixth: any[] } {
+       let measureCounter = mt.numberOfMeasures;
+       let sampleSize = mt.sampleSize;
+       let aggregatedValues: any[] = [];
+       let tempSec: any[] = [], tempTer: any[] = [], tempQuat: any[] = [], tempFifth: any[] = [], tempSixth: any[] = [];
+       const titlePos = { counterValue: 0, numberOfMeasures: mt.numberOfMeasures, yAxisForLabels: mt.yAxisForLabels, yAxisMultiplier: mt.yAxisMultiplier, maxLabelTextWidth: mt.maxLabelTextWidth };
+       if (mt.totalLabelSettings.show) {
+           sampleSize = this.rmtResolveSampleSize(sampleSize);
+           aggregatedValues = this.rmtComputeTotalAggregates(mt.dataCategories, mt.dataSeries, mt.noAxis);
+           let totalTitleTextProperties: TextProperties = {
+               text: mt.totalLabelSettings.titleText,
+               fontFamily: mt.totalLabelSettings.titleFontFamily,
+               fontSize: mt.totalLabelSettings.titleFontSize + 'px'
+           };
+           let totalTitleText = TextMeasurementService.getTailoredTextOrDefault(totalTitleTextProperties, mt.maxLabelTextWidth);
+           this.rmtAppendTitle(mt.totalLabelSettings, totalTitleText, --measureCounter, mt.numberOfMeasures, mt.yAxisForLabels, mt.yAxisMultiplier);
+       }
+       let value = this.dataViews[1]?.categorical?.values;
+       if (value) {
+           tempSec = this.rmtRenderExtraMeasureTitle(value, mt.noAxis, mt.secondaryLabelSettings, { ...titlePos, counterValue: --measureCounter }, false);
+       }
+       let dvcvalues = this.dataViews[3]?.categorical?.values;
+       if (dvcvalues) {
+           tempTer = this.rmtRenderExtraMeasureTitle(dvcvalues, mt.noAxis, mt.tertiaryLabelSettings, { ...titlePos, counterValue: --measureCounter }, false);
+       }
+       value = this.dataViews[4]?.categorical?.values;
+       if (value) {
+           tempQuat = this.rmtRenderExtraMeasureTitle(value, mt.noAxis, mt.quaternaryLabelSettings, { ...titlePos, counterValue: --measureCounter }, true);
+       }
+       value = this.dataViews[5]?.categorical?.values;
+       if (value) {
+           tempFifth = this.rmtRenderExtraMeasureTitle(value, mt.noAxis, mt.FifthLabelSettings, { ...titlePos, counterValue: --measureCounter }, false);
+       }
+       value = this.dataViews[6]?.categorical?.values;
+       if (value) {
+           tempSixth = this.rmtRenderExtraMeasureTitle(value, mt.noAxis, mt.SixthLabelSettings, { ...titlePos, counterValue: --measureCounter }, false);
+       }
+       return { aggregatedValues, sampleSize, tempSec, tempTer, tempQuat, tempFifth, tempSixth };
+   }
+
+   private rmtCountMeasures(totalShow: boolean): number {
+       return (totalShow ? 1 : 0) +
+           (this.dataViews[1]?.categorical?.values ? 1 : 0) +
+           (this.dataViews[3]?.categorical?.values ? 1 : 0) +
+           (this.dataViews[4]?.categorical?.values ? 1 : 0) +
+           (this.dataViews[5]?.categorical?.values ? 1 : 0) +
+           (this.dataViews[6]?.categorical?.values ? 1 : 0);
+   }
+
+   private renderCategoryValueLabels(ctx: any): void {
+       let len;
+       if (ctx.dataCategories.length === 1 && ctx.dataCategories[0] === null) {
+           len = 0;
+       }
+       else {
+           len = ctx.xTicks[0].length - 1;
+       }
+       while (len >= 0) {
+           let yAxisValue = 32;
+           const xAxisValue = this.rvlResolveXAxisValue(ctx.noAxis, ctx.box, ctx.barWidthValue, ctx.xTicks, len);
+           yAxisValue = this.rvlRenderRowPrimary(ctx, len, xAxisValue, yAxisValue);
+           this.rvlRenderRowSecondary(ctx, len, xAxisValue, yAxisValue);
+           len--;
+       }
+   }
+
+   private rvlRenderRowPrimary(ctx: any, len: number, xAxisValue: number, yAxisValue: number): number {
+       if (ctx.totalLabelSettings.show) {
+           yAxisValue = yAxisValue - 27;
+           let totalText = this.rvlFormatTotalText(ctx.aggregatedValues, len, ctx.totalLabelSettings, ctx.sampleSize, ctx.barWidthValue);
+           this.rvlAppendValueLabel('totalLabels', ctx.totalLabelSettings, totalText, xAxisValue, yAxisValue);
+       }
+       if (this.dataViews[1]?.categorical?.values) {
+           yAxisValue = yAxisValue - 27;
+           let secText = this.rvlFormatMeasureText(this.dataViews[1].categorical.values, ctx.secondaryLabelSettings, ctx.tempAggregatedSecValues[len], ctx.barWidthValue);
+           this.rvlAppendValueLabel('secLabels', ctx.secondaryLabelSettings, secText, xAxisValue, yAxisValue);
+       }
+       if (this.dataViews[3]?.categorical?.values) {
+           yAxisValue = yAxisValue - 27;
+           let terText = this.rvlFormatMeasureText(this.dataViews[3].categorical.values, ctx.tertiaryLabelSettings, ctx.tempAggregatedTerValues[len], ctx.barWidthValue);
+           this.rvlAppendValueLabel('terLabels', ctx.tertiaryLabelSettings, terText, xAxisValue, yAxisValue);
+       }
+       return yAxisValue;
+   }
+
+   private rvlRenderRowSecondary(ctx: any, len: number, xAxisValue: number, yAxisValue: number): number {
+       let value = this.dataViews[4]?.categorical?.values;
+       if (value) {
+           yAxisValue = yAxisValue - 27;
+           let quatText = this.rvlFormatMeasureText(value, ctx.quaternaryLabelSettings, ctx.tempAggregatedQuatValues[len], ctx.barWidthValue);
+           this.rvlAppendValueLabel('quatLabels', ctx.quaternaryLabelSettings, quatText, xAxisValue, yAxisValue);
+       }
+       value = this.dataViews[5]?.categorical?.values;
+       if (value) {
+           yAxisValue = yAxisValue - 27;
+           let fiveText = this.rvlFormatMeasureText(value, ctx.FifthLabelSettings, ctx.tempAggregatedfifthValues[len], ctx.barWidthValue);
+           this.rvlAppendValueLabel('fiveLabels', ctx.FifthLabelSettings, fiveText, xAxisValue, yAxisValue);
+       }
+       value = this.dataViews[6]?.categorical?.values;
+       if (value) {
+           yAxisValue = yAxisValue - 27;
+           let sixText = this.rvlFormatMeasureText(value, ctx.SixthLabelSettings, ctx.tempAggregatedsixthValues[len], ctx.barWidthValue);
+           this.rvlAppendValueLabel('sixLabels', ctx.SixthLabelSettings, sixText, xAxisValue, yAxisValue);
+       }
+       return yAxisValue;
+   }
+
+   private renderDataLabels(columnChartDrawInfo: any): void {
+       let dataLabelPoints = [];
+       for (const labelDataPoint of columnChartDrawInfo.labelDataPoints) {
+           dataLabelPoints.push(labelDataPoint.text);
+       }
+       let allBoxes = this.root.selectAll('.mainGraphicsContext > svg > g > rect');
+       $('allBoxes').filter(function () {
+           return $(this).attr('opacity') == '1';
+       }).css("fill", "red");
+       let allBoxesLength = allBoxes[0].length - 1;
+       let all = 0;
+       let boxWidth = Number.parseFloat((<SVGRectElement>allBoxes[0][0]).width.baseVal.valueAsString);
+       let dataLabelSvg = this.root.select('.svgScrollable > .axisGraphicsContext > .mainGraphicsContext')
+           .append('g')
+           .classed('dataLabels', true);
+       let objects = this.dataView.metadata.objects;
+       let labelsObj = <DataLabelObject>objects['labels'];
+       let precision = labelsObj.labelPrecision ? labelsObj.labelPrecision : 0;
+       let labelColor = (labelsObj.color ? labelsObj.color.solid.color : 'black');
+       let labelFontFamily = labelsObj['fontFamily'] != null ? <string>labelsObj['fontFamily'] : 'Segoe UI';
+       let labelFontWeight = labelsObj['fontBold'] ? 'bold' : 'normal';
+       let labelFontStyle = labelsObj['fontItalic'] ? 'italic' : 'normal';
+       let labelTextDecoration = labelsObj['fontUnderline'] ? 'underline' : 'none';
+       let vis = [];
+       for (let i = 0; i <= allBoxesLength; i++)
+           vis[i] = 0;
+       while (all < dataLabelPoints.length) {
+           if (dataLabelPoints[all] != 0) {
+               const box = this.rdlFindBox(allBoxes, allBoxesLength, dataLabelPoints[all], vis, boxWidth);
+               let formattedDataLabelText = this.format(Number.parseFloat(dataLabelPoints[all]) * 100, 1, precision, 'sample');
+               this.rdlAppendDataLabel(dataLabelSvg, box, formattedDataLabelText, boxWidth);
+           }
+           all++;
+       }
+       dataLabelSvg.style({ 'fill': labelColor });
+       this.root.selectAll('.dataLabel').style('fill', labelColor);
+       this.root.selectAll('.dataLabel').style('font-family', labelFontFamily);
+       this.root.selectAll('.dataLabel').style('font-weight', labelFontWeight);
+       this.root.selectAll('.dataLabel').style('font-style', labelFontStyle);
+       this.root.selectAll('.dataLabel').style('text-decoration', labelTextDecoration);
+   }
+
+   private rdlFindBox(allBoxes: any, allBoxesLength: number, pointValue: any, vis: any[], boxWidth: number): any {
+       const box: any = { boxX: undefined, boxY: undefined, boxHeight: undefined, boxCenterX: undefined, boxCenterY: undefined };
+       let b = 0;
+       while (b <= allBoxesLength) {
+           if (allBoxes[0][b]['__data__'].originalValue == pointValue && vis[b] == 0 && allBoxes[0][b]['style']['fill-opacity'] == 1) {
+               box.boxHeight = Number.parseFloat((<SVGRectElement>allBoxes[0][b]).height.baseVal.valueAsString);
+               box.boxX = Number.parseFloat((<SVGRectElement>allBoxes[0][b]).x.baseVal.valueAsString);
+               box.boxY = Number.parseFloat((<SVGRectElement>allBoxes[0][b]).y.baseVal.valueAsString);
+               box.boxCenterX = box.boxX + boxWidth / 2;
+               box.boxCenterY = box.boxY + box.boxHeight / 2;
+               vis[b] = 1;
+               break;
+           }
+           b++;
+       }
+       return box;
+   }
+
+   private rdlAppendDataLabel(dataLabelSvg: any, box: any, formattedDataLabelText: string, boxWidth: number): void {
+       let dataLabelText;
+       if (formattedDataLabelText == "") {
+           dataLabelText = dataLabelSvg
+               .append('text')
+               .classed('dataLabel', true)
+               .attr('x', box.boxCenterX)
+               .attr('y', box.boxCenterY + 3)
+               .attr('text-anchor', 'middle')
+               .attr('font-size', this.data.labelSettings.fontSize)
+               .text(formattedDataLabelText);
+       }
+       else {
+           dataLabelText = dataLabelSvg
+               .append('text')
+               .classed('dataLabel', true)
+               .attr('x', box.boxCenterX)
+               .attr('y', box.boxCenterY + 3)
+               .attr('text-anchor', 'middle')
+               .attr('font-size', this.data.labelSettings.fontSize)
+               .text(formattedDataLabelText + '%');
+       }
+       let dataLabelBBox = (dataLabelText.node() as any).getBBox();
+       if (box.boxX + boxWidth < dataLabelBBox.x + dataLabelBBox.width || box.boxY + box.boxHeight < dataLabelBBox.y + dataLabelBBox.height) {
+           dataLabelText.text('');
+       }
+   }
+
+   private renderComputeMargins(renderXAxis: boolean, renderY1Axis: boolean, showY1OnRight: boolean): { tickLabelMargins: any; axisLabels: ChartAxesLabels; chartHasAxisLabels: boolean } {
+       let tickLabelMargins;
+       let axisLabels: ChartAxesLabels;
+       let chartHasAxisLabels: boolean;
+       let doneWithMargins = false, maxIterations = 2, numIterations = 0;
+       while (!doneWithMargins && numIterations < maxIterations) {
+           numIterations++;
+           tickLabelMargins = AxisHelper.getTickLabelMargins({
+               viewport: { width: this.viewportIn.width, height: this.viewport.height },
+               yMarginLimit: this.leftRightMarginLimit,
+               textWidthMeasurer: TextMeasurementService.measureSvgTextWidth,
+               textHeightMeasurer: TextMeasurementService.measureSvgTextHeight,
+               axes: { x: this.xAxisProperties, y1: this.yAxisProperties },
+               bottomMarginLimit: this.bottomMarginLimit,
+               properties: this.textProperties,
+               scrollbarVisible: this.isXScrollBarVisible || this.isYScrollBarVisible,
+               showOnRight: showY1OnRight,
+               renderXAxis: renderXAxis,
+               renderY1Axis: renderY1Axis,
+               renderY2Axis: false,
+           });
+           const sides = this.rcmResolveSides(tickLabelMargins, showY1OnRight, renderY1Axis);
+           if (this.hideAxisLabels()) {
+               this.xAxisProperties.axisLabel = null;
+               this.yAxisProperties.axisLabel = null;
+           }
+           this.addUnitTypeToAxisLabel(this.xAxisProperties, this.yAxisProperties);
+           axisLabels = { x: this.xAxisProperties.axisLabel, y: this.yAxisProperties.axisLabel, y2: null };
+           chartHasAxisLabels = (axisLabels.x != null) || (axisLabels.y != null || axisLabels.y2 != null);
+           this.rcmApplyAxisLabels(axisLabels, sides.maxMainYaxisSide, sides.maxSecondYaxisSide, sides.xMax, showY1OnRight);
+           let previousTickCountY1 = this.yAxisProperties.values.length;
+           this.calculateAxes(this.categoryAxisProperties, this.valueAxisProperties, this.textProperties, true);
+           if (this.yAxisProperties.values.length === previousTickCountY1)
+               doneWithMargins = true;
+       }
+       return { tickLabelMargins, axisLabels, chartHasAxisLabels };
+   }
+
+   private rcmResolveSides(tickLabelMargins: any, showY1OnRight: boolean, renderY1Axis: boolean): { maxMainYaxisSide: number; maxSecondYaxisSide: number; xMax: number } {
+       let maxMainYaxisSide = (showY1OnRight ? tickLabelMargins.right : tickLabelMargins.left) || 0,
+           maxSecondYaxisSide = (showY1OnRight ? tickLabelMargins.left : tickLabelMargins.right) || 0,
+           xMax = tickLabelMargins.top || 0;
+       maxMainYaxisSide += 10;
+       maxSecondYaxisSide += 10;
+       xMax += 12;
+       if (showY1OnRight && renderY1Axis) {
+           maxSecondYaxisSide += 20;
+       }
+       if (!showY1OnRight && renderY1Axis) {
+           maxMainYaxisSide += 20;
+       }
+       return { maxMainYaxisSide, maxSecondYaxisSide, xMax };
+   }
+
+   private rcmApplyAxisLabels(axisLabels: ChartAxesLabels, maxMainYaxisSide: number, maxSecondYaxisSide: number, xMax: number, showY1OnRight: boolean): void {
+       if (axisLabels.x != null)
+           xMax += 18;
+       if (axisLabels.y != null)
+           maxMainYaxisSide += 20;
+       if (axisLabels.y2 != null)
+           maxSecondYaxisSide += 20;
+       this.margin.left = showY1OnRight ? maxSecondYaxisSide : maxMainYaxisSide;
+       this.margin.right = showY1OnRight ? maxMainYaxisSide : maxSecondYaxisSide;
+       this.margin.bottom = xMax;
+   }
+
+   private renderFinalLayout(showY1OnRight: boolean, resize: boolean): void {
+       this.rflSizeMainGraphics(resize);
+       let legendPosition = Number.parseFloat(this.root.select('.legend').attr('orientation'));
+       let customTitleHeight = Number.parseFloat(this.root.select('.Title_Div_Text').style('height'));
+       let legendHeight1 = Number.parseFloat(this.root.select('.legend').style('height')) - 20;
+       customTitleHeight = PixelConverter.fromPointToPixel(customTitleHeight);
+       legendHeight1 = PixelConverter.fromPointToPixel(legendHeight1);
+       if (this.rflLegendHidden(legendHeight1, legendPosition)) {
+           legendHeight1 = 0;
+       }
+       this.rflTranslateContexts(showY1OnRight);
+       this.rflApplyAxisTransform(customTitleHeight, legendHeight1);
+       this.rflApplyLeftRightLegendLayout(showY1OnRight, customTitleHeight);
+       let legendHeight = Number.parseFloat(this.root.select('.legend').style('height')) - 20;
+       if (this.rflLegendHidden(legendHeight, legendPosition)) {
+           legendHeight = 0;
+           if (!this.legendObjectProperties['show']) {
+               this.root.select('.navArrow').remove();
+           }
+           if (!this.legendObjectProperties['show']) {
+               this.root.select('.legend').style({ 'display': 'none' });
+           }
+       }
+       if (legendPosition === 0 || legendPosition === 5) {
+           this.svg.style('margin-top', legendHeight + 'px');
+       }
+   }
+
+   private rflLegendHidden(h: number, legendPosition: number): boolean {
+       return Number.isNaN(h) || !(0 === legendPosition || 5 === legendPosition || 1 === legendPosition || 6 === legendPosition) || !this.legendObjectProperties['show'] || !this.isLegendValue;
+   }
+
+   private rflParseTransformHeight(transformStr: string): number {
+       if (Number.isNaN((Number.parseInt(transformStr.split(' ')[1])))) {
+           return (Number.parseInt(transformStr.split(',')[1]));
+       }
+       return (Number.parseInt(transformStr.split(' ')[1]));
+   }
+
+   private rflSizeMainGraphics(resize: boolean): void {
+       if (this.viewportIn.width > 0 && this.viewportIn.height > 0) {
+           this.mainGraphicsContext.attr('width', this.viewportIn.width)
+               .attr('height', (this.viewportIn.height));
+           let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar);
+           if (!resize) {
+               if (isBarChart) {
+                   let xTransform = this.xAxisGraphicsContext.attr('transform');
+                   this.mainGraphicsContext.attr('height', this.rflParseTransformHeight(xTransform));
+               }
+               else {
+                   let yZeroTick = this.y1AxisGraphicsContext.selectAll('g.tick').filter((data) => data === 0);
+                   if (yZeroTick[0].length != 0) {
+                       let yTransform = yZeroTick.attr('transform');
+                       this.mainGraphicsContext.attr('height', this.rflParseTransformHeight(yTransform));
+                   }
+               }
+           }
+       }
+       else {
+           this.mainGraphicsContext.attr('width', 0)
+               .attr('height', 0);
+       }
+   }
+
+   private rflHasSeriesRole(): boolean {
+       let dvmcolumns = this.dataViews[0].metadata.columns;
+       let columnlength = dvmcolumns.length;
+       for (let i = 0; i < columnlength; i++) {
+           if (dvmcolumns[i].roles.hasOwnProperty('Series')) {
+               return true;
+           }
+       }
+       return false;
+   }
+
+   private rflTranslateContexts(showY1OnRight: boolean): void {
+       const isLegendPresent = this.rflHasSeriesRole();
+       if (this.isSecondaryMeasure && isLegendPresent) {
+           this.svg.selectAll('.mainGraphicsContext').attr('transform', 'translate(0, 40)');
+           this.xAxisGraphicsContext
+               .attr('transform', manipulation.translate(0, this.viewportIn.height + 40));
+           this.y1AxisGraphicsContext
+               .attr('transform', manipulation.translate(showY1OnRight ? this.viewportIn.width : 0, 40));
+       }
+       else {
+           this.svg.selectAll('.mainGraphicsContext').attr('transform', 'translate(0, 20)');
+           this.xAxisGraphicsContext
+               .attr('transform', manipulation.translate(0, this.viewportIn.height + 20))
+               .attr('text-anchor', 'middle');
+           this.y1AxisGraphicsContext
+               .attr('transform', manipulation.translate(showY1OnRight ? this.viewportIn.width : 0, 20));
+       }
+   }
+
+   private rflApplyAxisTransform(customTitleHeight: number, legendHeight1: number): void {
+       const isLegendPresent = this.rflHasSeriesRole();
+       const isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar);
+       if (((this.isSecondaryMeasure && isLegendPresent) || (!this.isSecondaryMeasure && isLegendPresent)) && isBarChart) {
+           this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10 - customTitleHeight + 33.333 - legendHeight1 + 67 - 40));
+       }
+       else if (((this.isSecondaryMeasure && isLegendPresent) || (!this.isSecondaryMeasure && isLegendPresent)) && !isBarChart) {
+           this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10));
+       }
+       else if (!isLegendPresent && isBarChart) {
+           this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10 - customTitleHeight + 33.33));
+       }
+       else {
+           this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10));
+       }
+   }
+
+   private rflLeftRightAxisTransform(customTitleHeight: number): void {
+       const isLegendPresent = this.rflHasSeriesRole();
+       const isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar);
+       if (((this.isSecondaryMeasure && isLegendPresent) || (!this.isSecondaryMeasure && isLegendPresent)) && isBarChart) {
+           this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10 - customTitleHeight + 33.333)); // 33.33 = initial Title Height
+       }
+       else if (((this.isSecondaryMeasure && isLegendPresent) || (!this.isSecondaryMeasure && isLegendPresent)) && !isBarChart) {
+           this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10));
+       }
+       else {
+           this.axisGraphicsContext.attr('transform', manipulation.translate(this.margin.left, -10));
+       }
+   }
+
+   private rflApplyLeftRightLegendLayout(showY1OnRight: boolean, customTitleHeight: number): void {
+       if (this.legendObjectProperties && (this.legendObjectProperties['position'] === 'Left' || this.legendObjectProperties['position'] === 'LeftCenter' || this.legendObjectProperties['position'] === 'Right' || this.legendObjectProperties['position'] === 'RightCenter')) {
+           this.svg.selectAll('.mainGraphicsContext').attr('transform', 'translate(0, 20)');
+           this.xAxisGraphicsContext
+               .attr('transform', manipulation.translate(0, this.viewportIn.height + 20));
+           this.y1AxisGraphicsContext
+               .attr('transform', manipulation.translate(showY1OnRight ? this.viewportIn.width : 0, 20));
+           this.rflLeftRightAxisTransform(customTitleHeight);
+       }
+   }
+
+   private rmtResolveSampleSize(current: any): any {
+       if (this.dataViews[2]?.categorical?.values) {
+           for (const sampleValue of this.dataViews[2].categorical.values[0].values) {
+               if (sampleValue !== null) {
+                   return sampleValue;
+               }
+           }
+       }
+       return current;
+   }
+
+   private rmtComputeTotalAggregates(dataCategories: any[], dataSeries: any[], noAxis: boolean): number[] {
+       let aggregatedValues: number[] = [];
+       if (noAxis) {
+           if (length !== 0) {
+               aggregatedValues.push(this.rmtSumTotalNoAxis(dataSeries));
+           }
+       }
+       else {
+           aggregatedValues = this.rmtSumTotalByCategory(dataCategories, dataSeries);
+       }
+       return aggregatedValues;
+   }
+
+   private rmtSumTotalNoAxis(dataSeries: any[]): number {
+       let sum = 0;
+       for (let i = 0; i < length; i++) {
+           if (dataSeries[i].data[0]) {
+               sum = sum + this.data.series[i].data[0].valueOriginal;
+           }
+       }
+       return sum;
+   }
+
+   private rmtSumTotalByCategory(dataCategories: any[], dataSeries: any[]): number[] {
+       let aggregatedValues: number[] = [];
+       let dclength = dataCategories.length;
+       let dslength = dataSeries.length;
+       for (let k = 0; k < dclength; k++) {
+           let sum = 0;
+           for (let i = 0; i < dslength; i++) {
+               let j = this.sfFindCategoryIndex(dataSeries[i].data, dclength, dataCategories[k]);
+               if (j >= 0) {
+                   sum = sum + this.data.series[i].data[j].valueOriginal;
+               }
+           }
+           aggregatedValues.push(sum);
+       }
+       return aggregatedValues;
+   }
+
+   private rmtAggregate(valueArr: any, noAxis: boolean): any[] {
+       let aggregated: any[];
+       if (noAxis) {
+           let sum = 0;
+           for (const entry of valueArr) {
+               sum = sum + entry.values[0];
+           }
+           aggregated = [sum];
+       }
+       else {
+           aggregated = valueArr[0].values;
+       }
+       let temp = aggregated.slice(0);
+       if (this.removeFlags.length > 0) {
+           this.spliceMeasures(temp);
+       }
+       return temp;
+   }
+
+   private rmtAppendTitle(settings: any, text: string, counterValue: number, numberOfMeasures: number, yAxisForLabels: number, yAxisMultiplier: number, widthtext?: number): void {
+       let sel = this.root.select('.cartesianChart')
+           .append('text')
+           .classed('measureLabelTitle', true)
+           .attr('x', 1)
+           .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * counterValue))
+           .attr('font-size', settings.titleFontSize + 'px')
+           .attr('font-family', settings.titleFontFamily)
+           .attr('font-weight', settings.titleBold ? 'bold' : 'normal')
+           .attr('font-style', settings.titleItalic ? 'italic' : 'normal')
+           .style('text-decoration', settings.titleUnderline ? 'underline' : 'none')
+           .attr('fill', settings.titleColor);
+       if (widthtext != null) {
+           sel = sel.attr('width', widthtext);
+       }
+       sel.text(text)
+           .append('title')
+           .text(settings.titleText);
+   }
+
+   private rmtRenderExtraMeasureTitle(valueArr: any, noAxis: boolean, settings: any, pos: { counterValue: number; numberOfMeasures: number; yAxisForLabels: number; yAxisMultiplier: number; maxLabelTextWidth: number }, computeWidth: boolean): any[] {
+       let props: TextProperties = {
+           text: settings.titleText,
+           fontFamily: settings.titleFontFamily,
+           fontSize: settings.titleFontSize + 'px'
+       };
+       let widthtext = computeWidth ? TextMeasurementService.measureSvgTextWidth(props) : undefined;
+       let measuretext = TextMeasurementService.getTailoredTextOrDefault(props, pos.maxLabelTextWidth);
+       let temp = this.rmtAggregate(valueArr, noAxis);
+       this.rmtAppendTitle(settings, measuretext, pos.counterValue, pos.numberOfMeasures, pos.yAxisForLabels, pos.yAxisMultiplier, widthtext);
+       return temp;
+   }
+
+   private rvlResolveXAxisValue(noAxis: boolean, box: any, barWidthValue: number, xTicks: any, len: number): number {
+       if (noAxis) {
+           let barXValue = Number.parseInt(box.x.baseVal.valueAsString);
+           return barXValue + barWidthValue / 2;
+       }
+       let transformMatch = /translate\(([^)]+)\)/.exec((<HTMLElement>xTicks[0][len]).getAttribute('transform'));
+       return transformMatch?.[1] ? Number.parseInt(transformMatch[1]) : 0;
+   }
+
+   private rvlFormatTotalText(aggregatedValues: any[], len: number, settings: any, sampleSize: any, barWidthValue: number): string {
+       let formattedTotalText = this.format(Number.parseInt(aggregatedValues[len], 10), settings.displayUnits, settings.textPrecision, 'sample');
+       if (sampleSize > aggregatedValues[len]) {
+           formattedTotalText = formattedTotalText + '*';
+       }
+       let props: TextProperties = {
+           text: formattedTotalText,
+           fontFamily: "Segoe UI",
+           fontSize: settings.fontSize + 'px'
+       };
+       let totalText = TextMeasurementService.getTailoredTextOrDefault(props, barWidthValue);
+       let totallength = totalText.length;
+       if (totalText[totallength - 1] == '%') {
+           totalText = this.format(Number.parseFloat(aggregatedValues[len]) * 100, 1, settings.textPrecision, 'sample');
+           totalText = totalText + '%';
+       }
+       return totalText;
+   }
+
+   private rvlFormatMeasureText(dataViewValues: any, settings: any, tempValue: any, barWidthValue: number): string {
+       let formatString = dataViewValues[0].source.format;
+       let formatter = valueFormatter.create({ format: formatString, value: settings.displayUnits, precision: settings.textPrecision });
+       let formatted;
+       if (tempValue !== null) {
+           formatted = formatter.format(tempValue);
+       }
+       else {
+           formatted = "0";
+       }
+       let props: TextProperties = {
+           text: formatted,
+           fontFamily: "Segoe UI",
+           fontSize: settings.fontSize + 'px'
+       };
+       let text = TextMeasurementService.getTailoredTextOrDefault(props, barWidthValue);
+       let textlength = text.length;
+       if (text[textlength - 1] == '%') {
+           text = this.format(Number.parseFloat(tempValue) * 100, 1, settings.textPrecision, 'sample');
+           text = text + '%';
+       }
+       return text;
+   }
+
+   private rvlAppendValueLabel(className: string, settings: any, text: string, xAxisValue: number, yAxisValue: number): void {
+       this.root.select('.svgScrollable > .axisGraphicsContext')
+           .append('text')
+           .classed(className, true)
+           .attr('x', xAxisValue)
+           .attr('y', yAxisValue)
+           .attr('text-anchor', 'middle')
+           .attr('font-size', settings.fontSize)
+           .attr('font-family', settings.fontFamily || 'Segoe UI')
+           .attr('fill', settings.color)
+           .attr('font-weight', settings.fontBold ? 'bold' : 'normal')
+           .attr('font-style', settings.fontItalic ? 'italic' : 'normal')
+           .style('text-decoration', settings.fontUnderline ? 'underline' : 'none')
+           .text(text);
+   }
+
    public spliceMeasures(measure: any[]) { 
        if (this.removeFlags.length) { 
            for (const removeFlag of this.removeFlags) { 
@@ -6089,34 +5954,63 @@ let  value=this.dataViews[1]?.categorical?.values
        let leftRightMarginLimit = this.leftRightMarginLimit; 
        let duration = AnimatorCommon.GetAnimationDuration(this.animator, suppressAnimations); 
        this.renderBackground(); 
-     //  let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar); 
+       this.renderChartXAxis(xAxis, tickLabelMargins, duration, bottomMarginLimit); 
+       this.renderChartYAxis(yAxis, tickLabelMargins, duration, leftRightMarginLimit); 
+       if (chartHasAxisLabels) { 
+           let hideXAxisTitle = !this.shouldRenderAxis(xAxis, "showAxisTitle"); 
+           let hideYAxisTitle = !this.shouldRenderAxis(yAxis, "showAxisTitle"); 
+           let hideY2AxisTitle = this.valueAxisProperties["secShowAxisTitle"] === false; 
+           this.renderAxesLabels(axisLabels, this.legend.getMargins().height, hideXAxisTitle, hideYAxisTitle, hideY2AxisTitle); 
+       } 
+       else { 
+           this.axisGraphicsContext.selectAll('.xAxisLabel').remove(); 
+           this.axisGraphicsContext.selectAll('.yAxisLabel').remove(); 
+       } 
+   } 
+
+   private renderChartXAxis(xAxis: IAxisProperties, tickLabelMargins: any, duration: number, bottomMarginLimit: number): void { 
        xAxis.axis.orient("bottom"); 
        if (!xAxis.willLabelsFit) 
            xAxis.axis.tickPadding(10); 
  
        let textWrapSettings: textWrapSettings = this.getTextWrapSettings(this.dataViews[0]); 
- 
-       if (textWrapSettings.show) { 
-           xAxis.willLabelsWordBreak = true; 
-       } 
-       else { 
-           xAxis.willLabelsWordBreak = false; 
-       } 
+       xAxis.willLabelsWordBreak = !!textWrapSettings.show; 
  
        let xAxisGraphicsElement = this.xAxisGraphicsContext; 
+       this.callAxis(xAxisGraphicsElement, xAxis, duration); 
+       xAxisGraphicsElement.selectAll('.zero-line').style('fill', 'black').style('display', 'initial'); 
+       this.styleXAxisTicks(xAxisGraphicsElement); 
+       this.layoutXAxisLabels(xAxisGraphicsElement, xAxis, tickLabelMargins, bottomMarginLimit, duration); 
+       xAxisGraphicsElement.selectAll('g.tick').selectAll('line').style({ 'display': 'none' }) 
+       
+       // Remove the x-axis domain line that d3 v7 adds by default.
+       xAxisGraphicsElement.selectAll('path.domain').remove();
+
+       if (this.shouldRenderAxis(xAxis)) { 
+           this.xAxisGraphicsContext.selectAll('*').style('visibility', 'visible'); 
+       } 
+       else { 
+           this.xAxisGraphicsContext.selectAll('*').style('visibility', 'hidden'); 
+       } 
+   } 
+
+   // Calls an axis onto its graphics element, with or without transition. 
+   private callAxis(graphicsElement: any, axisProps: IAxisProperties, duration: number): void { 
        if (duration) { 
-           xAxisGraphicsElement 
+           graphicsElement 
                .transition() 
                .duration(duration) 
-               .call(xAxis.axis) 
+               .call(axisProps.axis) 
                .call(this.darkenZeroLine as any); 
        } 
        else { 
-           xAxisGraphicsElement 
-               .call(xAxis.axis) 
+           graphicsElement 
+               .call(axisProps.axis) 
                .call(this.darkenZeroLine as any); 
        } 
-       xAxisGraphicsElement.selectAll('.zero-line').style('fill', 'black').style('display', 'initial'); 
+   } 
+
+   private styleXAxisTicks(xAxisGraphicsElement: any): void { 
        let xZeroTick = xAxisGraphicsElement.selectAll('g.tick').filter((data) => data === 0); 
        let xAllTicks = xAxisGraphicsElement.selectAll('g.tick'); 
  
@@ -6133,7 +6027,6 @@ let  value=this.dataViews[1]?.categorical?.values
            .style('text-decoration', this.categoryAxisProperties['fontUnderline'] ? 'underline' : 'none')
            .style('font-size', font_size + 'px');
  
-     // let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar); 
        if (xZeroTick) { 
            let xZeroColor = this.getValueAxisFill(); 
            if (xZeroColor) { 
@@ -6141,7 +6034,9 @@ let  value=this.dataViews[1]?.categorical?.values
                xAllTicks.selectAll('line').style({ 'fill': xZeroColor.solid.color }) 
            } 
        } 
- 
+   } 
+
+   private layoutXAxisLabels(xAxisGraphicsElement: any, xAxis: IAxisProperties, tickLabelMargins: any, bottomMarginLimit: number, duration: number): void { 
        let xAxisTextNodes = xAxisGraphicsElement.selectAll('text') 
  
        if (xAxis.willLabelsWordBreak) { 
@@ -6166,89 +6061,58 @@ let  value=this.dataViews[1]?.categorical?.values
                .append('title') 
                .text((d, i) => xAxis.values[i]); 
        } 
-       xAxisGraphicsElement.selectAll('g.tick').selectAll('line').style({ 'display': 'none' }) 
-       
-       // Remove the x-axis domain line that d3 v7 adds by default.
-       xAxisGraphicsElement.selectAll('path.domain').remove();
+   } 
 
-       if (this.shouldRenderAxis(xAxis)) { 
-           this.xAxisGraphicsContext.selectAll('*').style('visibility', 'visible'); 
- 
-       } 
-       else { 
-           this.xAxisGraphicsContext.selectAll('*').style('visibility', 'hidden'); 
-       } 
- 
-       if (this.shouldRenderAxis(yAxis)) { 
-           let yAxisOrientation = this.yAxisOrientation; 
-           let formatPercent = d3.format(".0%"); 
- 
-           yAxis.axis 
-               .tickSize(-this.viewportIn.width) 
-               .tickPadding(10) 
-               .orient(yAxisOrientation.toLowerCase()) 
-               .tickFormat(formatPercent); 
- 
-           let y1AxisGraphicsElement = this.y1AxisGraphicsContext; 
-           if (duration) { 
-               y1AxisGraphicsElement 
-                   .transition() 
-                   .duration(duration) 
-                   .call(yAxis.axis) 
-                   .call(this.darkenZeroLine as any); 
-           } 
-           else { 
-               y1AxisGraphicsElement 
-                   .call(yAxis.axis) 
-                   .call(this.darkenZeroLine); 
-           } 
-           let yZeroTick = y1AxisGraphicsElement.selectAll('g.tick').filter((data) => data === 0); 
-           let yAllTicks = y1AxisGraphicsElement.selectAll('g.tick'); 
-          // Clear d3 v7's injected sans-serif and use Segoe UI for percent labels.
-           y1AxisGraphicsElement.attr('font-family', null).attr('font-size', null);
-           let yFontFamily = this.valueAxisProperties?.['fontFamily'] ? <string>this.valueAxisProperties['fontFamily'] : 'Segoe UI';
-           let yFontSize = this.valueAxisProperties && Number(this.valueAxisProperties['fontSize']) ? Number(this.valueAxisProperties['fontSize']) : 10;
-           yAllTicks.selectAll('text')
-               .style('fill', this.getValueAxisFill().solid.color)
-               .style('font-family', yFontFamily)
-               .style('font-weight', this.valueAxisProperties?.['fontBold'] ? 'bold' : 'normal')
-               .style('font-style', this.valueAxisProperties?.['fontItalic'] ? 'italic' : 'normal')
-               .style('text-decoration', this.valueAxisProperties?.['fontUnderline'] ? 'underline' : 'none')
-               .style('font-size', yFontSize + 'px');
-
-           if (yZeroTick) {
-               yZeroTick.selectAll('line').attr('y2', 1);
-               // Apply uniform light-grey gridlines for every tick.
-               yAllTicks.selectAll('line').style({ 'stroke': 'rgb(119, 119, 119)', 'opacity': '0.3' })
-               yZeroTick.selectAll('line').style({ 'stroke': 'rgb(119, 119, 119)', 'opacity': '0.3' })
-           }
-           // Remove the y-axis domain path that d3 v7 adds by default.
-           y1AxisGraphicsElement.selectAll('path.domain').remove();
-           
-           if (tickLabelMargins.left >= leftRightMarginLimit) { 
-               y1AxisGraphicsElement.selectAll('text') 
-                   .call(AxisHelper.LabelLayoutStrategy.clip, 
-                       // Can't use padding space to render text, so subtract that from available space for ellipses calculations 
-                       leftRightMarginLimit - 40, 
-                       TextMeasurementService.svgEllipsis); 
-           } 
- 
-       } 
-       else { 
+   private renderChartYAxis(yAxis: IAxisProperties, tickLabelMargins: any, duration: number, leftRightMarginLimit: number): void { 
+       if (!this.shouldRenderAxis(yAxis)) { 
            this.y1AxisGraphicsContext.selectAll('*').remove(); 
+           return; 
        } 
-       // Axis labels 
+       let yAxisOrientation = this.yAxisOrientation; 
+       let formatPercent = d3.format(".0%"); 
  
-       if (chartHasAxisLabels) { 
-           let hideXAxisTitle = !this.shouldRenderAxis(xAxis, "showAxisTitle"); 
-           let hideYAxisTitle = !this.shouldRenderAxis(yAxis, "showAxisTitle"); 
-           let hideY2AxisTitle = this.valueAxisProperties["secShowAxisTitle"] === false; 
-           this.renderAxesLabels(axisLabels, this.legend.getMargins().height, hideXAxisTitle, hideYAxisTitle, hideY2AxisTitle); 
+       yAxis.axis 
+           .tickSize(-this.viewportIn.width) 
+           .tickPadding(10) 
+           .orient(yAxisOrientation.toLowerCase()) 
+           .tickFormat(formatPercent); 
+ 
+       let y1AxisGraphicsElement = this.y1AxisGraphicsContext; 
+       this.callAxis(y1AxisGraphicsElement, yAxis, duration); 
+       this.styleYAxisTicks(y1AxisGraphicsElement); 
+       // Remove the y-axis domain path that d3 v7 adds by default.
+       y1AxisGraphicsElement.selectAll('path.domain').remove();
+       
+       if (tickLabelMargins.left >= leftRightMarginLimit) { 
+           y1AxisGraphicsElement.selectAll('text') 
+               .call(AxisHelper.LabelLayoutStrategy.clip, 
+                   // Can't use padding space to render text, so subtract that from available space for ellipses calculations 
+                   leftRightMarginLimit - 40, 
+                   TextMeasurementService.svgEllipsis); 
        } 
-       else { 
-           this.axisGraphicsContext.selectAll('.xAxisLabel').remove(); 
-           this.axisGraphicsContext.selectAll('.yAxisLabel').remove(); 
-       } 
+   } 
+
+   private styleYAxisTicks(y1AxisGraphicsElement: any): void { 
+       let yZeroTick = y1AxisGraphicsElement.selectAll('g.tick').filter((data) => data === 0); 
+       let yAllTicks = y1AxisGraphicsElement.selectAll('g.tick'); 
+      // Clear d3 v7's injected sans-serif and use Segoe UI for percent labels.
+       y1AxisGraphicsElement.attr('font-family', null).attr('font-size', null);
+       let yFontFamily = this.valueAxisProperties?.['fontFamily'] ? <string>this.valueAxisProperties['fontFamily'] : 'Segoe UI';
+       let yFontSize = this.valueAxisProperties && Number(this.valueAxisProperties['fontSize']) ? Number(this.valueAxisProperties['fontSize']) : 10;
+       yAllTicks.selectAll('text')
+           .style('fill', this.getValueAxisFill().solid.color)
+           .style('font-family', yFontFamily)
+           .style('font-weight', this.valueAxisProperties?.['fontBold'] ? 'bold' : 'normal')
+           .style('font-style', this.valueAxisProperties?.['fontItalic'] ? 'italic' : 'normal')
+           .style('text-decoration', this.valueAxisProperties?.['fontUnderline'] ? 'underline' : 'none')
+           .style('font-size', yFontSize + 'px');
+
+       if (yZeroTick) {
+           yZeroTick.selectAll('line').attr('y2', 1);
+           // Apply uniform light-grey gridlines for every tick.
+           yAllTicks.selectAll('line').style({ 'stroke': 'rgb(119, 119, 119)', 'opacity': '0.3' })
+           yZeroTick.selectAll('line').style({ 'stroke': 'rgb(119, 119, 119)', 'opacity': '0.3' })
+       }
    } 
    private darkenZeroLine(g: Selection<any>): void { 
        let zeroTick = g.selectAll('g.tick').filter((data) => data === 0).node(); 
@@ -6285,12 +6149,8 @@ let  value=this.dataViews[1]?.categorical?.values
        let fontSize = Visual.AxisFontSize; 
        let yAxisOrientation = this.yAxisOrientation; 
        let showY1OnRight = yAxisOrientation === yAxisPosition.right; 
-       let isBarChart = EnumExtensions.hasFlag(this.chartType, flagBar); 
        let legendHeight = Number.parseFloat(this.root.select('.legend').style('height')) - 20; 
        let translateHeight; 
-       if (isBarChart) { 
-           translateHeight += 25; 
-       } 
        if (!this.legendObjectProperties["show"]) { 
            translateHeight = Visual.totalHeight - 26; 
        } 
@@ -6301,8 +6161,21 @@ let  value=this.dataViews[1]?.categorical?.values
        else { 
            translateHeight = Visual.totalHeight - 26 - legendHeight; 
        } 
-       if (!hideXAxisTitle) {
-           let xTitleFamily = this.categoryAxisProperties?.['titleFontFamily'] ? <string>this.categoryAxisProperties['titleFontFamily'] : (this.categoryAxisProperties?.['fontFamily'] ? <string>this.categoryAxisProperties['fontFamily'] : 'Segoe UI');
+       let axisTitleCtx = { width, height, margin, legendMargin, fontSize, showY1OnRight }; 
+       this.renderXAxisTitle(axisLabels, width, translateHeight, hideXAxisTitle); 
+       this.renderYAxisTitle(axisLabels, axisTitleCtx, hideYAxisTitle); 
+       this.renderY2AxisTitle(axisLabels, axisTitleCtx, hideY2AxisTitle); 
+   } 
+
+   private resolveAxisTitleFontFamily(axisProps): string { 
+       if (axisProps?.['titleFontFamily']) { return <string>axisProps['titleFontFamily']; } 
+       if (axisProps?.['fontFamily']) { return <string>axisProps['fontFamily']; } 
+       return 'Segoe UI'; 
+   } 
+
+   private renderXAxisTitle(axisLabels: ChartAxesLabels, width: number, translateHeight, hideXAxisTitle: boolean): void { 
+       if (hideXAxisTitle) { return; }
+           let xTitleFamily = this.resolveAxisTitleFontFamily(this.categoryAxisProperties);
            let xTitleSize = this.categoryAxisProperties?.['titleFontSize'] != null ? <number>this.categoryAxisProperties['titleFontSize'] : 12;
            let xTitleColor = this.categoryAxisProperties?.['titleColor'] ? (<any>this.categoryAxisProperties['titleColor']).solid.color : this.getCategoryAxisFill().solid.color;
            let xTitleBold = this.categoryAxisProperties?.['titleBold'] ? 'bold' : 'normal';
@@ -6325,10 +6198,12 @@ let  value=this.dataViews[1]?.categorical?.values
            xAxisLabel.call(AxisHelper.LabelLayoutStrategy.clip,
                width,
                TextMeasurementService.svgEllipsis);
-       }
+   } 
  
-       if (!hideYAxisTitle) {
-           let yTitleFamily = this.valueAxisProperties?.['titleFontFamily'] ? <string>this.valueAxisProperties['titleFontFamily'] : (this.valueAxisProperties?.['fontFamily'] ? <string>this.valueAxisProperties['fontFamily'] : 'Segoe UI');
+   private renderYAxisTitle(axisLabels: ChartAxesLabels, ctx: { width: number; height: number; margin: IMargin; legendMargin: number; fontSize: number; showY1OnRight: boolean }, hideYAxisTitle: boolean): void { 
+       if (hideYAxisTitle) { return; }
+           let { width, height, margin, legendMargin, fontSize, showY1OnRight } = ctx;
+           let yTitleFamily = this.resolveAxisTitleFontFamily(this.valueAxisProperties);
            let yTitleSize = this.valueAxisProperties?.['titleFontSize'] != null ? <number>this.valueAxisProperties['titleFontSize'] : 12;
            let yTitleColor = this.valueAxisProperties?.['titleColor'] ? (<any>this.valueAxisProperties['titleColor']).solid.color : this.getValueAxisFill().solid.color;
            let yTitleBold = this.valueAxisProperties?.['titleBold'] ? 'bold' : 'normal';
@@ -6354,9 +6229,11 @@ let  value=this.dataViews[1]?.categorical?.values
            yAxisLabel.call(AxisHelper.LabelLayoutStrategy.clip,
                height - (margin.bottom + margin.top),
                TextMeasurementService.svgEllipsis);
-       }
+   } 
  
-       if (!hideY2AxisTitle && axisLabels.y2) { 
+   private renderY2AxisTitle(axisLabels: ChartAxesLabels, ctx: { width: number; height: number; margin: IMargin; legendMargin: number; fontSize: number; showY1OnRight: boolean }, hideY2AxisTitle: boolean): void { 
+       if (hideY2AxisTitle || !axisLabels.y2) { return; }
+           let { width, height, margin, legendMargin, fontSize, showY1OnRight } = ctx;
            let y2AxisLabel = this.axisGraphicsContext.append("text") 
                .style("text-anchor", "middle") 
                .text(axisLabels.y2) 
@@ -6377,7 +6254,6 @@ let  value=this.dataViews[1]?.categorical?.values
            y2AxisLabel.call(AxisHelper.LabelLayoutStrategy.clip, 
                height - (margin.bottom + margin.top), 
                TextMeasurementService.svgEllipsis); 
-       } 
    } 
    private adjustMargins(): void { 
        // Adjust margins if ticks are not going to be shown on either axis 

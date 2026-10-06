@@ -78,7 +78,7 @@ legacyD3.transform = (transformStr: string) => {
     if (!transformStr) {
         return result;
     }
-    const translateMatch = /translate\(\s*([-\d.eE]+)[ ,]*([-\d.eE]+)?\s*\)/.exec(transformStr);
+    const translateMatch = /translate\(\s*([-\d.eE]+)(?:[\s,]+([-\d.eE]+))?\s*\)/.exec(transformStr);
     if (translateMatch) {
         result.translate = [Number.parseFloat(translateMatch[1]) || 0, Number.parseFloat(translateMatch[2]) || 0];
     }
@@ -86,7 +86,7 @@ legacyD3.transform = (transformStr: string) => {
     if (rotateMatch) {
         result.rotate = Number.parseFloat(rotateMatch[1]) || 0;
     }
-    const scaleMatch = /scale\(\s*([-\d.eE]+)[ ,]*([-\d.eE]+)?\s*\)/.exec(transformStr);
+    const scaleMatch = /scale\(\s*([-\d.eE]+)(?:[\s,]+([-\d.eE]+))?\s*\)/.exec(transformStr);
     if (scaleMatch) {
         const sx = Number.parseFloat(scaleMatch[1]) || 1;
         const sy = scaleMatch[2] != null ? (Number.parseFloat(scaleMatch[2]) || sx) : sx;
@@ -185,7 +185,7 @@ legacyUtilsRoot.CartesianHelper = {
         return !!xAxisCardProperties?.axisType || !!xAxisCardProperties?.isScalar;
     },
     getPrecision(precision: any) {
-        return precision == null ? null : precision;
+        return precision ?? null;
     },
     lookupXValue(data: any, index: number, isScalar: boolean) {
         if (!data) {
@@ -200,10 +200,11 @@ legacyUtilsRoot.CartesianHelper = {
     },
 };
 legacyUtilsRoot.chart = {
-    axis: Object.assign({}, chartUtils.axis, {
+    axis: {
+        ...chartUtils.axis,
         scale: chartUtils.axisScale,
         style: chartUtils.axisStyle,
-    }),
+    },
     dataLabel: {
         VisualDataLabelsSettings: chartUtils.dataLabelInterfaces,
         IDataLabelSettings: chartUtils.dataLabelInterfaces,
@@ -211,7 +212,8 @@ legacyUtilsRoot.chart = {
         LabelEnabledDataPoint: chartUtils.dataLabelInterfaces,
         utils: chartUtils.dataLabelUtils,
     },
-    legend: Object.assign({}, chartUtils.legend, {
+    legend: {
+        ...chartUtils.legend,
         LegendPosition: chartUtils.legendInterfaces.LegendPosition,
         LegendData: chartUtils.legendInterfaces,
         LegendDataPoint: chartUtils.legendInterfaces,
@@ -219,7 +221,7 @@ legacyUtilsRoot.chart = {
         position: chartUtils.legendPosition,
         SVGLegend: chartUtils.svgLegend.SVGLegend,
         LegendBehavior: LegendBehaviorImpl,
-    }),
+    },
 };
 
 // LegendBehavior (and its dimmedLegendColor static) are already wired into
@@ -286,7 +288,7 @@ const jqProto: any = {
             if (!node?.querySelectorAll) continue;
             try {
                 out.push(...(Array.from(node.querySelectorAll(selector)) as any[]));
-            } catch (ignored) { /* invalid selector -> no matches */ }
+            } catch (error_) { /* invalid selector -> no matches */ }
         }
         return makeJQ(out);
     },
@@ -297,7 +299,7 @@ const jqProto: any = {
                 if (fn.call(node, i, node)) {
                     out.push(node);
                 }
-            } catch (ignored) { /* ignore predicate errors */ }
+            } catch (error_) { /* ignore predicate errors */ }
         });
         return makeJQ(out);
     },
@@ -402,7 +404,7 @@ function legacyJQuery(arg: any): JQLike {
         } else if (typeof document !== "undefined") {
             try {
                 nodes = Array.from(document.querySelectorAll(str)) as any[];
-            } catch (ignored) {
+            } catch (error_) {
                 nodes = [];
             }
         }
@@ -418,6 +420,18 @@ function legacyJQuery(arg: any): JQLike {
     return makeJQ(nodes);
 }
 
+function legacyExtendMerge(target: any, src: any, deep: boolean): void {
+    for (const key of Object.keys(src)) {
+        const val = src[key];
+        if (deep && val && typeof val === "object" && !Array.isArray(val)) {
+            const base = target[key] && typeof target[key] === "object" ? target[key] : {};
+            target[key] = (legacyJQuery as any).extend(true, base, val);
+        } else {
+            target[key] = val;
+        }
+    }
+}
+
 (legacyJQuery as any).extend = function extend(...args: any[]): any {
     let deep = false;
     if (typeof args[0] === "boolean") {
@@ -426,14 +440,8 @@ function legacyJQuery(arg: any): JQLike {
     const target = args[0] || {};
     for (let i = 1; i < args.length; i++) {
         const src = args[i];
-        if (!src) continue;
-        for (const key of Object.keys(src)) {
-            const val = src[key];
-            if (deep && val && typeof val === "object" && !Array.isArray(val)) {
-                target[key] = extend(true, target[key] && typeof target[key] === "object" ? target[key] : {}, val);
-            } else {
-                target[key] = val;
-            }
+        if (src) {
+            legacyExtendMerge(target, src, deep);
         }
     }
     return target;

@@ -105,7 +105,7 @@ namespace powerbi.extensibility.utils.CartesianHelper {
     export function getPrecision(precision: DataViewPropertyValue): number {
         if (precision == null) return null;
         const numericPrecision = <number>precision;
-        return numericPrecision < 0 ? 0 : numericPrecision;
+        return Math.max(numericPrecision, 0);
     }
 
     export function lookupXValue(
@@ -142,7 +142,7 @@ namespace powerbi.extensibility.utils.CartesianHelper {
         if (!series?.length) return 0;
 
         return Math.max(
-            ...series.map(s => s.data?.[s.data.length - 1]?.categoryIndex || 0)
+            ...series.map(s => s.data?.at(-1)?.categoryIndex || 0)
         );
     }
 }

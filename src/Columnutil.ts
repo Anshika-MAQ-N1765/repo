@@ -74,21 +74,15 @@ namespace powerbi.extensibility.utils {
         OutsideBase = 8,
         OutsideEnd = 16,
 
-        All =
-        InsideCenter |
-        InsideBase |
-        InsideEnd |
-        OutsideBase |
-        OutsideEnd,
+        // = InsideCenter | InsideBase | InsideEnd | OutsideBase | OutsideEnd
+        All = 31,
 
-        InsideAll =
-        InsideCenter |
-        InsideBase |
-        InsideEnd,
+        // = InsideCenter | InsideBase | InsideEnd
+        InsideAll = 7,
     }
 export class ColumnChartGMO {
-        public static SeriesClasses: ClassAndSelector = createClassAndSelector('series');
-        public static stackedValidLabelPositions: RectLabelPositionGMO[] = [RectLabelPositionGMO.InsideCenter, RectLabelPositionGMO.InsideEnd, RectLabelPositionGMO.InsideBase];
+        public static readonly SeriesClasses: ClassAndSelector = createClassAndSelector('series');
+        public static readonly stackedValidLabelPositions: RectLabelPositionGMO[] = [RectLabelPositionGMO.InsideCenter, RectLabelPositionGMO.InsideEnd, RectLabelPositionGMO.InsideBase];
         public static getLabelFill(labelColor: string, isInside: boolean, isCombo: boolean): string {
             if (labelColor) {
                 return labelColor;
@@ -106,7 +100,7 @@ export class ColumnChartGMO {
             if (series && series.length > 0) {
                 for (let i = 0, len = series.length; i < len; i++) {
                     let iNewSeries = newSeries[i] = Prototype.inherit(series[i]);
-                    // TODO: possible perf gain by early exiting when categoryIndex exceeds endIndex.
+                    // Note: could early-exit once categoryIndex exceeds endIndex for a minor perf gain.
                     iNewSeries.data = series[i].data.filter(d => d.categoryIndex >= startIndex && d.categoryIndex < endIndex);
                 }
             }
@@ -128,6 +122,18 @@ export class ColumnChartGMO {
         categoryThickness: number;
         outerPaddingRatio: number;
         isScalar?: boolean;
+    }
+    export interface GetCategoryAxisOptions {
+        data: ColumnChartData;
+        size: number;
+        layout: CategoryLayout;
+        isVertical: boolean;
+        forcedXMin?: DataViewPropertyValue;
+        forcedXMax?: DataViewPropertyValue;
+        axisScaleType?: string;
+        axisDisplayUnits?: number;
+        axisPrecision?: number;
+        ensureXDomain?: NumberRange;
     }
     export interface ColumnChartSeries extends CartesianSeries {
         displayName: string;
@@ -244,12 +250,61 @@ export interface ColumnChartDataPoint extends CartesianDataPoint, SelectableData
         chartType: any;
     }
 
-        export function transformDomain(dataView: DataViewCategorical, min: DataViewPropertyValue, max: DataViewPropertyValue): DataViewCategorical {
-            if (!dataView.categories || !dataView.values || dataView.categories.length === 0 || dataView.values.length === 0)
-                return dataView;// no need to do something when there are no categories
+        interface TransformedDomainRows {
+            newCategoryValues: any[];
+            newObjects: any[];
+            newValues: any[][];
+        }
 
-            if (typeof min !== "number" && typeof max !== "number")
-                return dataView;//user did not set min max, nothing to do here
+        // Keep only the rows whose category value falls within [min, max], across the
+        // category values, the per-row objects, and every measure array (kept in sync).
+        function filterRowsInRange(dataView: DataViewCategorical, categoryValues: any[], categoryObjects: any, min: DataViewPropertyValue, max: DataViewPropertyValue): TransformedDomainRows {
+            let newCategoryValues = [];
+            let newObjects = [];
+            let newValues: any[][] = dataView.values.map(() => []);
+
+            for (let t = 0, len = categoryValues.length; t < len; t++) {
+                if (categoryValues[t] >= min && categoryValues[t] <= max) {
+                    newCategoryValues.push(categoryValues[t]);
+                    if (categoryObjects) {
+                        newObjects.push(categoryObjects[t]);
+                    }
+                    for (let k = 0; k < dataView.values.length; k++) {
+                        newValues[k].push(dataView.values[k].values[t]);
+                    }
+                }
+            }
+
+            return { newCategoryValues, newObjects, newValues };
+        }
+
+        // Clone the dataView (never mutate the original) and write the filtered arrays back.
+        function buildTransformedDataView(dataView: DataViewCategorical, rows: TransformedDomainRows): DataViewCategorical {
+            let resultDataView = Prototype.inherit(dataView);
+            let resultDataViewValues = resultDataView.values = Prototype.inherit(resultDataView.values);
+            let resultDataViewCategories = resultDataView.categories = Prototype.inherit(dataView.categories);
+            let resultDataViewCategories0 = resultDataView.categories[0] = Prototype.inherit(resultDataViewCategories[0]);
+
+            resultDataViewCategories0.values = rows.newCategoryValues;
+            //only if we had objects, then you set the new objects
+            if (resultDataViewCategories0.objects) {
+                resultDataViewCategories0.objects = rows.newObjects;
+            }
+
+            //update measure array
+            for (let t = 0, len = dataView.values.length; t < len; t++) {
+                let measureArray = resultDataViewValues[t] = Prototype.inherit(resultDataViewValues[t]);
+                measureArray.values = rows.newValues[t];
+            }
+
+            return resultDataView;
+        }
+
+        export function transformDomain(dataView: DataViewCategorical, min: DataViewPropertyValue, max: DataViewPropertyValue): DataViewCategorical {
+            // Nothing to do when there are no categories/values, or the user set neither min nor max.
+            if (!dataView.categories || !dataView.values || dataView.categories.length === 0 || dataView.values.length === 0
+                || (typeof min !== "number" && typeof max !== "number"))
+                return dataView;
 
             let category = dataView.categories[0];//at the moment we only support one category
             let categoryType = category ? category.source.type : null;
@@ -263,75 +318,25 @@ export interface ColumnChartDataPoint extends CartesianDataPoint, SelectableData
 
             if (!categoryValues || !categoryObjects)
                 return dataView;
-            let newcategoryValues = [];
-            let newValues = [];
-            let newObjects = [];
 
             //get new min max
             if (typeof min !== "number") {
                 min = categoryValues[0];
             }
             if (typeof max !== "number") {
-                max = categoryValues[categoryValues.length - 1];
+                max = categoryValues.at(-1);
             }
 
             //don't allow this
             if (min > max)
                 return dataView;
 
-            //build measure array
-            for (let j = 0, len = dataView.values.length; j < len; j++) {
-                newValues.push([]);
-            }
-
-            for (let t = 0, len = categoryValues.length; t < len; t++) {
-                if (categoryValues[t] >= min && categoryValues[t] <= max) {
-                    newcategoryValues.push(categoryValues[t]);
-                    if (categoryObjects) {
-                        newObjects.push(categoryObjects[t]);
-                    }
-
-                    //on each measure set the new range
-                    if (dataView.values) {
-                        for (let k = 0; k < dataView.values.length; k++) {
-                            newValues[k].push(dataView.values[k].values[t]);
-                        }
-                    }
-                }
-            }
-
-            //don't write directly to dataview
-            let resultDataView = Prototype.inherit(dataView);
-            let resultDataViewValues = resultDataView.values = Prototype.inherit(resultDataView.values);
-            let resultDataViewCategories = resultDataView.categories = Prototype.inherit(dataView.categories);
-            let resultDataViewCategories0 = resultDataView.categories[0] = Prototype.inherit(resultDataViewCategories[0]);
-
-            resultDataViewCategories0.values = newcategoryValues;
-            //only if we had objects, then you set the new objects
-            if (resultDataViewCategories0.objects) {
-                resultDataViewCategories0.objects = newObjects;
-            }
-
-            //update measure array
-            for (let t = 0, len = dataView.values.length; t < len; t++) {
-                let measureArray = resultDataViewValues[t] = Prototype.inherit(resultDataViewValues[t]);
-                measureArray.values = newValues[t];
-            }
-
-            return resultDataView;
+            let rows = filterRowsInRange(dataView, categoryValues, categoryObjects, min, max);
+            return buildTransformedDataView(dataView, rows);
         }
 
-        export function getCategoryAxis(
-            data: ColumnChartData,
-            size: number,
-            layout: CategoryLayout,
-            isVertical: boolean,
-            forcedXMin?: DataViewPropertyValue,
-            forcedXMax?: DataViewPropertyValue,
-            axisScaleType?: string,
-            axisDisplayUnits?: number,
-            axisPrecision?: number,
-            ensureXDomain?: NumberRange): IAxisProperties {
+        export function getCategoryAxis(options: GetCategoryAxisOptions): IAxisProperties {
+            let { data, size, layout, isVertical, forcedXMin, forcedXMax, axisScaleType, axisDisplayUnits, axisPrecision, ensureXDomain } = options;
 
             let categoryThickness = layout.categoryThickness;
             let isScalar = layout.isScalar;
@@ -400,7 +405,7 @@ export interface ColumnChartDataPoint extends CartesianDataPoint, SelectableData
     g.powerbi = g.powerbi || {};
     g.powerbi.extensibility = g.powerbi.extensibility || {};
     g.powerbi.extensibility.utils = g.powerbi.extensibility.utils || {};
-    if (typeof powerbi !== "undefined" && powerbi.extensibility && powerbi.extensibility.utils) {
+    if (typeof powerbi !== "undefined" && powerbi.extensibility?.utils) {
         Object.assign(g.powerbi.extensibility.utils, powerbi.extensibility.utils);
     }
 }

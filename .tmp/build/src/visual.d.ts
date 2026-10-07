@@ -39,8 +39,6 @@ declare namespace powerbi.extensibility.visual {
         image?: ImageValue;
         transparency?: number;
     }
-    const SelectionId: any;
-    type SelectionId = any;
     export type IGenericAnimator = IAnimator<IAnimatorOptions, IAnimationOptions, IAnimationResult>;
     export interface IGMOLegend {
         getMargins(): IViewport;
@@ -266,7 +264,7 @@ declare namespace powerbi.extensibility.visual {
         key: string;
         index: number;
         data: ColumnChartDataPoint[];
-        identity: SelectionId;
+        identity: any;
         color: string;
         labelSettings: VisualDataLabelsSettings;
         tooltip: VisualTooltipDataItem[];
@@ -308,6 +306,18 @@ declare namespace powerbi.extensibility.visual {
         outerPaddingRatio: number;
         isScalar?: boolean;
     }
+    export interface CategoryAxisOptions {
+        data: StackedChartGMOData;
+        size: number;
+        layout: CategoryLayout;
+        isVertical: boolean;
+        forcedXMin?: DataViewPropertyValue;
+        forcedXMax?: DataViewPropertyValue;
+        axisScaleType?: string;
+        axisDisplayUnits?: number;
+        axisPrecision?: number;
+        ensureXDomain?: NumberRange;
+    }
     interface CategoryLayoutOptions {
         availableWidth: number;
         categoryCount: number;
@@ -319,58 +329,55 @@ declare namespace powerbi.extensibility.visual {
     export function getValue<T>(objects: DataViewObjects, objectName: string, propertyName: string, defaultValue: T): T;
     export class GMOSVGLegend implements IGMOLegend {
         private maxLegendTextLength;
-        private mainGraphicsContext;
-        private labelGraphicsContext;
-        private mainGraphicsSVG;
         private orientation;
         private viewport;
         private parentViewport;
-        private svg;
-        private group;
-        private element;
-        private clearCatcher;
-        private interactivityService;
+        private readonly svg;
+        private readonly group;
+        private readonly element;
+        private readonly clearCatcher;
+        private readonly interactivityService;
         private legendDataStartIndex;
         private arrowPosWindow;
         private data;
-        private isScrollable;
+        private readonly isScrollable;
         private primaryTitle;
-        private secondaryTitle;
+        private readonly secondaryTitle;
         private lastCalculatedWidth;
         private visibleLegendWidth;
         TooltipServiceWrapper: ITooltipServiceWrapper;
-        private static identity;
+        private static readonly identity;
         private visibleLegendHeight;
         private legendFontSizeMarginDifference;
         private legendFontSizeMarginValue;
         legendHeight: number;
-        legendItemWidth: number;
-        static DefaultFontSizeInPt: number;
-        private static LegendIconRadius;
-        private static LegendIconRadiusFactor;
-        private static MaxTextLength;
-        private static MaxTitleLength;
-        private static TextAndIconPadding;
-        private static TitlePadding;
-        private static LegendEdgeMariginWidth;
-        private static LegendMaxWidthFactor;
-        private static TopLegendHeight;
-        private static DefaultTextMargin;
-        DefaultTextMargin: number;
-        private static DefaultMaxLegendFactor;
-        private secondaryExists;
-        private static LegendArrowOffset;
-        private static LegendArrowHeight;
-        private static LegendArrowWidth;
-        private static LegendArrowTranslateY;
+        readonly legendItemWidth: number;
+        static readonly DefaultFontSizeInPt = 8;
+        private static readonly LegendIconRadius;
+        private static readonly LegendIconRadiusFactor;
+        private static readonly MaxTextLength;
+        private static readonly MaxTitleLength;
+        private static readonly TextAndIconPadding;
+        private static readonly TitlePadding;
+        private static readonly LegendEdgeMariginWidth;
+        private static readonly LegendMaxWidthFactor;
+        private static readonly TopLegendHeight;
+        private static readonly DefaultTextMargin;
+        readonly DefaultTextMargin: number;
+        private static readonly DefaultMaxLegendFactor;
+        private readonly secondaryExists;
+        private static readonly LegendArrowOffset;
+        private static readonly LegendArrowHeight;
+        private static readonly LegendArrowWidth;
+        private static readonly LegendArrowTranslateY;
         private detailedLegend;
-        private static DefaultFontFamily;
-        private static DefaultTitleFontFamily;
-        private static LegendItem;
-        private static LegendText;
-        static LegendIcon: ClassAndSelector;
-        static LegendTitle: ClassAndSelector;
-        private static NavigationArrow;
+        private static readonly DefaultFontFamily;
+        private static readonly DefaultTitleFontFamily;
+        private static readonly LegendItem;
+        private static readonly LegendText;
+        static readonly LegendIcon: ClassAndSelector;
+        static readonly LegendTitle: ClassAndSelector;
+        private static readonly NavigationArrow;
         constructor(element: any, legendPosition: LegendPositionType, interactivityService: IInteractivityService, isScrollable: boolean);
         private updateLayout;
         private calculateViewport;
@@ -380,16 +387,27 @@ declare namespace powerbi.extensibility.visual {
         getOrientation(): LegendPositionType;
         drawLegend(data: LegendData, viewport: IViewport): void;
         drawLegendInternal(data: LegendData, viewport: IViewport, autoWidth: boolean, detailedLegend: any): void;
+        private applyLegendGroupTransform;
+        private renderLegendTitle;
+        private renderLegendItems;
+        private wrapLegendTextNodes;
         private normalizePosition;
         private calculateTitleLayout;
+        private computeTitleMaxMeasureLength;
         /** Performs layout offline for optimal perfomance */
         private calculateLayout;
         private updateNavigationArrowLayout;
         private calculateHorizontalNavigationArrowsLayout;
         private calculateVerticalNavigationArrowsLayout;
         private calculateHorizontalLayout;
+        private measureDetailedPrimaryWidth;
+        private layoutHorizontalItemWidth;
         private calculateVerticalLayout;
+        private applyVerticalTitleSpacing;
+        private layoutVerticalItemWidth;
         private drawNavigationArrows;
+        private positionTopBottomArrows;
+        private positionLeftRightArrows;
         private isTopOrBottom;
         private isLeftOrRight;
         private isCentered;
@@ -490,13 +508,13 @@ declare namespace powerbi.extensibility.visual {
         getClosestColumnIndex(x: number, y: number): number;
     }
     export class CartesianChartGMO {
-        static MinOrdinalRectThickness: number;
-        static MinScalarRectThickness: number;
-        static OuterPaddingRatio: number;
-        static InnerPaddingRatio: number;
-        private static FontSize;
+        static readonly MinOrdinalRectThickness = 20;
+        static readonly MinScalarRectThickness = 2;
+        static readonly OuterPaddingRatio = 0.4;
+        static readonly InnerPaddingRatio = 0.2;
+        private static readonly FontSize;
         FontSizeString: string;
-        static AxisTextProperties: TextProperties;
+        static readonly AxisTextProperties: TextProperties;
         static getPreferredCategorySpan(categoryCount: number, categoryThickness: number, noOuterPadding?: boolean): number;
         static getIsScalar(objects: DataViewObjects, propertyId: DataViewObjectPropertyIdentifier, type: ValueTypeDescriptor, scalarKeys?: any): boolean;
         private static supportsScalar;
@@ -505,14 +523,14 @@ declare namespace powerbi.extensibility.visual {
         static getLayout(data: StackedChartGMOData, options: CategoryLayoutOptions): CategoryLayout;
     }
     export class ColumnChartGMO {
-        static SeriesClasses: ClassAndSelector;
-        static stackedValidLabelPositions: RectLabelPositionGMO[];
+        static readonly SeriesClasses: ClassAndSelector;
+        static readonly stackedValidLabelPositions: RectLabelPositionGMO[];
         static getLabelFill(labelColor: string, isInside: boolean, isCombo: boolean): string;
         static getInteractiveColumnChartDomElement(element: any): HTMLElement;
         static sliceSeries(series: StackedChartGMOSeries[], endIndex: number, startIndex?: number): StackedChartGMOSeries[];
     }
     export class StackedChartGMOStrategy implements IColumnChartStrategyGMO {
-        private static classes;
+        private static readonly classes;
         private data;
         private graphicsContext;
         private width;
@@ -534,8 +552,9 @@ declare namespace powerbi.extensibility.visual {
         setTooltipServiceWrapper(TooltipServiceWrapper: ITooltipServiceWrapper): void;
         setData(data: ColumnChartData): void;
         setXScale(forcedXDomain?: any[], axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number): IAxisProperties;
-        getCategoryAxis(data: StackedChartGMOData, size: number, layout: CategoryLayout, isVertical: boolean, forcedXMin?: DataViewPropertyValue, forcedXMax?: DataViewPropertyValue, axisScaleType?: string, axisDisplayUnits?: number, axisPrecision?: number, ensureXDomain?: NumberRange): IAxisProperties;
+        getCategoryAxis(options: CategoryAxisOptions): IAxisProperties;
         lookupXValue(data: StackedChartGMOData, index: number, type: any, isScalar: boolean): any;
+        private lookupSeriesXValue;
         calcValueDomain(data: any, is100pct: any): {
             min: any;
             max: any;
@@ -572,9 +591,9 @@ declare namespace powerbi.extensibility.visual {
          */
         private getColumnsCenters;
         private moveHandle;
-        static getLayout(data: ColumnChartData, axisOptions: ColumnAxisOptions): IColumnLayout;
         private static getDisplayUnitValueFromAxisFormatter;
         private createLabelDataPoints;
+        private buildLabelDataPoint;
     }
     export const enum NewRectOrientationGMO {
         /** Rectangle with no specific orientation. */
@@ -636,7 +655,7 @@ declare namespace powerbi.extensibility.visual {
         key: string;
         index: number;
         data: StackedChartGMODataPoint[];
-        identity: SelectionId;
+        identity: any;
         color: string;
         labelSettings: VisualDataLabelsSettings;
     }
@@ -667,12 +686,12 @@ declare namespace powerbi.extensibility.visual {
         chartType: any;
     }
     export enum StackedChartGMOType {
-        clusteredBar,
-        clusteredColumn,
-        hundredPercentStackedBar,
-        hundredPercentStackedColumn,
-        stackedBar,
-        stackedColumn
+        clusteredBar = 10,// flagBar | flagClustered
+        clusteredColumn = 12,// flagColumn | flagClustered
+        hundredPercentStackedBar = 50,// flagBar | flagStacked100
+        hundredPercentStackedColumn = 52,// flagColumn | flagStacked100
+        stackedBar = 18,// flagBar | flagStacked
+        stackedColumn = 20
     }
     export interface IColumnGMOLayout {
         shapeLayout: {
@@ -703,7 +722,7 @@ declare namespace powerbi.extensibility.visual {
         selectColumn(selectedColumnIndex: number, lastSelectedColumnIndex: number): void;
         getClosestColumnIndex(x: number, y: number): number;
     }
-    export let StackedChartGMOProps: {
+    export const StackedChartGMOProps: {
         dataPoint: {
             defaultColor: DataViewObjectPropertyIdentifier;
             fill: DataViewObjectPropertyIdentifier;
@@ -896,16 +915,16 @@ declare namespace powerbi.extensibility.visual {
             fontUnderline: DataViewObjectPropertyIdentifier;
         };
     };
-    export interface sampleFilterSettings {
+    export interface SampleFilterSettings {
         show: boolean;
     }
-    export interface textWrapSettings {
+    export interface TextWrapSettings {
         show: boolean;
     }
-    export interface measureTitlesSettings {
+    export interface MeasureTitlesSettings {
         ellipsesStrength: number;
     }
-    export interface totalLabelSettings {
+    export interface TotalLabelSettings {
         show: boolean;
         titleText: string;
         titleColor: string;
@@ -923,7 +942,7 @@ declare namespace powerbi.extensibility.visual {
         fontItalic: boolean;
         fontUnderline: boolean;
     }
-    export interface secondaryLabelSettings {
+    export interface SecondaryLabelSettings {
         titleText: string;
         titleColor: string;
         titleFontFamily: string;
@@ -940,7 +959,7 @@ declare namespace powerbi.extensibility.visual {
         fontItalic: boolean;
         fontUnderline: boolean;
     }
-    export interface tertiaryLabelSettings {
+    export interface TertiaryLabelSettings {
         titleText: string;
         titleColor: string;
         titleFontFamily: string;
@@ -957,7 +976,7 @@ declare namespace powerbi.extensibility.visual {
         fontItalic: boolean;
         fontUnderline: boolean;
     }
-    export interface quaternaryLabelSettings {
+    export interface QuaternaryLabelSettings {
         titleText: string;
         titleColor: string;
         titleFontFamily: string;
@@ -1022,30 +1041,27 @@ declare namespace powerbi.extensibility.visual {
         labelText: ITextStyle;
         maxMarginFactor?: number;
     }
-    /**
-    * Renders a stacked and clustered column chart.
-    */
     export class Visual implements IVisual {
-        private root;
+        private readonly root;
         private updateCount;
-        private static ColumnChartClassName;
-        static SeriesClasses: ClassAndSelector;
-        private legend;
-        private static MainGraphicsContextClassName;
-        private AxisGraphicsContextClassName;
-        private ColorPalette;
+        private static readonly ColumnChartClassName;
+        static readonly SeriesClasses: ClassAndSelector;
+        private readonly legend;
+        private static readonly MainGraphicsContextClassName;
+        private readonly AxisGraphicsContextClassName;
+        private readonly ColorPalette;
         private background;
-        TooltipServiceWrapper: ITooltipServiceWrapper;
-        private svg;
-        private svgScrollable;
+        readonly TooltipServiceWrapper: ITooltipServiceWrapper;
+        private readonly svg;
+        private readonly svgScrollable;
         private mainGraphicsContext;
-        private labelGraphicsContext;
-        private axisGraphicsContext;
-        private axisGraphicsContextScrollable;
-        private xAxisGraphicsContext;
-        private backgroundGraphicsContext;
-        private y1AxisGraphicsContext;
-        private clearCatcher;
+        private readonly labelGraphicsContext;
+        private readonly axisGraphicsContext;
+        private readonly axisGraphicsContextScrollable;
+        private readonly xAxisGraphicsContext;
+        private readonly backgroundGraphicsContext;
+        private readonly y1AxisGraphicsContext;
+        private readonly clearCatcher;
         private mainGraphicsG;
         private xAxisProperties;
         private yAxisProperties;
@@ -1054,30 +1070,30 @@ declare namespace powerbi.extensibility.visual {
         private isSameAxis;
         private isSecondaryMeasure;
         private isPrimaryMeasure;
-        private ScrollBarWidth;
+        private readonly ScrollBarWidth;
         private data;
-        private style;
-        private colors;
-        private static AxisFontSize;
+        private readonly style;
+        private readonly colors;
+        private static readonly AxisFontSize;
         private yAxisOrientation;
-        private scrollY;
-        private scrollX;
-        private textProperties;
-        private chartType;
+        private readonly scrollY;
+        private readonly scrollX;
+        private readonly textProperties;
+        private readonly chartType;
         private columnChart;
-        private hostService;
-        private cartesianVisualHost;
+        private readonly hostService;
+        private readonly cartesianVisualHost;
         private legendObjectProperties;
         private removeFlags;
         private layerLegendData;
         private legendLabelFontSize;
-        private interactivity;
-        private cartesianSmallViewPortProperties;
-        private options;
-        private static LabelDisplayUnitsDefault;
-        private mainGraphicsSVG;
+        private readonly interactivity;
+        private readonly cartesianSmallViewPortProperties;
+        private readonly options;
+        private static readonly LabelDisplayUnitsDefault;
+        private readonly mainGraphicsSVG;
         private lastInteractiveSelectedColumnIndex;
-        private interactivityService;
+        private readonly interactivityService;
         private dataView;
         dataViews: DataView[];
         private dataViewCat;
@@ -1088,20 +1104,20 @@ declare namespace powerbi.extensibility.visual {
         private leftRightMarginLimit;
         private isXScrollBarVisible;
         private isYScrollBarVisible;
-        private animator;
-        private isScrollable;
-        private tooltipsEnabled;
-        private element;
-        private seriesLabelFormattingEnabled;
-        private isComboChart;
-        private formattingSettingsService;
+        private readonly animator;
+        private readonly isScrollable;
+        private readonly tooltipsEnabled;
+        private readonly element;
+        private readonly seriesLabelFormattingEnabled;
+        private readonly isComboChart;
+        private readonly formattingSettingsService;
         private formattingSettingsModel;
         private categoryAxisProperties;
         private valueAxisProperties;
         visualOptions: CalculateScaleAndDomainOptions;
         private categoryAxisHasUnitType;
         private valueAxisHasUnitType;
-        private static LegendLabelFontSizeDefault;
+        private static readonly LegendLabelFontSizeDefault;
         private static totalHeight;
         private _margin;
         legendDataGlobal: LegendData;
@@ -1116,22 +1132,64 @@ declare namespace powerbi.extensibility.visual {
         applyViewportSettings(): void;
         constructor(options: VisualConstructorOptions);
         private matrixToCategorical;
+        private static matrixNodeVal;
+        private static matrixNodeAt;
+        private mtcBuildRoleIndex;
+        private mtcFlattenColumns;
+        private mtcCollectNestedSeries;
+        private mtcBuildSeriesNodeByCat;
+        private mtcBuildValueColumns;
+        private mtcSeriesMeasureValues;
+        private mtcBuildGrain;
+        private mtcResolveGrainArray;
+        private mtcReadGrainForMeasure;
+        private mtcSubtotalNodeForCat;
+        private mtcAnyNonNull;
+        private mtcQnameOf;
+        private mtcBuildDiag;
+        private showNoDataMessage;
         update(options: VisualUpdateOptions): void;
+        private updateApplyPrimaryMeasureVisibility;
+        private updateDetectLegendValue;
+        private updateResolveTitle;
+        private updateSetBackground;
+        private updateBuildVisualOptions;
+        private updateTitleFontStyles;
+        private updateApplyTitleStyling;
+        private updateValidateInput;
+        private updateScanRoles;
+        private updateNormalizeDataViews;
+        private unTitleCaseColumns;
+        private unHasRole;
+        private unYColHasData;
+        private unMainHasExtraMeasures;
+        private unBuildNormalizedViews;
+        private unFindSourceColumn;
+        private unSumRoleValues;
+        private unSynthesizeMeasureViews;
         private shouldRenderAxis;
         private populateObjectProperties;
         private getValueAxisProperties;
         private getCategoryAxisProperties;
         private renderLegend;
+        private configureLegendData;
+        private applyLegendOrientation;
         getLegendTitle(name: any, showPrimaryMeasure: any): string;
+        private getCategoryLegendTitle;
+        private getPrimaryLegendTitle;
         private getCategoryLayout;
-        getTickLabelMargins(viewport: any, yMarginLimit: any, textWidthMeasurer: any, textHeightMeasurer: any, axes: any, bottomMarginLimit: any, properties: any, scrollbarVisible: any, showOnRight: any, renderXAxis: any, renderY1Axis: any, renderY2Axis: any): {
-            xMax: number;
-            yLeft: number;
-            yRight: number;
-        };
         applyUserMinMax(isScalar: boolean, dataView: DataViewCategorical, xAxisCardProperties: DataViewObject): DataViewCategorical;
         getLegend(colors: IColorPalette, defaultLegendLabelColor: string, defaultColor?: string): LegendSeriesInfo;
-        converter(dataViewAll: DataView[], dataView: DataViewCategorical, colors: IColorPalette, is100PercentStacked: boolean, isScalar?: boolean, dataViewMetadata?: DataViewMetadata, chartType?: any, interactivityService?: IInteractivityService): StackedChartGMOData;
+        converter(dataViewAll: DataView[], dataView: DataViewCategorical, colors: IColorPalette, isScalar?: boolean, dataViewMetadata?: DataViewMetadata, chartType?: any): StackedChartGMOData;
+        private convGetPivotedCategories;
+        private convDefaultCategories;
+        private convCreateAxesLabels;
+        private applySampleFilter;
+        private sfResolveSampleSize;
+        private sfComputeAggregates;
+        private sfFindCategoryIndex;
+        private sfRemoveBelowSample;
+        private sfReindexCategories;
         private static canSupportOverflow;
         private static getCategoryValueType;
         private static columnDataTypeHasValue;
@@ -1140,6 +1198,14 @@ declare namespace powerbi.extensibility.visual {
         private static getStackedMultiplier;
         createTooltipInfo(seriesIndex: number, categoryIndex: number): VisualTooltipDataItem[];
         private createDataPoints;
+        private cdpBuildRawValues;
+        private static cdpIsHighlightOverflow;
+        private cdpResolveSeriesLabelSettings;
+        private cdpApplySeriesColor;
+        private cdpProcessCategory;
+        private cdpComputeValuePosition;
+        private cdpBuildDataPoint;
+        private cdpBuildHighlightDataPoint;
         private static getDataPointColor;
         private static getStackedLabelColor;
         static getInteractiveColumnChartDomElement(element: any): SVGTextElement;
@@ -1161,42 +1227,95 @@ declare namespace powerbi.extensibility.visual {
         private getQuaternaryLabelSettings;
         private getFifthLabelSettings;
         private getSixthLabelSettings;
-        getDefaultSampleFilterSettings(): sampleFilterSettings;
-        getDefaultTextWrapSettings(): textWrapSettings;
-        getDefaultMeasureTitlesSettings(): measureTitlesSettings;
-        getDefaultTotalLabelSettings(): totalLabelSettings;
-        getDefaultMeasureLabelSettings(): secondaryLabelSettings;
-        getDefaultSecondaryLabelSettings(): secondaryLabelSettings;
-        getDefaultTertiaryLabelSettings(): tertiaryLabelSettings;
-        getDefaultQuaternaryLabelSettings(): quaternaryLabelSettings;
+        getDefaultSampleFilterSettings(): SampleFilterSettings;
+        getDefaultTextWrapSettings(): TextWrapSettings;
+        getDefaultMeasureTitlesSettings(): MeasureTitlesSettings;
+        getDefaultTotalLabelSettings(): TotalLabelSettings;
+        getDefaultMeasureLabelSettings(): SecondaryLabelSettings;
+        getDefaultSecondaryLabelSettings(): SecondaryLabelSettings;
+        getDefaultTertiaryLabelSettings(): TertiaryLabelSettings;
+        getDefaultQuaternaryLabelSettings(): QuaternaryLabelSettings;
         getDefaultFifthLabelSettings(): FifthLabelSettings;
         getDefaultSixthLabelSettings(): SixthLabelSettings;
         format(d: number, displayunitValue: number, precisionValue: number, columnType: string): string;
         numberWithCommas(x: any): any;
         private getShowTitle;
         private getTitleText;
+        private getExplicitTitleText;
+        private getTitleValuesName;
+        private composeTitleSuffix;
         private getTooltipText;
         private getTitleFill;
         private getTitleBgcolor;
         private getTitleSize;
         calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[];
+        private isSideLegendPosition;
+        private resolveLegendHeight;
+        private trimOverflowData;
+        private adjustPlotAreaWidth;
+        private adjustPlotAreaHeight;
+        private applyAxisLabels;
         getPreferredPlotArea(isScalar: boolean, categoryCount: number, categoryThickness: number): IViewport;
         private ApplyInteractivity;
         private selectColumn;
         private createInteractiveLegendDataPoints;
         calculateAxes(categoryAxisProperties: DataViewObject, valueAxisProperties: DataViewObject, textProperties: TextProperties, scrollbarVisible: boolean): IAxisProperties[];
         render(suppressAnimations: boolean, resize: boolean): CartesianVisualRenderResultGMO;
+        private renderMeasureTitles;
+        private rmtCountMeasures;
+        private renderCategoryValueLabels;
+        private rvlRenderRowPrimary;
+        private rvlRenderRowSecondary;
+        private renderDataLabels;
+        private rdlFindBox;
+        private rdlAppendDataLabel;
+        private renderComputeMargins;
+        private rcmResolveSides;
+        private rcmApplyAxisLabels;
+        private renderFinalLayout;
+        private rflLegendHidden;
+        private rflParseTransformHeight;
+        private rflSizeMainGraphics;
+        private rflHasSeriesRole;
+        private rflTranslateContexts;
+        private rflApplyAxisTransform;
+        private rflLeftRightAxisTransform;
+        private rflApplyLeftRightLegendLayout;
+        private rmtResolveSampleSize;
+        private rmtComputeTotalAggregates;
+        private rmtSumTotalNoAxis;
+        private rmtSumTotalByCategory;
+        private rmtAggregate;
+        private rmtAppendTitle;
+        private rmtRenderExtraMeasureTitle;
+        private rvlResolveXAxisValue;
+        private rvlFormatTotalText;
+        private rvlFormatMeasureText;
+        private rvlAppendValueLabel;
         spliceMeasures(measure: any[]): void;
         private getMaxMarginFactor;
         private hideAxisLabels;
         private renderBackground;
         private renderChart;
+        private renderChartXAxis;
+        private callAxis;
+        private styleXAxisTicks;
+        private layoutXAxisLabels;
+        private renderChartYAxis;
+        private styleYAxisTicks;
         private darkenZeroLine;
         private getValueAxisFill;
         private getCategoryAxisFill;
         private renderAxesLabels;
+        private resolveAxisTitleFontFamily;
+        private renderXAxisTitle;
+        private renderYAxisTitle;
+        private renderY2AxisTitle;
         private adjustMargins;
         private updateAxis;
+        private getCustomMeasureHeight;
+        private computeAxisLayoutMetrics;
+        private applyAxisSvgSizing;
         private getUnitType;
         private addUnitTypeToAxisLabel;
         onClearSelection(): void;

@@ -2364,16 +2364,16 @@ export const StackedChartGMOProps = {
        fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'fontUnderline' },
    }, 
 }; 
-export interface sampleFilterSettings { 
+export interface SampleFilterSettings { 
    show: boolean; 
 }; 
-export interface textWrapSettings { 
+export interface TextWrapSettings { 
    show: boolean; 
 }; 
-export interface measureTitlesSettings { 
+export interface MeasureTitlesSettings { 
    ellipsesStrength: number; 
 }; 
-export interface totalLabelSettings { 
+export interface TotalLabelSettings { 
    show: boolean; 
    titleText: string; 
    titleColor: string;
@@ -2391,7 +2391,7 @@ export interface totalLabelSettings {
    fontItalic: boolean;
    fontUnderline: boolean;
 }; 
-export interface secondaryLabelSettings { 
+export interface SecondaryLabelSettings { 
    titleText: string; 
    titleColor: string;
    titleFontFamily: string;
@@ -2408,7 +2408,7 @@ export interface secondaryLabelSettings {
    fontItalic: boolean;
    fontUnderline: boolean;
 }; 
-export interface tertiaryLabelSettings { 
+export interface TertiaryLabelSettings { 
    titleText: string; 
    titleColor: string;
    titleFontFamily: string;
@@ -2425,7 +2425,7 @@ export interface tertiaryLabelSettings {
    fontItalic: boolean;
    fontUnderline: boolean;
 }; 
-export interface quaternaryLabelSettings { 
+export interface QuaternaryLabelSettings { 
    titleText: string; 
    titleColor: string;
    titleFontFamily: string;
@@ -3791,7 +3791,7 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        dataView = ColumnUtil.applyUserMinMax(isScalar, dataView, xAxisCardProperties); 
  
        let converterStrategy = new ColumnChartConverterHelper(dataView); 
-       let sampleFilterSettings: sampleFilterSettings = this.getSampleFilterSettings(this.dataViews[0]); 
+    let sampleFilterSettings: SampleFilterSettings = this.getSampleFilterSettings(this.dataViews[0]);
        let categoryInfo = this.convGetPivotedCategories(dataView, columnChartProps.general.formatString); 
        let DCategory=dataView.categories 
        let categories = categoryInfo.categories, 
@@ -4517,9 +4517,9 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        }
    }
  
-   private getSampleFilterSettings(dataView: DataView): sampleFilterSettings { 
+   private getSampleFilterSettings(dataView: DataView): SampleFilterSettings { 
        let objects: DataViewObjects = null; 
-       let sampleFilterSetting: sampleFilterSettings = this.getDefaultSampleFilterSettings(); 
+       let sampleFilterSetting: SampleFilterSettings = this.getDefaultSampleFilterSettings(); 
  
        if (!dataView.metadata?.objects) 
            return sampleFilterSetting; 
@@ -4531,9 +4531,9 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        return sampleFilterSetting; 
    } 
  
-   private getTextWrapSettings(dataView: DataView): textWrapSettings { 
+   private getTextWrapSettings(dataView: DataView): TextWrapSettings { 
        let objects: DataViewObjects = null; 
-       let textWrapSetting: textWrapSettings = this.getDefaultTextWrapSettings(); 
+       let textWrapSetting: TextWrapSettings = this.getDefaultTextWrapSettings(); 
  
        if (!dataView.metadata?.objects) 
            return textWrapSetting; 
@@ -4545,9 +4545,9 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        return textWrapSetting; 
    } 
  
-   private getMeasureTitlesSettings(dataView: DataView): measureTitlesSettings { 
+   private getMeasureTitlesSettings(dataView: DataView): MeasureTitlesSettings { 
        let objects: DataViewObjects = null; 
-       let measureTitlesSettings: measureTitlesSettings = this.getDefaultMeasureTitlesSettings(); 
+       let measureTitlesSettings: MeasureTitlesSettings = this.getDefaultMeasureTitlesSettings(); 
  
        if (!dataView.metadata?.objects) 
            return measureTitlesSettings; 
@@ -4559,9 +4559,9 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        return measureTitlesSettings; 
    } 
  
-   private getTotalLabelSettings(dataView: DataView): totalLabelSettings { 
+   private getTotalLabelSettings(dataView: DataView): TotalLabelSettings { 
        let objects: DataViewObjects = null; 
-       let labelSettings: totalLabelSettings = this.getDefaultTotalLabelSettings(); 
+       let labelSettings: TotalLabelSettings = this.getDefaultTotalLabelSettings(); 
  
        if (!dataView.metadata?.objects) 
            return this.getDefaultTotalLabelSettings(); 
@@ -4636,15 +4636,15 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        return false;
    }
 
-   private getSecondaryLabelSettings(dataView: DataView): secondaryLabelSettings {
+    private getSecondaryLabelSettings(dataView: DataView): SecondaryLabelSettings {
        return this.getMeasureLabelSettings(dataView, StackedChartGMOProps.secondaryLabels, this.getDefaultSecondaryLabelSettings());
    }
  
-   private getTertiaryLabelSettings(dataView: DataView): tertiaryLabelSettings {
+    private getTertiaryLabelSettings(dataView: DataView): TertiaryLabelSettings {
        return this.getMeasureLabelSettings(dataView, StackedChartGMOProps.tertiaryLabels, this.getDefaultTertiaryLabelSettings());
    }
  
-   private getQuaternaryLabelSettings(dataView: DataView): quaternaryLabelSettings {
+    private getQuaternaryLabelSettings(dataView: DataView): QuaternaryLabelSettings {
        return this.getMeasureLabelSettings(dataView, StackedChartGMOProps.quaternaryLabels, this.getDefaultQuaternaryLabelSettings());
    }
    private getFifthLabelSettings(dataView: DataView): FifthLabelSettings {
@@ -4654,25 +4654,25 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        return this.getMeasureLabelSettings(dataView, StackedChartGMOProps.SixthLabels, this.getDefaultSixthLabelSettings());
    }
  
-   public getDefaultSampleFilterSettings(): sampleFilterSettings { 
+    public getDefaultSampleFilterSettings(): SampleFilterSettings { 
        return { 
            show: false 
        } 
    } 
  
-   public getDefaultTextWrapSettings(): textWrapSettings { 
+    public getDefaultTextWrapSettings(): TextWrapSettings { 
        return { 
            show: false 
        } 
    } 
  
-   public getDefaultMeasureTitlesSettings(): measureTitlesSettings { 
+    public getDefaultMeasureTitlesSettings(): MeasureTitlesSettings { 
        return { 
            ellipsesStrength: 120 
        } 
    } 
  
-   public getDefaultTotalLabelSettings(): totalLabelSettings {
+    public getDefaultTotalLabelSettings(): TotalLabelSettings {
        return {
            show: true,
            titleText: 'Total',
@@ -4694,7 +4694,7 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
    }
  
    // Shared defaults for the secondary..sixth measure labels (all identical).
-   public getDefaultMeasureLabelSettings(): secondaryLabelSettings { 
+    public getDefaultMeasureLabelSettings(): SecondaryLabelSettings { 
        return { 
            titleText: '',
            titleColor: '#0a0707',
@@ -4713,11 +4713,11 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
            fontUnderline: false, 
        } 
    } 
-   public getDefaultSecondaryLabelSettings(): secondaryLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
+    public getDefaultSecondaryLabelSettings(): SecondaryLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
  
-   public getDefaultTertiaryLabelSettings(): tertiaryLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
+    public getDefaultTertiaryLabelSettings(): TertiaryLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
  
-   public getDefaultQuaternaryLabelSettings(): quaternaryLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
+    public getDefaultQuaternaryLabelSettings(): QuaternaryLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
    public getDefaultFifthLabelSettings(): FifthLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
    public getDefaultSixthLabelSettings(): SixthLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
  
@@ -4912,7 +4912,7 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
  
    public calculateAxesProperties(options: CalculateScaleAndDomainOptions): IAxisProperties[] { 
         
-       let totalLabelSettings: totalLabelSettings = this.getTotalLabelSettings(this.dataViews[0]); 
+    let totalLabelSettings: TotalLabelSettings = this.getTotalLabelSettings(this.dataViews[0]); 
  
        let data = this.data; 
        let legendPosition = Number.parseFloat(this.root.select('.legend').attr('orientation')); 
@@ -5276,12 +5276,12 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
            this.renderDataLabels(columnChartDrawInfo); 
        } 
  
-     //  let sampleFilterSettings: sampleFilterSettings = this.getSampleFilterSettings(this.dataViews[0]); 
-       let measureTitlesSettings: measureTitlesSettings = this.getMeasureTitlesSettings(this.dataViews[0]); 
-       let totalLabelSettings: totalLabelSettings = this.getTotalLabelSettings(this.dataViews[0]); 
-       let secondaryLabelSettings: secondaryLabelSettings = this.getSecondaryLabelSettings(this.dataViews[1]); 
-       let tertiaryLabelSettings: tertiaryLabelSettings = this.getTertiaryLabelSettings(this.dataViews[3]); 
-       let quaternaryLabelSettings: quaternaryLabelSettings = this.getQuaternaryLabelSettings(this.dataViews[4]); 
+         //  let sampleFilterSettings: SampleFilterSettings = this.getSampleFilterSettings(this.dataViews[0]);
+             let measureTitlesSettings: MeasureTitlesSettings = this.getMeasureTitlesSettings(this.dataViews[0]);
+             let totalLabelSettings: TotalLabelSettings = this.getTotalLabelSettings(this.dataViews[0]);
+             let secondaryLabelSettings: SecondaryLabelSettings = this.getSecondaryLabelSettings(this.dataViews[1]);
+             let tertiaryLabelSettings: TertiaryLabelSettings = this.getTertiaryLabelSettings(this.dataViews[3]);
+             let quaternaryLabelSettings: QuaternaryLabelSettings = this.getQuaternaryLabelSettings(this.dataViews[4]);
        let FifthLabelSettings: FifthLabelSettings = this.getFifthLabelSettings(this.dataViews[5]); 
        let SixthLabelSettings: SixthLabelSettings = this.getSixthLabelSettings(this.dataViews[6]); 
  
@@ -5973,7 +5973,7 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        if (!xAxis.willLabelsFit) 
            xAxis.axis.tickPadding(10); 
  
-       let textWrapSettings: textWrapSettings = this.getTextWrapSettings(this.dataViews[0]); 
+    let textWrapSettings: TextWrapSettings = this.getTextWrapSettings(this.dataViews[0]);
        xAxis.willLabelsWordBreak = !!textWrapSettings.show; 
  
        let xAxisGraphicsElement = this.xAxisGraphicsContext; 
@@ -6310,7 +6310,7 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
 
    // Read the live legend/title DOM metrics and reserved heights used to size the axes.
    private computeAxisLayoutMetrics(): { customTitleHeight: any; legendHeight: number; legendWidth: number; customHeight: number } { 
-       let totalLabelSettings: totalLabelSettings = this.getTotalLabelSettings(this.dataViews[0]); 
+    let totalLabelSettings: TotalLabelSettings = this.getTotalLabelSettings(this.dataViews[0]); 
 
        let legendPosition = Number.parseFloat(this.root.select('.legend').attr('orientation')); 
        let customTitleHeight = this.root.select('.Title_Div_Text')?.style('height') && Number.parseFloat(this.root.select('.Title_Div_Text').style('height')); 

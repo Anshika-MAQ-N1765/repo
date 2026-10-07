@@ -14,6 +14,138 @@ function toTitleCase(text: string): string {
     if (text == null) { return text; }
     return String(text).replace(/\b\w/g, (ch) => ch.toUpperCase());
 }
+
+// ---- Strongly-typed shapes for the matrix -> categorical adapter (matrixToCategorical) ----
+// These replace the previous `any` usages. The Power BI matrix DataView is read
+// through the real API types; the reconstructed categorical output and the
+// internal parameter "bags" use the dedicated Mtc* interfaces below.
+type PrimitiveValue = powerbiApi.PrimitiveValue;
+type DataViewMatrix = powerbiApi.DataViewMatrix;
+type DataViewMatrixNode = powerbiApi.DataViewMatrixNode;
+type DataViewMatrixNodeValue = powerbiApi.DataViewMatrixNodeValue;
+type DataViewHierarchyLevel = powerbiApi.DataViewHierarchyLevel;
+type MatrixNodeIdentity = DataViewMatrixNode["identity"];
+
+/** One reconstructed series (column group) discovered while flattening the matrix. */
+interface MtcSeriesEntry {
+    key: string;
+    name: PrimitiveValue;
+    identity: MatrixNodeIdentity;
+    objects: DataViewObjects;
+}
+
+/** A measure metadata column optionally tagged with the owning series' group name. */
+interface MtcMeasureSource extends DataViewMetadataColumn {
+    groupName?: PrimitiveValue;
+}
+
+/** One reconstructed value column (series x measure) in the categorical output. */
+interface MtcValueColumn {
+    source: MtcMeasureSource;
+    values: PrimitiveValue[];
+    identity?: MatrixNodeIdentity;
+}
+
+/** A grouped bundle of value columns for a single series. */
+interface MtcValueGroup {
+    values: MtcValueColumn[];
+    name?: PrimitiveValue;
+    identity?: MatrixNodeIdentity;
+    objects?: DataViewObjects;
+}
+
+/** Value-column array with the legacy `.source` and `.grouped()` overrides. */
+interface MtcValueColumns extends Array<MtcValueColumn> {
+    source?: DataViewMetadataColumn;
+    grouped?: () => MtcValueGroup[];
+}
+
+/** Reconstructed single category column. */
+interface MtcCategoryColumn {
+    source: DataViewMetadataColumn;
+    values: PrimitiveValue[];
+    identity: MatrixNodeIdentity[];
+    objects?: DataViewObjects[];
+}
+
+/** role name -> value-source index map. */
+type MtcRoleIndex = { [role: string]: number };
+
+/** Per-role category-grain subtotal arrays. */
+type MtcGrain = { [role: string]: PrimitiveValue[] };
+
+/** Result of flattening the matrix column hierarchy. */
+interface MtcFlatColumns {
+    seriesLeafPos: { [key: string]: { [m: number]: number } };
+    subtotalLeafByMeasure: { [m: number]: number };
+    hasSubtotalColumn: boolean;
+    seriesList: MtcSeriesEntry[];
+    seriesPos: { [key: string]: number };
+    leafPos: number;
+}
+
+/** Parameter bag shared by the value-column builders. */
+interface MtcValueColumnsParams {
+    seriesList: MtcSeriesEntry[];
+    N: number;
+    M: number;
+    useColumns: boolean;
+    seriesLeafPos: { [key: string]: { [m: number]: number } };
+    rootChildren: DataViewMatrixNode[];
+    seriesNodeByCat: Array<{ [k: string]: DataViewMatrixNode }>;
+    hasSeriesLevel: boolean;
+    S: number;
+    seriesSource: DataViewMetadataColumn | null;
+    valueSources: DataViewMetadataColumn[];
+}
+
+/** Parameter bag shared by the grain (subtotal) readers. */
+interface MtcGrainParams {
+    roleIndex: MtcRoleIndex;
+    N: number;
+    M: number;
+    useColumns: boolean;
+    rootChildren: DataViewMatrixNode[];
+    subtotalLeafByMeasure: { [m: number]: number };
+    valueSources: DataViewMetadataColumn[];
+}
+
+/** Diagnostic parameter bag. */
+interface MtcDiagParams {
+    useColumns: boolean;
+    N: number;
+    seriesList: MtcSeriesEntry[];
+    M: number;
+    hasSubtotalColumn: boolean;
+    valueSources: DataViewMetadataColumn[];
+    grain: MtcGrain;
+}
+
+/** Diagnostic snapshot attached to the reconstructed dataView. */
+interface MtcDiag {
+    shape: string;
+    N: number;
+    S: number;
+    M: number;
+    hasSubtotalColumn: boolean;
+    vsRoles: string[];
+    grainTertiary: PrimitiveValue[] | null;
+    grainSecondary: PrimitiveValue[] | null;
+    grainSixth: PrimitiveValue[] | null;
+}
+
+/** Reconstructed categorical DataView consumed by the legacy renderer. */
+interface MtcOutput {
+    metadata: { columns: DataViewMetadataColumn[]; objects: DataViewObjects | null };
+    categorical: {
+        categories: MtcCategoryColumn[];
+        values: MtcValueColumns;
+        _categoryGrainTotals?: MtcGrain;
+    };
+    matrix: DataViewMatrix;
+    _categoryGrainTotals?: MtcGrain;
+    _diag?: MtcDiag;
+}
  
 const NewDataLabelUtils = dataLabelUtils; const Legend = legend; const LegendPosition = legendInterfaces.LegendPosition; type LegendPositionType = legendInterfaces.LegendPosition; type LegendData = legendInterfaces.LegendData; type LegendDataPoint = legendInterfaces.LegendDataPoint; const legendProps = legendInterfaces.legendProps; const SVGLegend = svgLegend.SVGLegend;
 // Use the shared Power BI namespace provided by the compatibility shims.
@@ -2723,22 +2855,22 @@ export class Visual implements IVisual {
 }
    // Rebuild matrix data into the categorical shape expected by the renderer.
    // Use category-grain subtotals for non-additive measures such as DISTINCTCOUNT.
-   private matrixToCategorical(dv: any): any {
-       const matrix: any = dv.matrix;
-       const valueSources: any[] = (matrix?.valueSources) || [];
+   private matrixToCategorical(dv: DataView): MtcOutput {
+       const matrix: DataViewMatrix = dv.matrix;
+       const valueSources: DataViewMetadataColumn[] = (matrix?.valueSources) || [];
        const M: number = valueSources.length;
-       const rowLevels: any[] = (matrix?.rows?.levels) || [];
-       const colLevels: any[] = (matrix?.columns?.levels) || [];
-       const fallbackCategorySource: any = dv.metadata?.columns ? dv.metadata.columns[0] : { displayName: '' };
-       const categorySource: any = rowLevels[0]?.sources ? rowLevels[0].sources[0]
+       const rowLevels: DataViewHierarchyLevel[] = (matrix?.rows?.levels) || [];
+       const colLevels: DataViewHierarchyLevel[] = (matrix?.columns?.levels) || [];
+       const fallbackCategorySource: DataViewMetadataColumn = dv.metadata?.columns ? dv.metadata.columns[0] : { displayName: '' };
+       const categorySource: DataViewMetadataColumn = rowLevels[0]?.sources ? rowLevels[0].sources[0]
            : fallbackCategorySource;
        // Series source: capabilities uses columns=[Series] (new), older nested shape put
        // it as the 2nd ROW level. Try columns first, then rows[1].
-       const seriesSource: any =
+       const seriesSource: DataViewMetadataColumn | null =
            (colLevels[0]?.sources?.[0]) ||
            (rowLevels[1]?.sources?.[0]) || null;
-       const rootChildren: any[] = (matrix?.rows?.root?.children) || [];
-       const colChildren: any[] = (matrix?.columns?.root?.children) || [];
+       const rootChildren: DataViewMatrixNode[] = (matrix?.rows?.root?.children) || [];
+       const colChildren: DataViewMatrixNode[] = (matrix?.columns?.root?.children) || [];
 
        // role name -> value-source index (first column carrying that role)
        const roleIndex = this.mtcBuildRoleIndex(valueSources, M);
@@ -2760,20 +2892,20 @@ export class Visual implements IVisual {
        const S: number = Math.max(1, seriesList.length);
 
        // (1) categories (level-0 row nodes)
-       const catNames: any[] = [];
-       const catIdentities: any[] = [];
-       const catObjects: any[] = [];
+       const catNames: PrimitiveValue[] = [];
+       const catIdentities: MatrixNodeIdentity[] = [];
+       const catObjects: DataViewObjects[] = [];
        for (const cn of rootChildren) {
            catNames.push(cn.value === undefined ? null : cn.value);
            catIdentities.push(cn.identity);
            catObjects.push(cn.objects);
        }
        const N: number = catNames.length;
-       const categoryColumn: any = { source: categorySource, values: catNames, identity: catIdentities };
+       const categoryColumn: MtcCategoryColumn = { source: categorySource, values: catNames, identity: catIdentities };
        if (catObjects.some((o) => !!o)) { categoryColumn.objects = catObjects; }
 
        // (2b) nested fallback: per-category lookup seriesKey -> series node
-       const seriesNodeByCat: { [k: string]: any }[] = useColumns ? [] : this.mtcBuildSeriesNodeByCat(rootChildren, N);
+       const seriesNodeByCat: Array<{ [k: string]: DataViewMatrixNode }> = useColumns ? [] : this.mtcBuildSeriesNodeByCat(rootChildren, N);
 
        // (3) grouped value columns, series-major (M measure columns per series)
        const valueColumns = this.mtcBuildValueColumns({
@@ -2784,53 +2916,53 @@ export class Visual implements IVisual {
        const grain = this.mtcBuildGrain({ roleIndex, N, M, useColumns, rootChildren, subtotalLeafByMeasure, valueSources });
 
        // (5) metadata.columns so the downstream role scan still finds Category/Series/Y/...
-       const columns: any[] = [];
+       const columns: DataViewMetadataColumn[] = [];
        if (categorySource) { columns.push(categorySource); }
        if (seriesSource) { columns.push(seriesSource); }
        for (let m = 0; m < M; m++) { columns.push(valueSources[m]); }
 
-       const out: any = {
+       const out: MtcOutput = {
            metadata: { columns, objects: dv.metadata ? dv.metadata.objects : null },
            categorical: { categories: [categoryColumn], values: valueColumns },
            matrix,
        };
        out._categoryGrainTotals = grain;
        out.categorical._categoryGrainTotals = grain;
-       (out as any)._diag = this.mtcBuildDiag({ useColumns, N, seriesList, M, hasSubtotalColumn, valueSources, grain });
+       out._diag = this.mtcBuildDiag({ useColumns, N, seriesList, M, hasSubtotalColumn, valueSources, grain });
        return out;
    }
 
    // read measure m from a matrix node's value bag (nested shape: keyed by measure idx)
-   private static matrixNodeVal(node: any, m: number): any {
+   private static matrixNodeVal(node: DataViewMatrixNode, m: number): PrimitiveValue | null {
        if (!node?.values) { return null; }
-       const cell: any = node.values[m];
+       const cell: DataViewMatrixNodeValue = node.values[m];
        return cell?.value !== undefined ? cell.value : null;
    }
    // read a row node's value at a flattened column-leaf position (rows/cols shape)
-   private static matrixNodeAt(node: any, leafPos: number): any {
+   private static matrixNodeAt(node: DataViewMatrixNode, leafPos: number): PrimitiveValue | null {
        if (!node?.values || leafPos == null) { return null; }
-       const cell: any = node.values[leafPos];
+       const cell: DataViewMatrixNodeValue = node.values[leafPos];
        return cell?.value !== undefined ? cell.value : null;
    }
 
-   private mtcBuildRoleIndex(valueSources: any[], M: number): { [role: string]: number } {
-       const roleIndex: { [role: string]: number } = {};
+   private mtcBuildRoleIndex(valueSources: DataViewMetadataColumn[], M: number): MtcRoleIndex {
+       const roleIndex: MtcRoleIndex = {};
        for (let m = 0; m < M; m++) {
-           const roles: any = valueSources[m]?.roles ? valueSources[m].roles : {};
+           const roles: { [name: string]: boolean } = valueSources[m]?.roles ? valueSources[m].roles : {};
            for (const r in roles) { if (roles[r] && roleIndex[r] === undefined) { roleIndex[r] = m; } }
        }
        return roleIndex;
    }
 
-   private mtcFlattenColumns(colChildren: any[], M: number): any {
+   private mtcFlattenColumns(colChildren: DataViewMatrixNode[], M: number): MtcFlatColumns {
        const seriesLeafPos: { [key: string]: { [m: number]: number } } = {};
        const subtotalLeafByMeasure: { [m: number]: number } = {};
        let hasSubtotalColumn = false;
-       const seriesList: { key: string; name: any; identity: any; objects: any }[] = [];
+       const seriesList: MtcSeriesEntry[] = [];
        const seriesPos: { [key: string]: number } = {};
        let leafPos = 0;
        for (const sNode of colChildren) {
-           const measureKids: any[] = sNode.children || [];
+           const measureKids: DataViewMatrixNode[] = sNode.children || [];
            const emit = (mi: number) => {
                if (sNode.isSubtotal) {
                    subtotalLeafByMeasure[mi] = leafPos;
@@ -2857,7 +2989,7 @@ export class Visual implements IVisual {
        return { seriesLeafPos, subtotalLeafByMeasure, hasSubtotalColumn, seriesList, seriesPos, leafPos };
    }
 
-   private mtcCollectNestedSeries(rootChildren: any[], seriesList: any[], seriesPos: any): void {
+   private mtcCollectNestedSeries(rootChildren: DataViewMatrixNode[], seriesList: MtcSeriesEntry[], seriesPos: { [key: string]: number }): void {
        for (const cn of rootChildren) {
            for (const sn of (cn.children || [])) {
                if (sn?.isSubtotal) { continue; }
@@ -2870,29 +3002,28 @@ export class Visual implements IVisual {
        }
    }
 
-   private mtcBuildSeriesNodeByCat(rootChildren: any[], N: number): { [k: string]: any }[] {
-       const seriesNodeByCat: { [k: string]: any }[] = [];
+   private mtcBuildSeriesNodeByCat(rootChildren: DataViewMatrixNode[], N: number): Array<{ [k: string]: DataViewMatrixNode }> {
+       const seriesNodeByCat: Array<{ [k: string]: DataViewMatrixNode }> = [];
        for (let ci = 0; ci < N; ci++) {
-           const map: { [k: string]: any } = {};
+           const map: { [k: string]: DataViewMatrixNode } = {};
            for (const sn of (rootChildren[ci].children || [])) { if (sn?.isSubtotal) { continue; } map[String(sn.value)] = sn; }
            seriesNodeByCat.push(map);
        }
        return seriesNodeByCat;
    }
 
-   private mtcBuildValueColumns(p: any): any {
+   private mtcBuildValueColumns(p: MtcValueColumnsParams): MtcValueColumns {
        const { seriesList, N, M, rootChildren, hasSeriesLevel, S, seriesSource, valueSources } = p;
-       const valueColumns: any = [];
-       const makeMeasureSource = (base: any, seriesName: any): any => {
-           const src: any = {};
-           for (const k in base) { src[k] = base[k]; }
+       const valueColumns = [] as MtcValueColumns;
+       const makeMeasureSource = (base: DataViewMetadataColumn, seriesName?: PrimitiveValue): MtcMeasureSource => {
+           const src: MtcMeasureSource = { ...base };
            if (hasSeriesLevel) { src.groupName = seriesName; }
            return src;
        };
        for (const series of seriesList) {
-           const seriesName: any = series.name;
+           const seriesName: PrimitiveValue = series.name;
            for (let m = 0; m < M; m++) {
-               const col: any = { source: makeMeasureSource(valueSources[m], seriesName), values: this.mtcSeriesMeasureValues(p, series.key, m) };
+               const col: MtcValueColumn = { source: makeMeasureSource(valueSources[m], seriesName), values: this.mtcSeriesMeasureValues(p, series.key, m) };
                col.identity = series.identity;
                valueColumns.push(col);
            }
@@ -2900,16 +3031,16 @@ export class Visual implements IVisual {
        // No Series bound: emit a single group of raw per-category measures.
        if (seriesList.length === 0) {
            for (let m = 0; m < M; m++) {
-               const vals: any[] = new Array(N).fill(null);
+               const vals: PrimitiveValue[] = new Array(N).fill(null);
                for (let ci = 0; ci < N; ci++) { vals[ci] = Visual.matrixNodeVal(rootChildren[ci], m); }
-               valueColumns.push({ source: makeMeasureSource(valueSources[m], undefined), values: vals });
+               valueColumns.push({ source: makeMeasureSource(valueSources[m]), values: vals });
            }
        }
        if (hasSeriesLevel && seriesSource) { valueColumns.source = seriesSource; }
        valueColumns.grouped = () => {
-           const groups: any[] = [];
+           const groups: MtcValueGroup[] = [];
            for (let s = 0; s < S; s++) {
-               const g: any = { values: valueColumns.slice(s * M, s * M + M) };
+               const g: MtcValueGroup = { values: valueColumns.slice(s * M, s * M + M) };
                if (seriesList[s]) { g.name = seriesList[s].name; g.identity = seriesList[s].identity; g.objects = seriesList[s].objects; }
                groups.push(g);
            }
@@ -2919,9 +3050,9 @@ export class Visual implements IVisual {
    }
 
    // Values array (one per category) for a given series/measure, in either matrix shape.
-   private mtcSeriesMeasureValues(p: any, seriesKey: string, m: number): any[] {
+   private mtcSeriesMeasureValues(p: MtcValueColumnsParams, seriesKey: string, m: number): PrimitiveValue[] {
        const { N, useColumns, seriesLeafPos, rootChildren, seriesNodeByCat } = p;
-       const vals: any[] = new Array(N).fill(null);
+       const vals: PrimitiveValue[] = new Array(N).fill(null);
        for (let ci = 0; ci < N; ci++) {
            if (useColumns) {
                const lp = seriesLeafPos[seriesKey];
@@ -2933,9 +3064,9 @@ export class Visual implements IVisual {
        return vals;
    }
 
-   private mtcBuildGrain(p: any): { [role: string]: any[] } {
+   private mtcBuildGrain(p: MtcGrainParams): MtcGrain {
        const { roleIndex } = p;
-       const grain: { [role: string]: any[] } = {};
+       const grain: MtcGrain = {};
        for (const role in roleIndex) {
            grain[role] = this.mtcResolveGrainArray(p, roleIndex[role]);
        }
@@ -2943,8 +3074,8 @@ export class Visual implements IVisual {
    }
 
    // Grain array for a measure; if empty, fall back to a same-queryName measure (role sharing).
-   private mtcResolveGrainArray(p: any, m: number): any[] {
-       const arr: any[] = this.mtcReadGrainForMeasure(p, m);
+   private mtcResolveGrainArray(p: MtcGrainParams, m: number): PrimitiveValue[] {
+       const arr: PrimitiveValue[] = this.mtcReadGrainForMeasure(p, m);
        if (this.mtcAnyNonNull(arr)) { return arr; }
        const qn = this.mtcQnameOf(p.valueSources, m);
        for (let m2 = 0; m2 < p.M; m2++) {
@@ -2955,9 +3086,9 @@ export class Visual implements IVisual {
        return arr;
    }
 
-   private mtcReadGrainForMeasure(p: any, m: number): any[] {
+   private mtcReadGrainForMeasure(p: MtcGrainParams, m: number): PrimitiveValue[] {
        const { N, useColumns, rootChildren, subtotalLeafByMeasure } = p;
-       const arr: any[] = new Array(N).fill(null);
+       const arr: PrimitiveValue[] = new Array(N).fill(null);
        for (let ci = 0; ci < N; ci++) {
            arr[ci] = useColumns
                ? Visual.matrixNodeAt(rootChildren[ci], subtotalLeafByMeasure[m])
@@ -2966,26 +3097,26 @@ export class Visual implements IVisual {
        return arr;
    }
 
-   private mtcSubtotalNodeForCat(rootChildren: any[], ci: number): any {
-       const cn: any = rootChildren[ci];
+   private mtcSubtotalNodeForCat(rootChildren: DataViewMatrixNode[], ci: number): DataViewMatrixNode | null {
+       const cn: DataViewMatrixNode = rootChildren[ci];
        if (cn?.values) { return cn; }
        for (const sn of ((cn?.children) || [])) { if (sn?.isSubtotal) { return sn; } }
        return null;
    }
 
-   private mtcAnyNonNull(arr: any[]): boolean { return !!arr?.some((v) => v != null); }
+   private mtcAnyNonNull(arr: PrimitiveValue[]): boolean { return !!arr?.some((v) => v != null); }
 
-   private mtcQnameOf(valueSources: any[], m: number): string {
+   private mtcQnameOf(valueSources: DataViewMetadataColumn[], m: number): string {
        return (valueSources[m] && (valueSources[m].queryName || valueSources[m].displayName)) || '';
    }
 
-   private mtcBuildDiag(p: any): any {
+   private mtcBuildDiag(p: MtcDiagParams): MtcDiag {
        const { useColumns, N, seriesList, M, hasSubtotalColumn, valueSources, grain } = p;
        return {
            shape: useColumns ? 'rows/cols' : 'nested',
            N, S: seriesList.length, M,
            hasSubtotalColumn,
-           vsRoles: valueSources.map((vs: any) => {
+           vsRoles: valueSources.map((vs: DataViewMetadataColumn) => {
                const r = vs?.roles ? Object.keys(vs.roles).filter((k) => vs.roles[k]) : [];
                return (r.join('+') || '?');
            }),
@@ -3005,9 +3136,9 @@ export class Visual implements IVisual {
    public update(options: VisualUpdateOptions) {
        Visual.totalHeight = options.viewport.height;
        // Adapt matrix input for the renderer and keep category-grain totals.
-       if (options.dataViews?.[0] && (<any>options.dataViews[0]).matrix) {
+       if (options.dataViews?.[0]?.matrix) {
            try {
-               options.dataViews[0] = this.matrixToCategorical(options.dataViews[0]);
+               options.dataViews[0] = this.matrixToCategorical(options.dataViews[0]) as unknown as DataView;
            } catch (e) {
                // Ignore adapter failures and let the existing rendering path handle the fallback.
            }

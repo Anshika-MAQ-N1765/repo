@@ -4289,7 +4289,7 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
            } 
  
            let metadata = dataViewCat.values[seriesIndex].source; 
-           const ctx = { seriesIndex, seriesCount, categories, isDateTime, isScalar, is100PctStacked, chartType, hasHighlights, highlightsOverflow, dataViewCat, grouped, converterStrategy, legendItem, dataPointObjects, columnSeries, defaultLabelSettings, metadata, baseValuesPos, baseValuesNeg, rawValues, rawHighlightValues, seriesDataPoints }; 
+           const ctx = { seriesIndex, seriesCount, categories, isDateTime, isScalar, is100PctStacked, chartType, hasHighlights, highlightsOverflow, dataViewCat, grouped, converterStrategy, legendItem, dataPointObjects, categoryObjectsList, columnSeries, defaultLabelSettings, metadata, baseValuesPos, baseValuesNeg, rawValues, rawHighlightValues, seriesDataPoints }; 
            for (let categoryIndex = 0; categoryIndex < categoryCount; categoryIndex++) { 
                this.cdpProcessCategory(ctx, categoryIndex); 
            } 
@@ -4433,7 +4433,7 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
            .withSeries(dataViewCat.values, seriesGroup) 
            .withMeasure(ctx.converterStrategy.getMeasureNameByIndex(seriesIndex)) 
            .createSelectionId(); 
-       let color = Visual.getDataPointColor(ctx.legendItem, categoryIndex, ctx.dataPointObjects); 
+       let color = Visual.getDataPointColor(ctx.legendItem, categoryIndex, ctx.dataPointObjects, ctx.categoryObjectsList); 
        let series = ctx.columnSeries[seriesIndex]; 
        let dataPointLabelSettings = (series.labelSettings) ? series.labelSettings : ctx.defaultLabelSettings; 
        let labelColor = dataPointLabelSettings.labelColor; 
@@ -4516,7 +4516,17 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
  
        legendItem: LegendDataPoint, 
        categoryIndex: number, 
-       dataPointObjects?: DataViewObjects[]): string { 
+       dataPointObjects?: DataViewObjects[], 
+       categoryObjectsList?: DataViewObjects[]): string { 
+ 
+       // Per-category conditional-formatting rules (fx) are written by Power BI
+       // into the category objects; honor those first so each data point can get
+       // its own rule-evaluated color instead of a single series-wide value.
+       if (categoryObjectsList?.[categoryIndex]) { 
+           let categoryOverride = dataViewObjects.getFillColor(categoryObjectsList[categoryIndex], columnChartProps.dataPoint.fill); 
+           if (categoryOverride) 
+               return categoryOverride; 
+       } 
  
        if (dataPointObjects) { 
            let colorOverride = dataViewObjects.getFillColor(dataPointObjects[categoryIndex], columnChartProps.dataPoint.fill); 

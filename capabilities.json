@@ -68,9 +68,6 @@
             }
           }
         },
-        "fillRule": {
-          "type": { "fill": {} }
-        },
         "fontSize": {
           "type": {
             "formatting": {

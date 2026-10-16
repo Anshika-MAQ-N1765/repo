@@ -1,4 +1,3 @@
-import powerbi from "powerbi-visuals-api";
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
  
 const FormattingSettingsCard = formattingSettings.SimpleCard;
@@ -26,15 +25,12 @@ function createNumberInput(name: string, displayName: string, value: number): fo
     return new formattingSettings.NumUpDown({ name, displayName, value });
 }
  
-// Text color pickers can opt into conditional formatting (the "fx" button in
-// the pane) by exposing the ConstantOrRule instance kind. Non-text swatches
-// (e.g. background) keep the default constant-only behaviour.
-function createColorPicker(name: string, displayName: string, value: string, enableFx = false): formattingSettings.ColorPicker {
-    const picker = new formattingSettings.ColorPicker({ name, displayName, value: { value } });
-    if (enableFx) {
-        picker.instanceKind = powerbi.VisualEnumerationInstanceKinds.ConstantOrRule;
-    }
-    return picker;
+// Color pickers are constant-only. Conditional formatting (the "fx" button) is
+// intentionally not exposed because this visual uses a matrix dataViewMapping,
+// for which Power BI does not support per-data-point conditional formatting.
+// The enableFx parameter is accepted for call-site compatibility but ignored.
+function createColorPicker(name: string, displayName: string, value: string, _enableFx = false): formattingSettings.ColorPicker {
+    return new formattingSettings.ColorPicker({ name, displayName, value: { value } });
 }
  
 function createFontPicker(name: string, displayName: string, value: string): formattingSettings.FontPicker {
@@ -437,11 +433,13 @@ class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
             this.dataPointCard.slices = [this.dataPointCard.defaultColor];
             return;
         }
-        this.dataPointCard.slices = points.map(p => new formattingSettings.ColorPicker({
-            name: "fill",
-            displayName: p.displayName,
-            value: { value: p.color },
-            selector: p.selector
-        }));
+        this.dataPointCard.slices = points.map(p => {
+            return new formattingSettings.ColorPicker({
+                name: "fill",
+                displayName: p.displayName,
+                value: { value: p.color },
+                selector: p.selector
+            });
+        });
     }
 }

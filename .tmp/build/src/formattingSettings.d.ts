@@ -46,17 +46,11 @@ declare class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
     titleItalic: formattingSettings.ToggleSwitch;
     titleUnderline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
-    textWrap: formattingSettings.ToggleSwitch;
+    wrap: formattingSettings.ToggleSwitch;
     valuesGroup: formattingSettings.Group;
     titleGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
     constructor();
-}
-declare class TextWrapCardSettings extends FormattingSettingsCard {
-    name: string;
-    displayName: string;
-    wrap: formattingSettings.ToggleSwitch;
-    slices: Array<FormattingSettingsSlice>;
 }
 declare class MeasureTitlesCardSettings extends FormattingSettingsCard {
     name: string;
@@ -290,7 +284,6 @@ export declare class VisualFormattingSettingsModel extends FormattingSettingsMod
     legendCard: LegendCardSettings;
     categoryAxisCard: CategoryAxisCardSettings;
     valueAxisCard: ValueAxisCardSettings;
-    textWrapCard: TextWrapCardSettings;
     measureTitlesCard: MeasureTitlesCardSettings;
     dataPointCard: DataPointCardSettings;
     labelsCard: LabelsCardSettings;
@@ -301,7 +294,7 @@ export declare class VisualFormattingSettingsModel extends FormattingSettingsMod
     fifthLabelsCard: FifthLabelsCardSettings;
     sixthLabelsCard: SixthLabelsCardSettings;
     gmoColumnChartTitleCard: GMOColumnChartTitleCardSettings;
-    cards: (LegendCardSettings | CategoryAxisCardSettings | ValueAxisCardSettings | TextWrapCardSettings | MeasureTitlesCardSettings | DataPointCardSettings | LabelsCardSettings | TotalLabelsCardSettings | SecondaryLabelsCardSettings | TertiaryLabelsCardSettings | QuaternaryLabelsCardSettings | FifthLabelsCardSettings | SixthLabelsCardSettings | GMOColumnChartTitleCardSettings)[];
+    cards: (LegendCardSettings | CategoryAxisCardSettings | ValueAxisCardSettings | MeasureTitlesCardSettings | DataPointCardSettings | LabelsCardSettings | TotalLabelsCardSettings | SecondaryLabelsCardSettings | TertiaryLabelsCardSettings | QuaternaryLabelsCardSettings | FifthLabelsCardSettings | SixthLabelsCardSettings | GMOColumnChartTitleCardSettings)[];
     /**
      * Replace the Data colors card slices with one color picker per legend value.
      * Each picker persists to dataPoint.fill scoped by the series selector, so the

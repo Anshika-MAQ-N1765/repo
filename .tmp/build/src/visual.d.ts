@@ -25,6 +25,7 @@ interface ClassAndSelector extends CssConstants.ClassAndSelector {
     selector: string;
     class: string;
 }
+type PrimitiveValue = powerbiApi.PrimitiveValue;
 type LegendPositionType = legendInterfaces.LegendPosition;
 type LegendData = legendInterfaces.LegendData;
 type TextProperties = formattingUtils.interfaces.TextProperties;
@@ -739,12 +740,7 @@ declare namespace powerbi.extensibility.visual {
         };
         categoryAxis: {
             axisType: DataViewObjectPropertyIdentifier;
-        };
-        textWrap: {
-            show: {
-                objectName: string;
-                propertyName: string;
-            };
+            wrap: DataViewObjectPropertyIdentifier;
         };
         measureTitles: {
             ellipses: {

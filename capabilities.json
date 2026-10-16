@@ -206,19 +206,13 @@
         "titleBold": { "type": { "bool": true } },
         "titleItalic": { "type": { "bool": true } },
         "titleUnderline": { "type": { "bool": true } },
-        "labelPrecision": { "type": { "numeric": true } }
+        "labelPrecision": { "type": { "numeric": true } },
+        "wrap": { "type": { "bool": true } }
       }
     },
  
     "sampleFilter": {
       "displayName": "Sample Filter",
-      "properties": {
-        "show": { "type": { "bool": true } }
-      }
-    },
- 
-    "textWrap": {
-      "displayName": "X-Axis Text Wrap",
       "properties": {
         "show": { "type": { "bool": true } }
       }

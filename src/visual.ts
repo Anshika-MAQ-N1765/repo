@@ -2364,9 +2364,7 @@ export const StackedChartGMOProps = {
    }, 
    categoryAxis: { 
        axisType: <DataViewObjectPropertyIdentifier>{ objectName: 'categoryAxis', propertyName: 'axisType' }, 
-   }, 
-   textWrap: { 
-       show: { objectName: 'textWrap', propertyName: 'show' } 
+       wrap: <DataViewObjectPropertyIdentifier>{ objectName: 'categoryAxis', propertyName: 'wrap' }, 
    }, 
    measureTitles: { 
        ellipses: { objectName: 'measureTitles', propertyName: 'ellipses' }, 
@@ -4671,7 +4669,7 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
  
        objects = dataView.metadata.objects; 
        let wrapTextProperties = StackedChartGMOProps; 
-       textWrapSetting.show = dataViewObjects.getValue(objects, wrapTextProperties.textWrap.show, textWrapSetting.show); 
+       textWrapSetting.show = dataViewObjects.getValue(objects, wrapTextProperties.categoryAxis.wrap, textWrapSetting.show); 
  
        return textWrapSetting; 
    } 

@@ -125,11 +125,9 @@ class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
     titleItalic = createToggle("titleItalic", "Italic", false);
     titleUnderline = createToggle("titleUnderline", "Underline", false);
     titleFont = createFontControl("categoryAxisTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
-    textWrap = new formattingSettings.ToggleSwitch({
-    name: "wrap", displayName: "Text wrap", value: false});
-    // add to an existing group's slices, e.g.:
+    wrap = createToggle("wrap", "Text wrap", false);
     valuesGroup = createGroup("categoryAxisValues", "Values",
-    [this.labelColor, this.font, this.labelDisplayUnits, this.labelPrecision, this.textWrap]);
+    [this.labelColor, this.font, this.labelDisplayUnits, this.labelPrecision, this.wrap]);
     titleGroup = createGroup("categoryAxisTitle", "Title", [this.titleColor, this.titleFont]);
  
     groups = [this.valuesGroup, this.titleGroup];
@@ -140,14 +138,7 @@ class CategoryAxisCardSettings extends FormattingSettingsCompositeCard {
         // the title styling controls beneath it.
         this.titleGroup.topLevelSlice = this.showAxisTitle;
     }
-}class TextWrapCardSettings extends FormattingSettingsCard {
-    name = "textWrap";
-    displayName = "X-Axis Text Wrap";
-    wrap = createToggle("wrap", "Wrap", false);
-    slices: Array<FormattingSettingsSlice> = [this.wrap];
-}
- 
-class MeasureTitlesCardSettings extends FormattingSettingsCard {
+}class MeasureTitlesCardSettings extends FormattingSettingsCard {
     name = "measureTitles";
     displayName = "Measure Titles";
     ellipses = createNumberInput("ellipses", "Ellipses strength", 120);
@@ -409,7 +400,6 @@ class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     legendCard = new LegendCardSettings();
     categoryAxisCard = new CategoryAxisCardSettings();
     valueAxisCard = new ValueAxisCardSettings();
-    textWrapCard = new TextWrapCardSettings();
     measureTitlesCard = new MeasureTitlesCardSettings();
     dataPointCard = new DataPointCardSettings();
     labelsCard = new LabelsCardSettings();
@@ -425,7 +415,6 @@ class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
         this.legendCard,
         this.categoryAxisCard,
         this.valueAxisCard,
-        this.textWrapCard,
         this.measureTitlesCard,
         this.dataPointCard,
         this.labelsCard,

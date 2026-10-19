@@ -10,6 +10,8 @@ declare class LegendCardSettings extends FormattingSettingsCompositeCard {
     show: formattingSettings.ToggleSwitch;
     topLevelSlice: formattingSettings.ToggleSwitch;
     position: formattingSettings.ItemDropdown;
+    legendTopPadding: formattingSettings.NumUpDown;
+    legendBottomPadding: formattingSettings.NumUpDown;
     showTitle: formattingSettings.ToggleSwitch;
     titleText: formattingSettings.TextInput;
     labelColor: formattingSettings.ColorPicker;
@@ -132,7 +134,9 @@ declare class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     italic: formattingSettings.ToggleSwitch;
     underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    titleAlignment: formattingSettings.AlignmentGroup;
     valueFont: formattingSettings.FontControl;
+    valueAlignment: formattingSettings.AlignmentGroup;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -157,7 +161,9 @@ declare class SecondaryLabelsCardSettings extends FormattingSettingsCompositeCar
     italic: formattingSettings.ToggleSwitch;
     underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    titleAlignment: formattingSettings.AlignmentGroup;
     valueFont: formattingSettings.FontControl;
+    valueAlignment: formattingSettings.AlignmentGroup;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -182,7 +188,9 @@ declare class TertiaryLabelsCardSettings extends FormattingSettingsCompositeCard
     italic: formattingSettings.ToggleSwitch;
     underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    titleAlignment: formattingSettings.AlignmentGroup;
     valueFont: formattingSettings.FontControl;
+    valueAlignment: formattingSettings.AlignmentGroup;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -207,7 +215,9 @@ declare class QuaternaryLabelsCardSettings extends FormattingSettingsCompositeCa
     italic: formattingSettings.ToggleSwitch;
     underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    titleAlignment: formattingSettings.AlignmentGroup;
     valueFont: formattingSettings.FontControl;
+    valueAlignment: formattingSettings.AlignmentGroup;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -232,7 +242,9 @@ declare class FifthLabelsCardSettings extends FormattingSettingsCompositeCard {
     italic: formattingSettings.ToggleSwitch;
     underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    titleAlignment: formattingSettings.AlignmentGroup;
     valueFont: formattingSettings.FontControl;
+    valueAlignment: formattingSettings.AlignmentGroup;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];
@@ -257,7 +269,9 @@ declare class SixthLabelsCardSettings extends FormattingSettingsCompositeCard {
     italic: formattingSettings.ToggleSwitch;
     underline: formattingSettings.ToggleSwitch;
     titleFont: formattingSettings.FontControl;
+    titleAlignment: formattingSettings.AlignmentGroup;
     valueFont: formattingSettings.FontControl;
+    valueAlignment: formattingSettings.AlignmentGroup;
     titleGroup: formattingSettings.Group;
     valuesGroup: formattingSettings.Group;
     groups: formattingSettings.Group[];

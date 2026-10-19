@@ -1,3 +1,4 @@
+import powerbi from "powerbi-visuals-api";
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
  
 const FormattingSettingsCard = formattingSettings.SimpleCard;
@@ -60,6 +61,18 @@ function createAutoDropdown(name: string, displayName: string, value: number): f
     return new formattingSettings.AutoDropdown({ name, displayName, value });
 }
  
+// Horizontal text-alignment control (left / center / right), rendered as the
+// native Power BI alignment button group. Persists the chosen value as a string.
+function createHorizontalAlignment(name: string, displayName: string, value: string): formattingSettings.AlignmentGroup {
+    return new formattingSettings.AlignmentGroup({
+        name,
+        displayName,
+        value,
+        mode: powerbi.visuals.AlignmentGroupMode.Horizonal,
+        supportsNoSelection: false
+    });
+}
+ 
 // Small helper to build a collapsible group inside a composite card. All groups
 // in a composite card bind their slices to the card's object name, so grouping
 // is purely a presentation concern and preserves the existing capabilities.
@@ -79,6 +92,8 @@ class LegendCardSettings extends FormattingSettingsCompositeCard {
     topLevelSlice = this.show;
  
     position = createDropdown("position", "Position", legendPositionItems[0], legendPositionItems);
+    legendTopPadding = createNumberInput("legendTopPadding", "Space above", 0);
+    legendBottomPadding = createNumberInput("legendBottomPadding", "Space below", 0);
     showTitle = createToggle("showTitle", "Title", false);
     titleText = createTextInput("titleText", "Legend name", "");
     labelColor = createColorPicker("labelColor", "Color", "#777777", true);
@@ -91,7 +106,7 @@ class LegendCardSettings extends FormattingSettingsCompositeCard {
  
     valuesGroup = createGroup("legendValues", "Values", [this.labelColor, this.font]);
     titleGroup = createGroup("legendTitle", "Title", [this.showTitle, this.titleText]);
-    layoutGroup = createGroup("legendLayout", "Layout", [this.position]);
+    layoutGroup = createGroup("legendLayout", "Layout", [this.position, this.legendTopPadding, this.legendBottomPadding]);
  
     groups = [this.valuesGroup, this.titleGroup, this.layoutGroup];
 }
@@ -235,10 +250,12 @@ class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     italic = createToggle("fontItalic", "Italic", false);
     underline = createToggle("fontUnderline", "Underline", false);
     titleFont = createFontControl("totalTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    titleAlignment = createHorizontalAlignment("titleAlignment", "Title alignment", "left");
     valueFont = createFontControl("totalValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
+    valueAlignment = createHorizontalAlignment("valueAlignment", "Value alignment", "center");
  
-    titleGroup = createGroup("totalLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("totalLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
+    titleGroup = createGroup("totalLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont, this.titleAlignment]);
+    valuesGroup = createGroup("totalLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision, this.valueAlignment]);
  
     groups = [this.titleGroup, this.valuesGroup];
 }class SecondaryLabelsCardSettings extends FormattingSettingsCompositeCard {
@@ -261,10 +278,12 @@ class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     italic = createToggle("fontItalic", "Italic", false);
     underline = createToggle("fontUnderline", "Underline", false);
     titleFont = createFontControl("secondaryTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    titleAlignment = createHorizontalAlignment("titleAlignment", "Title alignment", "left");
     valueFont = createFontControl("secondaryValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
+    valueAlignment = createHorizontalAlignment("valueAlignment", "Value alignment", "center");
  
-    titleGroup = createGroup("secondaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("secondaryLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
+    titleGroup = createGroup("secondaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont, this.titleAlignment]);
+    valuesGroup = createGroup("secondaryLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision, this.valueAlignment]);
  
     groups = [this.titleGroup, this.valuesGroup];
 }class TertiaryLabelsCardSettings extends FormattingSettingsCompositeCard {
@@ -287,10 +306,12 @@ class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     italic = createToggle("fontItalic", "Italic", false);
     underline = createToggle("fontUnderline", "Underline", false);
     titleFont = createFontControl("tertiaryTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    titleAlignment = createHorizontalAlignment("titleAlignment", "Title alignment", "left");
     valueFont = createFontControl("tertiaryValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
+    valueAlignment = createHorizontalAlignment("valueAlignment", "Value alignment", "center");
  
-    titleGroup = createGroup("tertiaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("tertiaryLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
+    titleGroup = createGroup("tertiaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont, this.titleAlignment]);
+    valuesGroup = createGroup("tertiaryLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision, this.valueAlignment]);
  
     groups = [this.titleGroup, this.valuesGroup];
 }class QuaternaryLabelsCardSettings extends FormattingSettingsCompositeCard {
@@ -313,10 +334,12 @@ class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     italic = createToggle("fontItalic", "Italic", false);
     underline = createToggle("fontUnderline", "Underline", false);
     titleFont = createFontControl("quaternaryTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    titleAlignment = createHorizontalAlignment("titleAlignment", "Title alignment", "left");
     valueFont = createFontControl("quaternaryValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
+    valueAlignment = createHorizontalAlignment("valueAlignment", "Value alignment", "center");
  
-    titleGroup = createGroup("quaternaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("quaternaryLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
+    titleGroup = createGroup("quaternaryLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont, this.titleAlignment]);
+    valuesGroup = createGroup("quaternaryLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision, this.valueAlignment]);
  
     groups = [this.titleGroup, this.valuesGroup];
 }class FifthLabelsCardSettings extends FormattingSettingsCompositeCard {
@@ -339,10 +362,12 @@ class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     italic = createToggle("fontItalic", "Italic", false);
     underline = createToggle("fontUnderline", "Underline", false);
     titleFont = createFontControl("fifthTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    titleAlignment = createHorizontalAlignment("titleAlignment", "Title alignment", "left");
     valueFont = createFontControl("fifthValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
+    valueAlignment = createHorizontalAlignment("valueAlignment", "Value alignment", "center");
  
-    titleGroup = createGroup("FifthLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("FifthLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
+    titleGroup = createGroup("FifthLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont, this.titleAlignment]);
+    valuesGroup = createGroup("FifthLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision, this.valueAlignment]);
  
     groups = [this.titleGroup, this.valuesGroup];
 }class SixthLabelsCardSettings extends FormattingSettingsCompositeCard {
@@ -365,10 +390,12 @@ class TotalLabelsCardSettings extends FormattingSettingsCompositeCard {
     italic = createToggle("fontItalic", "Italic", false);
     underline = createToggle("fontUnderline", "Underline", false);
     titleFont = createFontControl("sixthTitleFont", this.titleFontFamily, this.titleFontSize, this.titleBold, this.titleItalic, this.titleUnderline);
+    titleAlignment = createHorizontalAlignment("titleAlignment", "Title alignment", "left");
     valueFont = createFontControl("sixthValueFont", this.fontFamily, this.fontSize, this.bold, this.italic, this.underline);
+    valueAlignment = createHorizontalAlignment("valueAlignment", "Value alignment", "center");
  
-    titleGroup = createGroup("SixthLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont]);
-    valuesGroup = createGroup("SixthLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision]);
+    titleGroup = createGroup("SixthLabelsTitle", "Title", [this.titleText, this.titleColor, this.titleFont, this.titleAlignment]);
+    valuesGroup = createGroup("SixthLabelsValues", "Values", [this.color, this.valueFont, this.labelDisplayUnits, this.labelPrecision, this.valueAlignment]);
  
     groups = [this.titleGroup, this.valuesGroup];
 }class GMOColumnChartTitleCardSettings extends FormattingSettingsCompositeCard {

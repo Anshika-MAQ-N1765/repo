@@ -753,6 +753,8 @@ declare namespace powerbi.extensibility.visual {
             labelDisplayUnit: DataViewObjectPropertyIdentifier;
             labelPrecision: DataViewObjectPropertyIdentifier;
             primaryMeasureOnoff: DataViewObjectPropertyIdentifier;
+            legendTopPadding: DataViewObjectPropertyIdentifier;
+            legendBottomPadding: DataViewObjectPropertyIdentifier;
         };
         plotArea: {
             image: DataViewObjectPropertyIdentifier;
@@ -809,6 +811,8 @@ declare namespace powerbi.extensibility.visual {
             fontBold: DataViewObjectPropertyIdentifier;
             fontItalic: DataViewObjectPropertyIdentifier;
             fontUnderline: DataViewObjectPropertyIdentifier;
+            titleAlignment: DataViewObjectPropertyIdentifier;
+            valueAlignment: DataViewObjectPropertyIdentifier;
         };
         secondaryLabels: {
             titleText: {
@@ -829,6 +833,8 @@ declare namespace powerbi.extensibility.visual {
             fontBold: DataViewObjectPropertyIdentifier;
             fontItalic: DataViewObjectPropertyIdentifier;
             fontUnderline: DataViewObjectPropertyIdentifier;
+            titleAlignment: DataViewObjectPropertyIdentifier;
+            valueAlignment: DataViewObjectPropertyIdentifier;
         };
         tertiaryLabels: {
             titleText: {
@@ -849,6 +855,8 @@ declare namespace powerbi.extensibility.visual {
             fontBold: DataViewObjectPropertyIdentifier;
             fontItalic: DataViewObjectPropertyIdentifier;
             fontUnderline: DataViewObjectPropertyIdentifier;
+            titleAlignment: DataViewObjectPropertyIdentifier;
+            valueAlignment: DataViewObjectPropertyIdentifier;
         };
         quaternaryLabels: {
             titleText: {
@@ -869,6 +877,8 @@ declare namespace powerbi.extensibility.visual {
             fontBold: DataViewObjectPropertyIdentifier;
             fontItalic: DataViewObjectPropertyIdentifier;
             fontUnderline: DataViewObjectPropertyIdentifier;
+            titleAlignment: DataViewObjectPropertyIdentifier;
+            valueAlignment: DataViewObjectPropertyIdentifier;
         };
         FifthLabels: {
             titleText: {
@@ -889,6 +899,8 @@ declare namespace powerbi.extensibility.visual {
             fontBold: DataViewObjectPropertyIdentifier;
             fontItalic: DataViewObjectPropertyIdentifier;
             fontUnderline: DataViewObjectPropertyIdentifier;
+            titleAlignment: DataViewObjectPropertyIdentifier;
+            valueAlignment: DataViewObjectPropertyIdentifier;
         };
         SixthLabels: {
             titleText: {
@@ -909,6 +921,8 @@ declare namespace powerbi.extensibility.visual {
             fontBold: DataViewObjectPropertyIdentifier;
             fontItalic: DataViewObjectPropertyIdentifier;
             fontUnderline: DataViewObjectPropertyIdentifier;
+            titleAlignment: DataViewObjectPropertyIdentifier;
+            valueAlignment: DataViewObjectPropertyIdentifier;
         };
     };
     export interface SampleFilterSettings {
@@ -937,6 +951,8 @@ declare namespace powerbi.extensibility.visual {
         fontBold: boolean;
         fontItalic: boolean;
         fontUnderline: boolean;
+        titleAlignment: string;
+        valueAlignment: string;
     }
     export interface SecondaryLabelSettings {
         titleText: string;
@@ -954,6 +970,8 @@ declare namespace powerbi.extensibility.visual {
         fontBold: boolean;
         fontItalic: boolean;
         fontUnderline: boolean;
+        titleAlignment: string;
+        valueAlignment: string;
     }
     export interface TertiaryLabelSettings {
         titleText: string;
@@ -971,6 +989,8 @@ declare namespace powerbi.extensibility.visual {
         fontBold: boolean;
         fontItalic: boolean;
         fontUnderline: boolean;
+        titleAlignment: string;
+        valueAlignment: string;
     }
     export interface QuaternaryLabelSettings {
         titleText: string;
@@ -988,6 +1008,8 @@ declare namespace powerbi.extensibility.visual {
         fontBold: boolean;
         fontItalic: boolean;
         fontUnderline: boolean;
+        titleAlignment: string;
+        valueAlignment: string;
     }
     export interface FifthLabelSettings {
         titleText: string;
@@ -1005,6 +1027,8 @@ declare namespace powerbi.extensibility.visual {
         fontBold: boolean;
         fontItalic: boolean;
         fontUnderline: boolean;
+        titleAlignment: string;
+        valueAlignment: string;
     }
     export interface SixthLabelSettings {
         titleText: string;
@@ -1022,6 +1046,8 @@ declare namespace powerbi.extensibility.visual {
         fontBold: boolean;
         fontItalic: boolean;
         fontUnderline: boolean;
+        titleAlignment: string;
+        valueAlignment: string;
     }
     export interface ITextStyle extends IStyleInfo {
         fontFace?: string;
@@ -1040,6 +1066,7 @@ declare namespace powerbi.extensibility.visual {
     export class Visual implements IVisual {
         private readonly root;
         private updateCount;
+        private rmtMaxLabelTextWidth;
         private static readonly ColumnChartClassName;
         static readonly SeriesClasses: ClassAndSelector;
         private readonly legend;
@@ -1269,6 +1296,7 @@ declare namespace powerbi.extensibility.visual {
         private rcmResolveSides;
         private rcmApplyAxisLabels;
         private renderFinalLayout;
+        private applyLegendPadding;
         private rflLegendHidden;
         private rflParseTransformHeight;
         private rflSizeMainGraphics;

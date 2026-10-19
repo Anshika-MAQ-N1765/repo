@@ -2374,6 +2374,8 @@ export const StackedChartGMOProps = {
        labelDisplayUnit: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'labelDisplayUnit' }, 
        labelPrecision: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'labelPrecision' }, 
        primaryMeasureOnoff: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'primaryMeasureOnoff' }, 
+       legendTopPadding: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'legendTopPadding' }, 
+       legendBottomPadding: <DataViewObjectPropertyIdentifier>{ objectName: 'legend', propertyName: 'legendBottomPadding' }, 
    }, 
    plotArea: { 
        image: <DataViewObjectPropertyIdentifier>{ objectName: 'plotArea', propertyName: 'image' }, 
@@ -2407,6 +2409,8 @@ export const StackedChartGMOProps = {
        fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'fontBold' },
        fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'fontItalic' },
        fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'fontUnderline' },
+       titleAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'titleAlignment' },
+       valueAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'totalLabels', propertyName: 'valueAlignment' },
    }, 
    secondaryLabels: { 
        titleText: { objectName: 'secondaryLabels', propertyName: 'titleText' }, 
@@ -2424,6 +2428,8 @@ export const StackedChartGMOProps = {
        fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'fontBold' },
        fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'fontItalic' },
        fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'fontUnderline' },
+       titleAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'titleAlignment' },
+       valueAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'secondaryLabels', propertyName: 'valueAlignment' },
    }, 
    tertiaryLabels: { 
        titleText: { objectName: 'tertiaryLabels', propertyName: 'titleText' }, 
@@ -2441,6 +2447,8 @@ export const StackedChartGMOProps = {
        fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'fontBold' },
        fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'fontItalic' },
        fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'fontUnderline' },
+       titleAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'titleAlignment' },
+       valueAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'tertiaryLabels', propertyName: 'valueAlignment' },
    }, 
    quaternaryLabels: { 
        titleText: { objectName: 'quaternaryLabels', propertyName: 'titleText' }, 
@@ -2458,6 +2466,8 @@ export const StackedChartGMOProps = {
        fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'fontBold' },
        fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'fontItalic' },
        fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'fontUnderline' },
+       titleAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'titleAlignment' },
+       valueAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'quaternaryLabels', propertyName: 'valueAlignment' },
    }, 
    FifthLabels: { 
        titleText: { objectName: 'FifthLabels', propertyName: 'titleText' }, 
@@ -2475,6 +2485,8 @@ export const StackedChartGMOProps = {
        fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'fontBold' },
        fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'fontItalic' },
        fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'fontUnderline' },
+       titleAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'titleAlignment' },
+       valueAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'FifthLabels', propertyName: 'valueAlignment' },
    }, 
    SixthLabels: { 
        titleText: { objectName: 'SixthLabels', propertyName: 'titleText' }, 
@@ -2492,6 +2504,8 @@ export const StackedChartGMOProps = {
        fontBold: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'fontBold' },
        fontItalic: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'fontItalic' },
        fontUnderline: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'fontUnderline' },
+       titleAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'titleAlignment' },
+       valueAlignment: <DataViewObjectPropertyIdentifier>{ objectName: 'SixthLabels', propertyName: 'valueAlignment' },
    }, 
 }; 
 export interface SampleFilterSettings { 
@@ -2520,6 +2534,8 @@ export interface TotalLabelSettings {
    fontBold: boolean;
    fontItalic: boolean;
    fontUnderline: boolean;
+   titleAlignment: string;
+   valueAlignment: string;
 }; 
 export interface SecondaryLabelSettings { 
    titleText: string; 
@@ -2537,6 +2553,8 @@ export interface SecondaryLabelSettings {
    fontBold: boolean;
    fontItalic: boolean;
    fontUnderline: boolean;
+   titleAlignment: string;
+   valueAlignment: string;
 }; 
 export interface TertiaryLabelSettings { 
    titleText: string; 
@@ -2554,6 +2572,8 @@ export interface TertiaryLabelSettings {
    fontBold: boolean;
    fontItalic: boolean;
    fontUnderline: boolean;
+   titleAlignment: string;
+   valueAlignment: string;
 }; 
 export interface QuaternaryLabelSettings { 
    titleText: string; 
@@ -2571,6 +2591,8 @@ export interface QuaternaryLabelSettings {
    fontBold: boolean;
    fontItalic: boolean;
    fontUnderline: boolean;
+   titleAlignment: string;
+   valueAlignment: string;
 }; 
 export interface FifthLabelSettings { 
    titleText: string; 
@@ -2588,6 +2610,8 @@ export interface FifthLabelSettings {
    fontBold: boolean;
    fontItalic: boolean;
    fontUnderline: boolean;
+   titleAlignment: string;
+   valueAlignment: string;
 }; 
 export interface SixthLabelSettings { 
    titleText: string; 
@@ -2605,6 +2629,8 @@ export interface SixthLabelSettings {
    fontBold: boolean;
    fontItalic: boolean;
    fontUnderline: boolean;
+   titleAlignment: string;
+   valueAlignment: string;
 }; 
 export interface ITextStyle extends IStyleInfo { 
    fontFace?: string; 
@@ -2635,6 +2661,7 @@ interface PivotedCategoryInfo {
 export class Visual implements IVisual { 
    private readonly root: Selection<any>; 
    private updateCount: number = 0; 
+   private rmtMaxLabelTextWidth: number = 120; 
    private static readonly ColumnChartClassName = 'StackedChartGMO'; 
    public static readonly SeriesClasses: ClassAndSelector = createClassAndSelector('series'); 
    private readonly legend: IGMOLegend; 
@@ -4724,6 +4751,8 @@ this.root.selectAll('.legendGroup').remove(); this.root.selectAll('.legendIcon')
        labelSettings.fontUnderline = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.fontUnderline, labelSettings.fontUnderline);
        labelSettings.displayUnits = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.displayUnits, labelSettings.displayUnits);
        labelSettings.color = dataViewObjects.getFillColor(objects, totalLabelsProperties.totalLabels.color, labelSettings.color);
+       labelSettings.titleAlignment = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.titleAlignment, labelSettings.titleAlignment);
+       labelSettings.valueAlignment = dataViewObjects.getValue(objects, totalLabelsProperties.totalLabels.valueAlignment, labelSettings.valueAlignment);
 
         return labelSettings; 
    } 
@@ -4739,7 +4768,7 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        let objects = dataView.metadata.objects;
        // Keys resolved through getValue (scalar/string/bool settings).
        const valueKeys = ['titleText', 'titleFontFamily', 'titleFontSize', 'titleBold', 'titleItalic', 'titleUnderline',
-           'textPrecision', 'fontSize', 'fontFamily', 'fontBold', 'fontItalic', 'fontUnderline', 'displayUnits'];
+           'textPrecision', 'fontSize', 'fontFamily', 'fontBold', 'fontItalic', 'fontUnderline', 'displayUnits', 'titleAlignment', 'valueAlignment'];
        // Keys resolved through getFillColor (color settings).
        const fillKeys = ['titleColor', 'color'];
        for (const key of valueKeys) {
@@ -4829,6 +4858,8 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
            fontBold: false,
            fontItalic: false,
            fontUnderline: false,
+           titleAlignment: 'left',
+           valueAlignment: 'center',
        }
    }
  
@@ -4850,6 +4881,8 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
            fontBold: false,
            fontItalic: false,
            fontUnderline: false, 
+           titleAlignment: 'left',
+           valueAlignment: 'center',
        } 
    } 
     public getDefaultSecondaryLabelSettings(): SecondaryLabelSettings { return this.getDefaultMeasureLabelSettings(); } 
@@ -5476,6 +5509,7 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
  
    private renderMeasureTitles(mt: any): { aggregatedValues: any[]; sampleSize: any; tempSec: any[]; tempTer: any[]; tempQuat: any[]; tempFifth: any[]; tempSixth: any[] } {
        let measureCounter = mt.numberOfMeasures;
+       this.rmtMaxLabelTextWidth = mt.maxLabelTextWidth;
        let sampleSize = mt.sampleSize;
        let aggregatedValues: any[] = [];
        let tempSec: any[] = [], tempTer: any[] = [], tempQuat: any[] = [], tempFifth: any[] = [], tempSixth: any[] = [];
@@ -5544,17 +5578,17 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        if (ctx.totalLabelSettings.show) {
            yAxisValue = yAxisValue - 27;
            let totalText = this.rvlFormatTotalText(ctx.aggregatedValues, len, ctx.totalLabelSettings, ctx.sampleSize, ctx.barWidthValue);
-           this.rvlAppendValueLabel('totalLabels', ctx.totalLabelSettings, totalText, xAxisValue, yAxisValue);
+           this.rvlAppendValueLabel('totalLabels', ctx.totalLabelSettings, totalText, xAxisValue, yAxisValue, ctx.barWidthValue);
        }
        if (this.dataViews[1]?.categorical?.values) {
            yAxisValue = yAxisValue - 27;
            let secText = this.rvlFormatMeasureText(this.dataViews[1].categorical.values, ctx.secondaryLabelSettings, ctx.tempAggregatedSecValues[len], ctx.barWidthValue);
-           this.rvlAppendValueLabel('secLabels', ctx.secondaryLabelSettings, secText, xAxisValue, yAxisValue);
+           this.rvlAppendValueLabel('secLabels', ctx.secondaryLabelSettings, secText, xAxisValue, yAxisValue, ctx.barWidthValue);
        }
        if (this.dataViews[3]?.categorical?.values) {
            yAxisValue = yAxisValue - 27;
            let terText = this.rvlFormatMeasureText(this.dataViews[3].categorical.values, ctx.tertiaryLabelSettings, ctx.tempAggregatedTerValues[len], ctx.barWidthValue);
-           this.rvlAppendValueLabel('terLabels', ctx.tertiaryLabelSettings, terText, xAxisValue, yAxisValue);
+           this.rvlAppendValueLabel('terLabels', ctx.tertiaryLabelSettings, terText, xAxisValue, yAxisValue, ctx.barWidthValue);
        }
        return yAxisValue;
    }
@@ -5564,19 +5598,19 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        if (value) {
            yAxisValue = yAxisValue - 27;
            let quatText = this.rvlFormatMeasureText(value, ctx.quaternaryLabelSettings, ctx.tempAggregatedQuatValues[len], ctx.barWidthValue);
-           this.rvlAppendValueLabel('quatLabels', ctx.quaternaryLabelSettings, quatText, xAxisValue, yAxisValue);
+           this.rvlAppendValueLabel('quatLabels', ctx.quaternaryLabelSettings, quatText, xAxisValue, yAxisValue, ctx.barWidthValue);
        }
        value = this.dataViews[5]?.categorical?.values;
        if (value) {
            yAxisValue = yAxisValue - 27;
            let fiveText = this.rvlFormatMeasureText(value, ctx.FifthLabelSettings, ctx.tempAggregatedfifthValues[len], ctx.barWidthValue);
-           this.rvlAppendValueLabel('fiveLabels', ctx.FifthLabelSettings, fiveText, xAxisValue, yAxisValue);
+           this.rvlAppendValueLabel('fiveLabels', ctx.FifthLabelSettings, fiveText, xAxisValue, yAxisValue, ctx.barWidthValue);
        }
        value = this.dataViews[6]?.categorical?.values;
        if (value) {
            yAxisValue = yAxisValue - 27;
            let sixText = this.rvlFormatMeasureText(value, ctx.SixthLabelSettings, ctx.tempAggregatedsixthValues[len], ctx.barWidthValue);
-           this.rvlAppendValueLabel('sixLabels', ctx.SixthLabelSettings, sixText, xAxisValue, yAxisValue);
+           this.rvlAppendValueLabel('sixLabels', ctx.SixthLabelSettings, sixText, xAxisValue, yAxisValue, ctx.barWidthValue);
        }
        return yAxisValue;
    }
@@ -5759,7 +5793,21 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
            }
        }
        if (legendPosition === 0 || legendPosition === 5) {
-           this.svg.style('margin-top', legendHeight + 'px');
+           this.applyLegendPadding(legendHeight, true);
+       } else {
+           this.applyLegendPadding(legendHeight, false);
+       }
+   }
+
+   // Legend-specific top/bottom spacing. For a top legend the pads are folded into the
+   // svg's margin-top so the whole chart (plot + both axes, one svg) shifts down together
+   // and never overlaps the x-axis labels.
+   private applyLegendPadding(legendHeight: number, isTopLegend: boolean): void {
+       let legendTopPad = Number(this.legendObjectProperties['legendTopPadding']) || 0;
+       let legendBottomPad = Number(this.legendObjectProperties['legendBottomPadding']) || 0;
+       this.root.select('.legend').style({ 'padding-top': legendTopPad + 'px', 'padding-bottom': legendBottomPad + 'px' });
+       if (isTopLegend) {
+           this.svg.style('margin-top', (legendHeight + legendTopPad + legendBottomPad) + 'px');
        }
    }
 
@@ -5942,10 +5990,20 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
    }
 
    private rmtAppendTitle(settings: any, text: string, counterValue: number, numberOfMeasures: number, yAxisForLabels: number, yAxisMultiplier: number, widthtext?: number): void {
+       // Horizontal alignment of the measure title within the reserved label
+       // strip. Falls back to left when unset. The reference width is the
+       // ellipses strength captured in rmtMaxLabelTextWidth (default 120).
+       const refWidth = (this.rmtMaxLabelTextWidth > 0) ? this.rmtMaxLabelTextWidth : 120;
+       const alignment = (settings.titleAlignment || 'left');
+       let xPos = 1;
+       let anchor = 'start';
+       if (alignment === 'center') { xPos = refWidth / 2; anchor = 'middle'; }
+       else if (alignment === 'right') { xPos = refWidth; anchor = 'end'; }
        let sel = this.root.select('.cartesianChart')
            .append('text')
            .classed('measureLabelTitle', true)
-           .attr('x', 1)
+           .attr('x', xPos)
+           .attr('text-anchor', anchor)
            .attr('y', yAxisForLabels - numberOfMeasures + (yAxisMultiplier * counterValue))
            .attr('font-size', settings.titleFontSize + 'px')
            .attr('font-family', settings.titleFontFamily)
@@ -6026,13 +6084,23 @@ private getMeasureLabelSettings(dataView: DataView, props: any, labelSettings: a
        return text;
    }
 
-   private rvlAppendValueLabel(className: string, settings: any, text: string, xAxisValue: number, yAxisValue: number): void {
+   private rvlAppendValueLabel(className: string, settings: any, text: string, xAxisValue: number, yAxisValue: number, barWidthValue?: number): void {
+       // Align the value within its bar column, using the value-specific
+       // alignment (separate from the title alignment). xAxisValue is the bar
+       // centre; shift to the bar edges for left/right.
+       const alignment = (settings.valueAlignment || 'center');
+       let anchor = 'middle';
+       let xPos = xAxisValue;
+       if (barWidthValue != null) {
+           if (alignment === 'left') { anchor = 'start'; xPos = xAxisValue - barWidthValue / 2; }
+           else if (alignment === 'right') { anchor = 'end'; xPos = xAxisValue + barWidthValue / 2; }
+       }
        this.root.select('.svgScrollable > .axisGraphicsContext')
            .append('text')
            .classed(className, true)
-           .attr('x', xAxisValue)
+           .attr('x', xPos)
            .attr('y', yAxisValue)
-           .attr('text-anchor', 'middle')
+           .attr('text-anchor', anchor)
            .attr('font-size', settings.fontSize)
            .attr('font-family', settings.fontFamily || 'Segoe UI')
            .attr('fill', settings.color)
